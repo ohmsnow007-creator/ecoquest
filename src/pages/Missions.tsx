@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Search, Clock, Sparkles, CheckCircle2 } from 'lucide-react';
 import { missions } from '../data/missions';
 import { useGame } from '../store/GameContext';
@@ -91,13 +92,16 @@ export function Missions() {
 
         {/* Mission List */}
         <div className="space-y-3 mt-1">
-          {filtered.map((mission) => {
+          {filtered.map((mission, idx) => {
             const status = getMissionStatus(mission.id);
             const isCompleted = status === 'completed-today' || status === 'completed-once';
 
             return (
-              <button
+              <motion.button
                 key={mission.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.04, duration: 0.25 }}
                 onClick={() => navigate(`/missions/${mission.id}`)}
                 className={`w-full text-left rounded-2xl overflow-hidden transition-all active:scale-[0.98] shadow-sm ${
                   isCompleted ? 'opacity-60' : ''
@@ -130,7 +134,7 @@ export function Missions() {
                     </div>
                   </div>
                 </div>
-              </button>
+              </motion.button>
             );
           })}
         </div>

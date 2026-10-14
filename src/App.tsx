@@ -12,6 +12,8 @@ import { Achievements } from './pages/Achievements';
 import { Progress } from './pages/Progress';
 import { Impact } from './pages/Impact';
 import { Settings } from './pages/Settings';
+import { Quiz } from './pages/Quiz';
+import { Ranking } from './pages/Ranking';
 
 function AppRoutes() {
   const { profile } = useGame();
@@ -26,6 +28,8 @@ function AppRoutes() {
         <Route path="/achievements" element={profile ? <Achievements /> : <Navigate to="/" />} />
         <Route path="/progress" element={profile ? <Progress /> : <Navigate to="/" />} />
         <Route path="/impact" element={profile ? <Impact /> : <Navigate to="/" />} />
+        <Route path="/quiz" element={profile ? <Quiz /> : <Navigate to="/" />} />
+        <Route path="/ranking" element={profile ? <Ranking /> : <Navigate to="/" />} />
         <Route path="/settings" element={profile ? <Settings /> : <Navigate to="/" />} />
       </Route>
     </Routes>

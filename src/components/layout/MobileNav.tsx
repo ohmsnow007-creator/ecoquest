@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import {
   Home,
   Target,
-  TreePine,
+  Brain,
   Trophy,
   BarChart3,
 } from 'lucide-react';
@@ -10,8 +10,8 @@ import {
 const navItems = [
   { to: '/', icon: Home, label: 'หน้าหลัก' },
   { to: '/missions', icon: Target, label: 'ภารกิจ' },
-  { to: '/world', icon: TreePine, label: 'โลก' },
-  { to: '/achievements', icon: Trophy, label: 'เหรียญ' },
+  { to: '/quiz', icon: Brain, label: 'ควิซ' },
+  { to: '/ranking', icon: Trophy, label: 'อันดับ' },
   { to: '/progress', icon: BarChart3, label: 'สถิติ' },
 ];
 

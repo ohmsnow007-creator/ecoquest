@@ -53,10 +53,18 @@ export interface PlayerProfile {
   };
 }
 
+export interface QuizCompletion {
+  quizId: string;
+  completedAt: string;
+  correct: boolean;
+  xpAwarded: number;
+}
+
 export interface PlayerProgress {
   totalXp: number;
   completions: MissionCompletion[];
   unlockedBadges: BadgeRecord[];
+  quizCompletions: QuizCompletion[];
   schemaVersion: number;
 }
 

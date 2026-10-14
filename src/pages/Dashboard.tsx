@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Target, Flame, ChevronRight, Trophy, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useGame } from '../store/GameContext';
 import { getLevelFromXp, getXpInCurrentLevel, getXpToNextLevel, getLevelProgress } from '../utils/xp';
 import { calculateStreak } from '../utils/streak';
@@ -106,27 +107,21 @@ export function Dashboard() {
       <div className="px-4 -mt-4 max-w-lg mx-auto">
         {/* Stats Row */}
         <div className="grid grid-cols-3 gap-2 mb-4">
-          <div className="bg-white rounded-2xl p-3 shadow-sm border border-green-50 text-center">
-            <div className="w-8 h-8 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-1">
-              <Flame size={16} className="text-amber-500" />
-            </div>
-            <p className="text-lg font-bold text-green-800">{streak}</p>
-            <p className="text-[10px] text-gray-400">Streak</p>
-          </div>
-          <div className="bg-white rounded-2xl p-3 shadow-sm border border-green-50 text-center">
-            <div className="w-8 h-8 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-1">
-              <Target size={16} className="text-green-600" />
-            </div>
-            <p className="text-lg font-bold text-green-800">{todayCount}</p>
-            <p className="text-[10px] text-gray-400">วันนี้</p>
-          </div>
-          <div className="bg-white rounded-2xl p-3 shadow-sm border border-green-50 text-center">
-            <div className="w-8 h-8 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-1">
-              <Sparkles size={16} className="text-purple-500" />
-            </div>
-            <p className="text-lg font-bold text-green-800">{progress.unlockedBadges.length}</p>
-            <p className="text-[10px] text-gray-400">เหรียญ</p>
-          </div>
+          {[
+            { icon: <Flame size={16} className="text-amber-500" />, bg: 'bg-amber-50', value: streak, label: 'Streak' },
+            { icon: <Target size={16} className="text-green-600" />, bg: 'bg-green-50', value: todayCount, label: 'วันนี้' },
+            { icon: <Sparkles size={16} className="text-purple-500" />, bg: 'bg-purple-50', value: progress.unlockedBadges.length, label: 'เหรียญ' },
+          ].map((s, i) => (
+            <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 + i * 0.08 }}
+              className="bg-white rounded-2xl p-3 shadow-sm border border-green-50 text-center">
+              <div className={`w-8 h-8 ${s.bg} rounded-full flex items-center justify-center mx-auto mb-1`}>
+                {s.icon}
+              </div>
+              <p className="text-lg font-bold text-green-800">{s.value}</p>
+              <p className="text-[10px] text-gray-400">{s.label}</p>
+            </motion.div>
+          ))}
         </div>
 
         {/* Daily Challenge Card */}

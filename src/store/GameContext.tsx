@@ -1,5 +1,5 @@
 import { createContext, useContext, useCallback, useState, useEffect, type ReactNode } from 'react';
-import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, Badge, MissionCategory } from '../types';
+import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, Badge, MissionCategory, QuizCompletion } from '../types';
 import { storageService } from '../services/storageService';
 import { missions } from '../data/missions';
 import { checkNewBadges } from '../utils/badges';
@@ -23,6 +23,8 @@ interface GameActions {
   completeMission: (missionId: string, note?: string) => boolean;
   canCompleteMission: (missionId: string) => boolean;
   getMissionStatus: (missionId: string) => 'available' | 'completed-today' | 'completed-once';
+  completeQuiz: (quizId: string, correct: boolean, xp: number) => void;
+  isQuizCompleted: (quizId: string) => boolean;
   resetAll: () => void;
   dismissToast: (id: string) => void;
   getCompletionsByCategory: () => Record<MissionCategory, number>;
@@ -160,6 +162,46 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return true;
   }, [canCompleteMission, addToast]);
 
+  const completeQuiz = useCallback((quizId: string, correct: boolean, xp: number) => {
+    if (progress.quizCompletions?.some((q) => q.quizId === quizId)) return;
+
+    const record: QuizCompletion = {
+      quizId,
+      completedAt: new Date().toISOString(),
+      correct,
+      xpAwarded: correct ? xp : 0,
+    };
+
+    setProgress((prev) => {
+      const updated: PlayerProgress = {
+        ...prev,
+        totalXp: prev.totalXp + (correct ? xp : 0),
+        quizCompletions: [...(prev.quizCompletions || []), record],
+      };
+
+      const newBadges = checkNewBadges(updated);
+      if (newBadges.length > 0) {
+        const newRecords: BadgeRecord[] = newBadges.map((b) => ({
+          badgeId: b.id,
+          unlockedAt: new Date().toISOString(),
+        }));
+        updated.unlockedBadges = [...prev.unlockedBadges, ...newRecords];
+        setTimeout(() => {
+          newBadges.forEach((b: Badge) => addToast(`ปลดล็อก Badge: ${b.title}!`, 'badge'));
+        }, 500);
+      }
+
+      return updated;
+    });
+
+    if (correct) addToast(`+${xp} XP จากควิซ!`, 'xp');
+    else addToast('ตอบผิด ลองใหม่ได้ในครั้งหน้า', 'info');
+  }, [progress.quizCompletions, addToast]);
+
+  const isQuizCompleted = useCallback((quizId: string): boolean => {
+    return (progress.quizCompletions || []).some((q) => q.quizId === quizId);
+  }, [progress.quizCompletions]);
+
   const resetAll = useCallback(() => {
     storageService.resetAll();
     setProfile(null);
@@ -167,6 +209,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       totalXp: 0,
       completions: [],
       unlockedBadges: [],
+      quizCompletions: [],
       schemaVersion: 1,
     });
   }, []);
@@ -198,6 +241,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
         completeMission,
         canCompleteMission,
         getMissionStatus,
+        completeQuiz,
+        isQuizCompleted,
         resetAll,
         dismissToast,
         getCompletionsByCategory,

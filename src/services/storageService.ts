@@ -12,6 +12,7 @@ function getDefaultProgress(): PlayerProgress {
     totalXp: 0,
     completions: [],
     unlockedBadges: [],
+    quizCompletions: [],
     schemaVersion: CURRENT_SCHEMA_VERSION,
   };
 }
@@ -60,6 +61,9 @@ export const storageService = {
       }
       if (!parsed.unlockedBadges) {
         parsed.unlockedBadges = [];
+      }
+      if (!parsed.quizCompletions) {
+        parsed.quizCompletions = [];
       }
       return parsed;
     } catch {

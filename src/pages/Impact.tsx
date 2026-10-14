@@ -4,6 +4,7 @@ import { CATEGORY_LABELS } from '../types';
 import type { MissionCategory } from '../types';
 import { Leaf, Info, TrendingUp, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 const categoryEmojis: Record<MissionCategory, string> = {
   waste: '♻️', energy: '⚡', water: '💧',
@@ -77,6 +78,37 @@ export function Impact() {
                 <p className="text-[10px] text-gray-400">ครั้ง</p>
               </div>
             </div>
+
+            {/* Category Pie Chart */}
+            {(() => {
+              const chartData = (Object.keys(categoryCounts) as MissionCategory[])
+                .filter((cat) => categoryCounts[cat] > 0)
+                .map((cat) => ({ name: CATEGORY_LABELS[cat], value: categoryCounts[cat] }));
+              const COLORS = ['#22c55e', '#eab308', '#3b82f6', '#f97316', '#ec4899', '#14b8a6'];
+              return chartData.length > 0 ? (
+                <div className="bg-white rounded-2xl border border-green-50 p-4 mb-4 shadow-sm">
+                  <h2 className="font-bold text-green-800 text-sm mb-2">สัดส่วนกิจกรรม</h2>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <PieChart>
+                      <Pie data={chartData} cx="50%" cy="50%" innerRadius={40} outerRadius={65}
+                        dataKey="value" strokeWidth={2} stroke="#fff">
+                        {chartData.map((_, i) => (
+                          <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex flex-wrap gap-2 justify-center mt-1">
+                    {chartData.map((d, i) => (
+                      <span key={i} className="flex items-center gap-1 text-[10px] text-gray-500">
+                        <span className="w-2 h-2 rounded-full inline-block" style={{ background: COLORS[i % COLORS.length] }} />
+                        {d.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null;
+            })()}
 
             {/* Category impact */}
             <div className="bg-white rounded-2xl border border-green-50 p-4 mb-4 shadow-sm">

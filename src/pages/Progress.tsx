@@ -6,6 +6,8 @@ import { missions } from '../data/missions';
 import { CATEGORY_LABELS } from '../types';
 import type { MissionCategory } from '../types';
 import { TrendingUp, Target, Flame, Sparkles, Calendar, ChevronRight, BarChart3 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts';
 
 const categoryEmojis: Record<MissionCategory, string> = {
   waste: '♻️', energy: '⚡', water: '💧',
@@ -30,10 +32,17 @@ export function Progress() {
       <div className="dark-header px-4 pt-8 pb-6 rounded-b-[28px]">
         <h1 className="text-xl font-bold text-white mb-4">สถิติ</h1>
         <div className="grid grid-cols-2 gap-2">
-          <StatCard icon={<Target size={16} className="text-green-300" />} label="ภารกิจสำเร็จ" value={progress.completions.length} />
-          <StatCard icon={<Sparkles size={16} className="text-amber-300" />} label="XP สะสม" value={progress.totalXp.toLocaleString()} />
-          <StatCard icon={<TrendingUp size={16} className="text-sky-300" />} label="เลเวล" value={level} />
-          <StatCard icon={<Flame size={16} className="text-rose-300" />} label="Streak สูงสุด" value={`${longestStreak} วัน`} />
+          {[
+            { icon: <Target size={16} className="text-green-300" />, label: 'ภารกิจสำเร็จ', value: progress.completions.length },
+            { icon: <Sparkles size={16} className="text-amber-300" />, label: 'XP สะสม', value: progress.totalXp.toLocaleString() },
+            { icon: <TrendingUp size={16} className="text-sky-300" />, label: 'เลเวล', value: level },
+            { icon: <Flame size={16} className="text-rose-300" />, label: 'Streak สูงสุด', value: `${longestStreak} วัน` },
+          ].map((s, i) => (
+            <motion.div key={i} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.08 }}>
+              <StatCard icon={s.icon} label={s.label} value={s.value} />
+            </motion.div>
+          ))}
         </div>
       </div>
 
@@ -78,6 +87,27 @@ export function Progress() {
             })}
           </div>
         </div>
+
+        {/* Category Chart */}
+        {progress.completions.length > 0 && (
+          <div className="bg-white rounded-2xl border border-green-50 p-4 mb-4 shadow-sm">
+            <h2 className="font-bold text-green-800 text-sm mb-3">กราฟกิจกรรม</h2>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={(Object.keys(categoryCounts) as MissionCategory[]).map((cat) => ({
+                name: categoryEmojis[cat],
+                count: categoryCounts[cat],
+              }))} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 14 }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={32}>
+                  {(Object.keys(categoryCounts) as MissionCategory[]).map((_, i) => (
+                    <Cell key={i} fill={['#22c55e', '#eab308', '#3b82f6', '#f97316', '#ec4899', '#14b8a6'][i]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
 
         {/* Impact Link */}
         <Link
