@@ -42,6 +42,8 @@ beforeEach(() => {
   cleanup();
   localStorage.clear();
   sessionStorage.clear();
+  // Skip the slide-to-unlock intro; it has its own tests below.
+  sessionStorage.setItem('ecoquest_launcher_open', '1');
   window.location.hash = '';
 });
 
@@ -161,12 +163,58 @@ describe('Flow F — Escape cancels a destructive dialog', () => {
   it('pressing Escape on clear-all keeps every record', async () => {
     seedProfile();
     openApp('#/settings');
-    fireEvent.click(await screen.findByRole('button', { name: 'ล้างข้อมูลทั้งหมด' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'ลบบัญชี' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     fireEvent.keyDown(document, { key: 'Escape' });
     await vi.waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(storageService.getProfile()?.displayName).toBe('Tester');
   });
+});
+
+describe('Intro — slide to unlock', () => {
+  it('shows on every screen size before the app, and unlocks with the keyboard', async () => {
+    sessionStorage.clear();
+    openApp('#/');
+    expect(screen.getByRole('heading', { name: /ปลูกวันนี้/ })).toBeInTheDocument();
+    expect(screen.queryByText('สวัสดี Tester')).not.toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole('button', { name: /เลื่อนเพื่อเริ่มต้น/ }), { key: 'Enter' });
+    await vi.waitFor(() => expect(window.location.hash).toBe('#/welcome'));
+    expect(sessionStorage.getItem('ecoquest_launcher_open')).toBe('1');
+  });
+
+  it('greets a returning player and opens home after unlocking', async () => {
+    sessionStorage.clear();
+    seedProfile();
+    openApp('#/');
+    expect(screen.getByText('Tester')).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole('button', { name: /เลื่อนเพื่อเข้าเกม/ }), { key: 'Enter' });
+    expect(await screen.findByText('สวัสดี Tester', undefined, { timeout: 5000 })).toBeInTheDocument();
+  });
+});
+
+describe('Delete account — start over with a new character', () => {
+  it('deletes the old player and creates a new level-1 one with a new name', async () => {
+    seedProfile();
+    const m = missions[0];
+    seedProgress({ completions: [completion(m.id, m.xpReward)] as PlayerProgress['completions'], unlockedBadges: [{ badgeId: 'badge-first-mission', unlockedAt: new Date().toISOString() }] });
+    openApp('#/settings');
+    fireEvent.click(await screen.findByRole('button', { name: 'ลบบัญชี' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'ลบบัญชี' }));
+    await vi.waitFor(() => expect(window.location.hash).toBe('#/welcome/profile'));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'ต่อไป' }, { timeout: 5000 }));
+    await screen.findByText(/เลือกได้สูงสุด/);
+    fireEvent.click(screen.getByRole('button', { name: 'ต่อไป' }));
+    fireEvent.change(await screen.findByLabelText('ชื่อผู้เล่น'), { target: { value: 'NewHero' } });
+    fireEvent.click(screen.getByRole('button', { name: 'เริ่มภารกิจแรก' }));
+
+    expect(await screen.findByText('สวัสดี NewHero', undefined, { timeout: 5000 })).toBeInTheDocument();
+    const p = storageService.getProgress();
+    expect(p.totalXp).toBe(0);
+    expect(p.completions).toHaveLength(0);
+    expect(p.unlockedBadges).toHaveLength(0);
+    expect(storageService.getProfile()!.id).not.toBe('p1');
+  }, 20_000);
 });
 
 describe('Flow G — direct navigation', () => {

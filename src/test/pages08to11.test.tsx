@@ -43,6 +43,7 @@ function renderAt(path: string) {
             <Route path="/settings" element={<Settings />} />
             <Route path="/home" element={<p>home page</p>} />
             <Route path="/welcome" element={<p>welcome page</p>} />
+            <Route path="/welcome/profile" element={<p>create profile page</p>} />
           </Routes>
         </GameProvider>
       </MemoryRouter>
@@ -175,11 +176,15 @@ describe('Settings page', () => {
     expect(screen.getByText('home page')).toBeInTheDocument();
   });
 
-  it('clear all removes everything and returns to welcome', () => {
+  it('delete account asks first, removes everything and opens profile creation', () => {
+    localStorage.setItem('ecoquest_progress', JSON.stringify(progressWith(35, new Date().toISOString())));
     renderAt('/settings');
-    fireEvent.click(screen.getByRole('button', { name: 'ล้างข้อมูลทั้งหมด' }));
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'ลบทั้งหมด' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ลบบัญชี' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText(/ลบบัญชี “Tester”/)).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'ลบบัญชี' }));
     expect(storageService.getProfile()).toBeNull();
-    expect(screen.getByText('welcome page')).toBeInTheDocument();
+    expect(storageService.getProgress().totalXp).toBe(0);
+    expect(screen.getByText('create profile page')).toBeInTheDocument();
   });
 });

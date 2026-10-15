@@ -1,6 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { startTransition, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Download, Trash2, Check, Plus, ChevronRight, RotateCcw, ShieldCheck, ExternalLink, User, HardDrive, Smartphone, BellRing, Volume2, PartyPopper, Wind, Settings2, type LucideIcon } from 'lucide-react';
+import { Download, Trash2, UserX, Check, Plus, ChevronRight, RotateCcw, ShieldCheck, ExternalLink, User, HardDrive, Smartphone, BellRing, Volume2, PartyPopper, Wind, Settings2, type LucideIcon } from 'lucide-react';
 import { INTERESTS, MAX_INTERESTS, PROFILE_COLORS } from '../data/avatars';
 import { EMISSION_FACTORS } from '../data/emissionFactors';
 import { quizzes } from '../data/quizzes';
@@ -68,7 +68,7 @@ const STORAGE_KEY_LABELS: Record<string, string> = {
   ecoquest_progress_corrupt_backup: 'สำเนาความคืบหน้าที่อ่านไม่ได้ (สำรองไว้)',
 };
 
-type Confirm = null | 'reset-game' | 'clear-all';
+type Confirm = null | 'reset-game' | 'delete-account';
 
 export function Settings() {
   const { profile, progress, updateProfile, setPreference, resetProgress, resetAll, notify } = useGame();
@@ -105,10 +105,14 @@ export function Settings() {
     }
   };
 
-  const handleClearAll = () => {
+  // Deletes the profile and every record on this device, then goes straight to creating a new level-1 character.
+  const handleDeleteAccount = () => {
     setConfirm(null);
-    resetAll();
-    navigate('/welcome', { replace: true });
+    // One transition for both: otherwise the route guard sees "no profile" first and redirects to /welcome.
+    startTransition(() => {
+      resetAll();
+      navigate('/welcome/profile', { replace: true });
+    });
   };
 
   return (
@@ -125,6 +129,13 @@ export function Settings() {
             </span>
             <ChevronRight size={18} className="text-muted" aria-hidden="true" />
           </Link>
+          <button
+            type="button"
+            onClick={() => setConfirm('delete-account')}
+            className="-mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-card border border-danger/30 bg-surface px-4 text-body font-semibold text-danger hover:bg-danger/5"
+          >
+            <UserX size={18} aria-hidden="true" /> ลบบัญชี
+          </button>
 
           <Link to="/install" className="flex items-center gap-3 rounded-card border border-border bg-surface p-4 shadow-card hover:border-primary/40">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-pale-mint text-primary" aria-hidden="true">
@@ -247,8 +258,8 @@ export function Settings() {
               <SecondaryButton fullWidth icon={<RotateCcw size={17} />} onClick={() => setConfirm('reset-game')}>
                 รีเซ็ตเกม
               </SecondaryButton>
-              <PrimaryButton tone="danger" fullWidth className="mt-2" icon={<Trash2 size={17} />} onClick={() => setConfirm('clear-all')}>
-                ล้างข้อมูลทั้งหมด
+              <PrimaryButton tone="danger" fullWidth className="mt-2" icon={<Trash2 size={17} />} onClick={() => setConfirm('delete-account')}>
+                ลบบัญชีและข้อมูลทั้งหมด
               </PrimaryButton>
             </div>
           </Section>
@@ -294,12 +305,12 @@ export function Settings() {
         onCancel={() => setConfirm(null)}
       />
       <ConfirmationDialog
-        open={confirm === 'clear-all'}
-        title="ล้างข้อมูลทั้งหมด?"
-        description="โปรไฟล์ การตั้งค่า XP เลเวล เหรียญตรา ประวัติภารกิจ ผลควิซ และบันทึกผลกระทบทั้งหมดจะถูกลบออกจากเครื่องนี้ แล้วกลับไปหน้าเริ่มต้น ไม่สามารถกู้คืนได้ หากต้องการเก็บไว้ ให้ส่งออกข้อมูลก่อน"
-        confirmLabel="ลบทั้งหมด"
+        open={confirm === 'delete-account'}
+        title={`ลบบัญชี “${profile.displayName}”?`}
+        description="ชื่อ ตัวละคร การตั้งค่า XP เลเวล เหรียญตรา ประวัติภารกิจ ผลควิซ และบันทึกผลกระทบทั้งหมดจะถูกลบออกจากเครื่องนี้ แล้วไปหน้าสร้างตัวละครใหม่ที่เลเวล 1 ไม่สามารถกู้คืนได้ หากต้องการเก็บไว้ ให้ส่งออกข้อมูลก่อน"
+        confirmLabel="ลบบัญชี"
         tone="danger"
-        onConfirm={handleClearAll}
+        onConfirm={handleDeleteAccount}
         onCancel={() => setConfirm(null)}
       />
     </>

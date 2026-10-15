@@ -10,3 +10,100 @@
   color: var(--color-white);
   padding: 2rem;
 }
+
+/* ---------- Intro (slide to unlock) ---------- */
+.intro-stage {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  background: var(--color-evergreen);
+}
+
+.intro-screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  background:
+    radial-gradient(70% 45% at 75% 18%, rgb(255 236 170 / 0.95) 0%, transparent 70%),
+    radial-gradient(60% 40% at 15% 40%, rgb(180 220 120 / 0.55) 0%, transparent 70%),
+    linear-gradient(180deg, #F2C66B 0%, #D9C46A 30%, #A9B95A 55%, #5E8A3C 78%, #2F5426 100%);
+}
+
+/* On wide screens the intro sits in a phone-sized card, like the reference mockup. */
+@media (min-width: 640px) {
+  .intro-stage {
+    align-items: center;
+    padding: 2rem;
+    background:
+      radial-gradient(60% 50% at 50% 35%, rgb(16 185 129 / 0.18), transparent 70%),
+      var(--color-forest);
+  }
+  .intro-screen {
+    max-width: 400px;
+    min-height: min(860px, calc(100dvh - 4rem));
+    border-radius: 2.75rem;
+    box-shadow: 0 30px 80px rgb(0 0 0 / 0.45), 0 0 0 10px rgb(255 255 255 / 0.06);
+  }
+}
+
+.intro-bokeh span {
+  position: absolute;
+  border-radius: 9999px;
+  background: rgb(255 248 210 / 0.45);
+  filter: blur(18px);
+}
+
+.intro-bubble {
+  position: relative;
+  max-width: 15rem;
+  padding: 1rem 1.25rem;
+  border-radius: 1.5rem;
+  background: rgb(255 255 255 / 0.92);
+  box-shadow: 0 10px 30px rgb(80 60 10 / 0.18);
+}
+.intro-bubble-dot {
+  position: absolute;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.92);
+}
+.intro-bubble-dot-lg { right: 2.5rem; bottom: -0.9rem; width: 1rem; height: 1rem; }
+.intro-bubble-dot-sm { right: 1.75rem; bottom: -1.7rem; width: 0.6rem; height: 0.6rem; }
+
+.intro-card {
+  border-radius: 2rem 2rem 0 0;
+  background: linear-gradient(180deg, rgb(28 72 46 / 0.94) 0%, rgb(14 44 30 / 0.97) 100%);
+  box-shadow: 0 -12px 40px rgb(0 0 0 / 0.25);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.intro-card::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  width: 84px;
+  height: 13px;
+  transform: translateX(-50%);
+  border-radius: 14px 14px 0 0;
+  background: rgb(28 72 46 / 0.94);
+}
+@media (min-width: 640px) {
+  .intro-card { border-radius: 2rem; margin: 0 0.75rem 0.75rem; }
+}
+
+.intro-track {
+  background: linear-gradient(90deg, #E9F77E 0%, #C8EC5C 60%, #9FD64A 100%);
+  box-shadow: inset 0 2px 6px rgb(0 0 0 / 0.12), 0 8px 24px rgb(160 214 74 / 0.35);
+}
+
+.intro-chevrons { animation: intro-nudge 1.6s ease-in-out infinite; }
+@keyframes intro-nudge {
+  0%, 100% { transform: translateX(0); opacity: 0.6; }
+  50% { transform: translateX(4px); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-chevrons { animation: none; }
+}
