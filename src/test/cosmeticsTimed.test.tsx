@@ -152,3 +152,27 @@ describe('timed quiz', () => {
     });
   });
 });
+
+describe('cosmetics never double up with a character’s own accessories', () => {
+  const byName = (n: string) => AVATAR_CHARACTERS.find((a) => a.name === n)!;
+
+  it('a worn hat replaces ซันนี่’s built-in cap', () => {
+    const own = render(<CharacterAvatar look={byName('ซันนี่').look} />);
+    expect(own.container.innerHTML).toContain('M98 78 L166 78'); // the cap's brim
+    own.unmount();
+    const worn = render(<CharacterAvatar look={byName('ซันนี่').look} outfit={{ hat: 'hat-leaf-cap' }} />);
+    expect(worn.container.innerHTML).not.toContain('M98 78 L166 78');
+    worn.unmount();
+  });
+
+  it('worn glasses replace built-in glasses (มีน, ลีโอ)', () => {
+    for (const n of ['มีน', 'ลีโอ']) {
+      const own = render(<CharacterAvatar look={byName(n).look} />);
+      expect(own.container.querySelectorAll('circle[r="11"]').length).toBe(2);
+      own.unmount();
+      const worn = render(<CharacterAvatar look={byName(n).look} outfit={{ eyes: 'eyes-round' }} />);
+      expect(worn.container.querySelectorAll('circle[r="11"]').length).toBe(0);
+      worn.unmount();
+    }
+  });
+});

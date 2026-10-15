@@ -146,7 +146,11 @@ interface CharacterAvatarProps {
 }
 
 export function CharacterAvatar({ look, framing = 'full', className = '', title, outfit }: CharacterAvatarProps) {
-  const { skin, hair, hairStyle, shirt, pants, accent, accessory = 'none' } = look;
+  const { skin, hair, accent } = look;
+  const { shirt, pants } = look;
+  // A worn hat replaces a built-in cap, and worn glasses replace built-in ones, so nothing is doubled.
+  const hairStyle: HairStyle = outfit?.hat && look.hairStyle === 'cap' ? 'undercut' : look.hairStyle;
+  const accessory: Accessory = outfit?.eyes && look.accessory === 'glasses' ? 'none' : (look.accessory ?? 'none');
   const lashes = ['long', 'pigtails', 'bun', 'bob', 'ponytail', 'wavy', 'headscarf', 'puffs'].includes(hairStyle);
   const viewBox = framing === 'bust' ? '26 8 148 156' : '0 0 200 250';
 

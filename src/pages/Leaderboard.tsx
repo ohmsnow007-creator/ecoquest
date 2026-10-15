@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useOutfit } from '../components/cosmetics/useOutfit';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Trophy, Crown, Settings, Info, FlaskConical, Medal } from 'lucide-react';
@@ -46,6 +47,7 @@ function Podium({ entry }: { entry: RankedEntry }) {
 
 export function Leaderboard() {
   const { profile, progress } = useGame();
+  const outfit = useOutfit();
   const [period, setPeriod] = useState<LeaderboardPeriod>('weekly');
   const [includeDemo, setIncludeDemo] = useState(true);
 
@@ -128,7 +130,7 @@ export function Leaderboard() {
                   className={`flex items-center gap-3 rounded-card border p-3 shadow-card ${e.isCurrentPlayer ? 'border-primary bg-pale-mint' : 'border-border bg-surface'}`}
                 >
                   <span className="w-7 shrink-0 text-center text-body font-bold text-muted">{e.rank}</span>
-                  <Avatar id={e.avatarId} color={e.profileColor} size="sm" />
+                  <Avatar id={e.avatarId} color={e.profileColor} size="sm" outfit={e.isCurrentPlayer ? outfit : undefined} />
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-1.5 text-body font-semibold">
                       <span className="truncate">{e.name}</span>

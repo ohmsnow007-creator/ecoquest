@@ -26,6 +26,8 @@ export function QuizTimed() {
   const endAt = useRef(0);
   const saved = useRef(false);
   const score = useRef({ correct: 0, answered: 0 });
+  const advance = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const position = useRef(0);
 
   const best = bestTimedRun(progress.timedRuns);
   const q = deck[index % Math.max(deck.length, 1)];
@@ -33,6 +35,7 @@ export function QuizTimed() {
   const start = () => {
     setDeck(shuffledQuestions());
     setIndex(0);
+    position.current = 0;
     setCorrect(0);
     setAnswered(0);
     score.current = { correct: 0, answered: 0 };
@@ -71,15 +74,19 @@ export function QuizTimed() {
     setCorrect(score.current.correct);
     setAnswered(score.current.answered);
     setFeedback({ chosen: optionId, right });
-    setTimeout(() => {
+    if (advance.current) clearTimeout(advance.current);
+    advance.current = setTimeout(() => {
       setFeedback(null);
-      setIndex((i) => {
-        const nextI = i + 1;
-        if (nextI % deck.length === 0) setDeck(shuffledQuestions());
-        return nextI;
-      });
+      const nextI = position.current + 1;
+      position.current = nextI;
+      // A fast player who answers every question gets a fresh order instead of the same sequence again.
+      if (nextI % deck.length === 0) setDeck(shuffledQuestions());
+      setIndex(nextI);
     }, reduce ? 150 : FEEDBACK_MS);
   };
+
+  // Never fire a pending "next question" after leaving the page.
+  useEffect(() => () => void (advance.current && clearTimeout(advance.current)), []);
 
   const seconds = Math.ceil(left / 1000);
 
