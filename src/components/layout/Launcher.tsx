@@ -10,6 +10,7 @@ import { markSplashSeen } from '../../utils/session';
 import { useGame } from '../../store/GameContext';
 import { SPROUTY_TIPS, nextTipOrder, type SproutyTip } from '../../data/sproutyTips';
 import { getTimeOfDay } from '../../utils/timeOfDay';
+import { usePet } from '../sprouty/usePet';
 import { useTantrum } from '../sprouty/useTantrum';
 import { getSproutyStage } from '../../utils/sprouty';
 import { getPlayerStats } from '../../utils/playerStats';
@@ -232,8 +233,9 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
   }, [reduce]);
 
   const tantrum = useTantrum();
+  const pet = usePet();
   const outfit = useOutfit();
-  const mood = leaving ? 'cheer' : tantrum.angry ? 'angry' : timeOfDay === 'night' && !touched ? 'sleepy' : 'happy';
+  const mood = leaving ? 'cheer' : tantrum.angry ? 'angry' : pet.shy ? 'shy' : timeOfDay === 'night' && !touched ? 'sleepy' : 'happy';
 
   // Unlocking: Sprouty cheers, leaves burst out, the card drops away, then the app opens.
   const unlock = () => {
@@ -302,7 +304,7 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
           >
             <AnimatePresence mode="wait" initial={false}>
               <motion.p
-                key={tantrum.angry ? `angry-${tantrum.line}` : key}
+                key={tantrum.angry ? `angry-${tantrum.line}` : pet.shy ? `shy-${pet.line}` : key}
                 data-testid="sprouty-says"
                 initial={reduce ? false : { opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -313,6 +315,8 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
                 {/* Thai has no spaces between words; the browser's word breaker wraps it, and the bubble never lets text spill out. */}
                 {tantrum.angry ? (
                   <span className="text-[#C2410C]">{tantrum.line}</span>
+                ) : pet.shy ? (
+                  <span className="text-[#DB2777]">{pet.line}</span>
                 ) : (
                   <>
                     {tip.lead} <span className="text-primary">{tip.hl}</span>
@@ -330,7 +334,6 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
             className="relative mt-auto mb-3 w-[min(240px,62vw)] cursor-pointer sm:w-[240px]"
             initial={reduce ? false : { opacity: 0, scale: 0.35 }}
             animate={reduce ? { opacity: 1, y: 0 } : { opacity: 1, scale: 1, y: [0, -7, 0], rotate: [0, 2.5, 0, -2.5, 0] }}
-            style={{ transformOrigin: '50% 90%' }}
             transition={
               reduce
                 ? undefined
@@ -341,7 +344,10 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
                     rotate: { duration: 6.4, repeat: Infinity, ease: 'easeInOut', delay: 1.6 },
                   }
             }
-            onPointerDown={() => {
+            {...pet.handlers}
+            style={{ transformOrigin: '50% 90%', ...pet.touchStyle }}
+            onClick={() => {
+              if (pet.consumeTap()) return;
               setHop((h) => h + 1);
               if (!tantrum.tap() && !tantrum.angry) next();
             }}

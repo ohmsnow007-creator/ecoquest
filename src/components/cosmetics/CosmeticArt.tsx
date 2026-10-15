@@ -66,6 +66,49 @@ export function HatArt({ id }: { id: string }) {
           <circle cx="132" cy="38" r="3" fill="#FFF7D6" />
         </g>
       );
+    case 'hat-beanie':
+      return (
+        <g>
+          <path d="M56 76 C56 34 144 34 144 76 Z" fill="#7CCB4F" />
+          <path d="M70 46 L70 74 M85 38 L85 74 M100 36 L100 74 M115 38 L115 74 M130 46 L130 74" stroke="#5DAA43" strokeWidth={3} opacity={0.6} />
+          <rect x="50" y="70" width="100" height="14" rx="7" fill="#3F8A35" />
+          <path d="M100 36 L100 22" stroke="#3F8A35" strokeWidth={3} strokeLinecap="round" />
+          <path d="M100 26 C90 12 76 14 74 22 C84 30 94 30 100 26 Z" fill="#A3E06F" />
+          <path d="M100 26 C110 12 124 14 126 22 C116 30 106 30 100 26 Z" fill="#8BD46A" />
+        </g>
+      );
+    case 'hat-raindrop':
+      return (
+        <g>
+          <path d="M100 18 C112 36 140 54 140 72 Q100 84 60 72 C60 54 88 36 100 18 Z" fill="#7DD3FC" stroke="#0284C7" strokeWidth={2.5} strokeLinejoin="round" />
+          <path d="M84 50 C88 42 94 36 98 32" stroke="#FFFFFF" strokeWidth={4} strokeLinecap="round" opacity={0.75} />
+          <path d="M52 74 Q100 88 148 74 L148 80 Q100 94 52 80 Z" fill="#0EA5E9" />
+          <circle cx="122" cy="58" r="4" fill="#FFFFFF" opacity={0.6} />
+        </g>
+      );
+    case 'hat-sun-cap':
+      return (
+        <g>
+          <path d="M58 76 C58 40 142 40 142 76 Z" fill="#FACC15" stroke="#CA8A04" strokeWidth={2} />
+          <path d="M126 72 Q160 70 176 80 Q150 86 126 80 Z" fill="#EAB308" stroke="#CA8A04" strokeWidth={2} />
+          <circle cx="100" cy="58" r="10" fill="#FB923C" />
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((r) => (
+            <path key={r} d="M100 44 L100 40" stroke="#FB923C" strokeWidth={3} strokeLinecap="round" transform={`rotate(${r} 100 58)`} />
+          ))}
+        </g>
+      );
+    case 'hat-mushroom':
+      return (
+        <g>
+          <path d="M42 76 C42 26 158 26 158 76 Q100 86 42 76 Z" fill="#EF4444" stroke="#B91C1C" strokeWidth={2.5} />
+          <circle cx="76" cy="50" r="8" fill="#FFF7ED" />
+          <circle cx="104" cy="38" r="6" fill="#FFF7ED" />
+          <circle cx="128" cy="54" r="9" fill="#FFF7ED" />
+          <circle cx="58" cy="68" r="5" fill="#FFF7ED" />
+          <circle cx="146" cy="70" r="4" fill="#FFF7ED" />
+          <path d="M50 76 Q100 88 150 76" stroke="#FDE2C8" strokeWidth={4} fill="none" strokeLinecap="round" />
+        </g>
+      );
     default:
       return null;
   }
@@ -89,6 +132,27 @@ export function EyesArt({ id }: { id: string }) {
           <path d="M96 102 Q100 98 104 102" stroke="#1F2937" strokeWidth={3} fill="none" />
           <path d="M73 101 L80 99" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" opacity={0.6} />
           <path d="M109 101 L116 99" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" opacity={0.6} />
+        </g>
+      );
+    case 'eyes-heart':
+      return (
+        <g>
+          {[82, 118].map((x) => (
+            <path key={x} d={`M${x} 116 C${x - 18} 104 ${x - 14} 90 ${x} 98 C${x + 14} 90 ${x + 18} 104 ${x} 116 Z`} fill="#F472B6" fillOpacity={0.85} stroke="#BE185D" strokeWidth={2.5} strokeLinejoin="round" />
+          ))}
+          <path d="M94 102 Q100 98 106 102" stroke="#BE185D" strokeWidth={3} fill="none" />
+          <circle cx="76" cy="101" r="2.5" fill="#FFFFFF" opacity={0.8} />
+          <circle cx="112" cy="101" r="2.5" fill="#FFFFFF" opacity={0.8} />
+        </g>
+      );
+    case 'eyes-goggles':
+      return (
+        <g>
+          <path d="M60 104 L140 104" stroke="#334155" strokeWidth={5} strokeLinecap="round" />
+          <rect x="66" y="93" width="32" height="24" rx="11" fill="#67E8F9" fillOpacity={0.55} stroke="#F97316" strokeWidth={4} />
+          <rect x="102" y="93" width="32" height="24" rx="11" fill="#67E8F9" fillOpacity={0.55} stroke="#F97316" strokeWidth={4} />
+          <path d="M73 100 L82 98" stroke="#FFFFFF" strokeWidth={2.5} strokeLinecap="round" opacity={0.8} />
+          <path d="M109 100 L118 98" stroke="#FFFFFF" strokeWidth={2.5} strokeLinecap="round" opacity={0.8} />
         </g>
       );
     default:
@@ -117,6 +181,25 @@ export function BagFrontArt({ id }: { id: string }) {
         <g stroke="#8B5E34" strokeWidth={6} strokeLinecap="round">
           <path d="M76 150 L80 196" />
           <path d="M124 150 L120 196" />
+        </g>
+      );
+    case 'bag-bottle':
+      return (
+        <g>
+          <path d="M76 150 L130 186" stroke="#0F766E" strokeWidth={3.5} strokeLinecap="round" />
+          <rect x="122" y="176" width="20" height="34" rx="8" fill="#5EEAD4" stroke="#0F766E" strokeWidth={2} />
+          <rect x="125" y="170" width="14" height="8" rx="3" fill="#0F766E" />
+          <path d="M126 190 L138 190" stroke="#FFFFFF" strokeWidth={2.5} opacity={0.7} />
+        </g>
+      );
+    case 'bag-basket':
+      return (
+        <g>
+          <path d="M120 186 Q134 160 148 186" stroke="#92400E" strokeWidth={3.5} fill="none" strokeLinecap="round" />
+          <path d="M114 186 L154 186 L148 210 L120 210 Z" fill="#D6A15E" stroke="#92400E" strokeWidth={2} strokeLinejoin="round" />
+          <path d="M118 194 L150 194 M120 202 L148 202" stroke="#92400E" strokeWidth={1.5} opacity={0.6} />
+          <circle cx="126" cy="184" r="5" fill="#EF4444" />
+          <path d="M136 186 C134 176 140 172 144 174 C144 180 140 184 136 186 Z" fill="#4ADE80" />
         </g>
       );
     default:
@@ -165,6 +248,25 @@ function SproutyBagFront({ id }: { id: string }) {
         <g stroke="#8B5E34" strokeWidth={7} strokeLinecap="round" fill="none">
           <path d="M70 116 Q62 150 70 190" />
           <path d="M170 116 Q178 150 170 190" />
+        </g>
+      );
+    case 'bag-bottle':
+      return (
+        <g>
+          <path d="M156 104 Q184 136 178 168" stroke="#0F766E" strokeWidth={4} strokeLinecap="round" fill="none" />
+          <rect x="168" y="164" width="22" height="38" rx="9" fill="#5EEAD4" stroke="#0F766E" strokeWidth={2.5} />
+          <rect x="172" y="157" width="14" height="9" rx="3" fill="#0F766E" />
+          <path d="M172 180 L186 180" stroke="#FFFFFF" strokeWidth={2.5} opacity={0.7} />
+        </g>
+      );
+    case 'bag-basket':
+      return (
+        <g>
+          <path d="M162 178 Q178 150 194 178" stroke="#92400E" strokeWidth={4} fill="none" strokeLinecap="round" />
+          <path d="M156 178 L200 178 L194 204 L162 204 Z" fill="#D6A15E" stroke="#92400E" strokeWidth={2.5} strokeLinejoin="round" />
+          <path d="M160 187 L196 187 M162 196 L194 196" stroke="#92400E" strokeWidth={1.5} opacity={0.6} />
+          <circle cx="170" cy="176" r="6" fill="#EF4444" />
+          <path d="M182 178 C180 166 188 162 192 165 C192 172 188 176 182 178 Z" fill="#4ADE80" />
         </g>
       );
     default:

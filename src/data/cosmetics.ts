@@ -1,5 +1,7 @@
-import type { PlayerProgress } from '../types';
+import type { MissionCategory, PlayerProgress } from '../types';
+import { CATEGORY_LABELS } from '../types';
 import { badges } from './badges';
+import { missions } from './missions';
 import { getLevelFromXp } from '../utils/xp';
 
 export type CosmeticSlot = 'hat' | 'eyes' | 'bag';
@@ -9,7 +11,9 @@ export const SLOT_LABELS: Record<CosmeticSlot, string> = { hat: 'หมวก', 
 export type UnlockRule =
   | { type: 'badge'; badgeId: string }
   | { type: 'level'; level: number }
-  | { type: 'weekly'; count: number };
+  | { type: 'weekly'; count: number }
+  /** Recorded mission completions, optionally in one category. */
+  | { type: 'missions'; count: number; category?: MissionCategory };
 
 export interface Cosmetic {
   id: string;
@@ -29,7 +33,22 @@ export const COSMETICS: Cosmetic[] = [
   { id: 'eyes-sun', slot: 'eyes', name: 'แว่นกันแดด', unlock: { type: 'badge', badgeId: 'badge-streak-7' } },
   { id: 'bag-tote', slot: 'bag', name: 'กระเป๋าผ้ารักษ์โลก', unlock: { type: 'badge', badgeId: 'badge-waste-5' } },
   { id: 'bag-backpack', slot: 'bag', name: 'เป้นักสำรวจ', unlock: { type: 'weekly', count: 3 } },
+  // Mission rewards: unlocked by recorded mission completions (self-reported, like every mission).
+  { id: 'bag-bottle', slot: 'bag', name: 'กระบอกน้ำพกพา', unlock: { type: 'missions', count: 5 } },
+  { id: 'eyes-heart', slot: 'eyes', name: 'แว่นหัวใจ', unlock: { type: 'missions', count: 10 } },
+  { id: 'hat-beanie', slot: 'hat', name: 'หมวกไหมพรมต้นกล้า', unlock: { type: 'missions', count: 20 } },
+  { id: 'hat-raindrop', slot: 'hat', name: 'หมวกหยดน้ำ', unlock: { type: 'missions', count: 3, category: 'water' } },
+  { id: 'hat-sun-cap', slot: 'hat', name: 'แก๊ปพลังแสงอาทิตย์', unlock: { type: 'missions', count: 3, category: 'energy' } },
+  { id: 'hat-mushroom', slot: 'hat', name: 'หมวกเห็ดป่า', unlock: { type: 'missions', count: 3, category: 'nature' } },
+  { id: 'eyes-goggles', slot: 'eyes', name: 'แว่นนักปั่น', unlock: { type: 'missions', count: 3, category: 'transport' } },
+  { id: 'bag-basket', slot: 'bag', name: 'ตะกร้าจ่ายตลาด', unlock: { type: 'missions', count: 3, category: 'consumption' } },
 ];
+
+function missionsDone(progress: PlayerProgress, category?: MissionCategory): number {
+  if (!category) return progress.completions.length;
+  const ids = new Set(missions.filter((m) => m.category === category).map((m) => m.id));
+  return progress.completions.filter((c) => ids.has(c.missionId)).length;
+}
 
 export type Outfit = Partial<Record<CosmeticSlot, string>>;
 
@@ -71,6 +90,11 @@ function getEarnedCosmeticStatus(cosmetic: Cosmetic, progress: PlayerProgress): 
     case 'weekly': {
       const done = weeklyChallengesDone(progress);
       return { cosmetic, unlocked: done >= rule.count, condition: `ทำชาเลนจ์ประจำสัปดาห์สำเร็จ ${rule.count} ครั้ง`, current: Math.min(done, rule.count), target: rule.count };
+    }
+    case 'missions': {
+      const done = missionsDone(progress, rule.category);
+      const what = rule.category ? `ภารกิจหมวด${CATEGORY_LABELS[rule.category]}` : 'ภารกิจ';
+      return { cosmetic, unlocked: done >= rule.count, condition: `ทำ${what}ครบ ${rule.count} ครั้ง`, current: Math.min(done, rule.count), target: rule.count };
     }
   }
 }

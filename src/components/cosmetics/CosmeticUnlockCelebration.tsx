@@ -36,6 +36,8 @@ function howUnlocked(c: Cosmetic): string {
       return `ได้รับเมื่อถึงเลเวล ${c.unlock.level}`;
     case 'weekly':
       return 'ได้รับจากชาเลนจ์ประจำสัปดาห์';
+    case 'missions':
+      return 'ได้รับจากการทำภารกิจ';
   }
 }
 

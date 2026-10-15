@@ -7,6 +7,7 @@ import { getSproutyStage } from '../../utils/sprouty';
 import { getLevelFromXp } from '../../utils/xp';
 import { SPROUTY_TIPS } from '../../data/sproutyTips';
 import { useTantrum } from './useTantrum';
+import { usePet } from './usePet';
 
 /** Natural blinking for small Sprouties around the app. */
 function useBlinking(enabled: boolean) {
@@ -60,10 +61,12 @@ export function SproutyTalk({ text, mood = 'happy', tips = true, className = '' 
   const [hop, setHop] = useState(0);
   const [tip, setTip] = useState<number | null>(null);
   const tantrum = useTantrum();
+  const pet = usePet();
   const reduce = useReducedMotion();
-  const said = tantrum.angry ? tantrum.line : tip === null ? text : `${SPROUTY_TIPS[tip].lead} ${SPROUTY_TIPS[tip].hl}${SPROUTY_TIPS[tip].tail ?? ''}`;
+  const said = tantrum.angry ? tantrum.line : pet.shy ? pet.line : tip === null ? text : `${SPROUTY_TIPS[tip].lead} ${SPROUTY_TIPS[tip].hl}${SPROUTY_TIPS[tip].tail ?? ''}`;
 
   const tap = () => {
+    if (pet.consumeTap()) return;
     setHop((h) => h + 1);
     if (tantrum.tap() || tantrum.angry || !tips) return;
     setTip((i) => (i === null ? Math.floor(Math.random() * SPROUTY_TIPS.length) : i + 1 >= SPROUTY_TIPS.length ? null : i + 1));
@@ -71,9 +74,9 @@ export function SproutyTalk({ text, mood = 'happy', tips = true, className = '' 
 
   return (
     <div className={`flex items-end gap-2 ${className}`}>
-      <button type="button" onClick={tap} aria-label="แตะ Sprouty" className="-mb-1 w-[72px] shrink-0 rounded-full">
+      <button type="button" onClick={tap} {...pet.handlers} style={pet.touchStyle} aria-label="แตะหรือลูบหัว Sprouty" className="-mb-1 w-[72px] shrink-0 rounded-full">
         <motion.span className="block" animate={tantrum.angry && !reduce ? { x: [0, -7, 7, -6, 6, -3, 3, 0], rotate: [0, -4, 4, -3, 3, 0] } : { x: 0, rotate: 0 }} transition={{ duration: 0.5 }}>
-          <PlayerSprouty size={72} mood={tantrum.angry ? 'angry' : mood} hop={hop} />
+          <PlayerSprouty size={72} mood={tantrum.angry ? 'angry' : pet.shy ? 'shy' : mood} hop={hop} />
         </motion.span>
       </button>
       <p
