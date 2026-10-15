@@ -1,19 +1,21 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, Sparkles, BookOpen, CheckCircle2, Info } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Clock, BookOpen, CheckCircle2, Info, Lightbulb } from 'lucide-react';
 import { missions } from '../data/missions';
 import { useGame } from '../store/GameContext';
 import { CATEGORY_LABELS, DIFFICULTY_LABELS } from '../types';
-import { useState } from 'react';
-
-const typeLabels = {
-  educational: '📚 ความรู้',
-  simulation: '🎮 จำลอง',
-  'self-reported': '✋ รายงานด้วยตนเอง',
-};
+import { CATEGORY_ICON } from '../data/icons';
+import { PageHeader } from '../components/ui/PageHeader';
+import { Card, SectionTitle } from '../components/ui/Card';
+import { XPBadge } from '../components/ui/Badges';
+import { PrimaryButton, buttonClasses } from '../components/ui/Button';
+import { ErrorState } from '../components/ui/States';
+import { EcoMascot } from '../components/ui/EcoMascot';
+import { MISSION_TYPE_META } from '../components/ui/MissionCard';
 
 export function MissionDetail() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { completeMission, canCompleteMission, getMissionStatus } = useGame();
   const [note, setNote] = useState('');
   const [justCompleted, setJustCompleted] = useState(false);
@@ -21,143 +23,126 @@ export function MissionDetail() {
   const mission = missions.find((m) => m.id === id);
   if (!mission) {
     return (
-      <div className="px-4 pt-8 max-w-lg mx-auto text-center">
-        <p className="text-gray-500">ไม่พบภารกิจนี้</p>
-        <button onClick={() => navigate('/missions')} className="mt-4 text-green-600 font-medium text-sm">
-          กลับไปหน้าภารกิจ
-        </button>
-      </div>
+      <>
+        <PageHeader title="ไม่พบภารกิจ" back="/missions" />
+        <ErrorState
+          title="ไม่พบภารกิจนี้"
+          description="ภารกิจอาจถูกนำออกไปแล้ว หรือลิงก์ไม่ถูกต้อง"
+          action={<Link to="/missions" className={buttonClasses('primary')}>กลับไปหน้าภารกิจ</Link>}
+        />
+      </>
     );
   }
 
   const status = getMissionStatus(mission.id);
   const canComplete = canCompleteMission(mission.id);
+  const CatIcon = CATEGORY_ICON[mission.category];
+  const TypeMeta = MISSION_TYPE_META[mission.type];
 
   const handleComplete = () => {
-    const success = completeMission(mission.id, note.trim() || undefined);
-    if (success) {
+    if (completeMission(mission.id, note.trim() || undefined)) {
       setJustCompleted(true);
       setNote('');
     }
   };
 
   return (
-    <div className="animate-fade-in">
-      {/* Dark Header */}
-      <div className="dark-header px-4 pt-6 pb-5 rounded-b-[28px]">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1 text-green-300 font-medium text-sm mb-3 py-1"
-        >
-          <ArrowLeft size={18} />
-          <span>กลับ</span>
-        </button>
-        <h1 className="text-lg font-bold text-white mb-2">{mission.title}</h1>
-        <p className="text-sm text-green-200/70">{mission.description}</p>
+    <>
+      <PageHeader title={mission.title} subtitle={mission.description} back="/missions" />
 
-        {/* Meta badges */}
-        <div className="flex flex-wrap gap-2 mt-3">
-          <span className="text-[10px] px-2.5 py-1 rounded-full bg-white/10 text-green-200 font-medium">
-            {CATEGORY_LABELS[mission.category]}
-          </span>
-          <span className="text-[10px] px-2.5 py-1 rounded-full bg-white/10 text-amber-200 font-medium">
-            {DIFFICULTY_LABELS[mission.difficulty]}
-          </span>
-          <span className="text-[10px] px-2.5 py-1 rounded-full bg-white/10 text-sky-200 font-medium">
-            {typeLabels[mission.type]}
-          </span>
-          <span className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-white/10 text-white/70">
-            <Clock size={10} /> {mission.durationMinutes} นาที
-          </span>
-          <span className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300 font-bold">
-            <Sparkles size={10} /> {mission.xp} XP
-          </span>
-        </div>
-      </div>
-
-      <div className="px-4 -mt-3 max-w-lg mx-auto">
-        {/* Self-reported notice */}
-        {mission.type === 'self-reported' && (
-          <div className="flex items-start gap-2 bg-sky-50 border border-sky-100 rounded-2xl p-3 mb-4">
-            <Info size={14} className="text-sky-500 shrink-0 mt-0.5" />
-            <p className="text-[11px] text-sky-700">
-              ภารกิจนี้เป็นแบบรายงานด้วยตนเอง ระบบไม่ได้ตรวจจับการกระทำจริง
-            </p>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
+          <div className="flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-caption font-medium text-primary">
+              <CatIcon size={14} aria-hidden="true" /> {CATEGORY_LABELS[mission.category]}
+            </span>
+            <span className="rounded-full bg-surface px-3 py-1 text-caption font-medium border border-border">{DIFFICULTY_LABELS[mission.difficulty]}</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-caption font-medium">
+              <TypeMeta.icon size={14} aria-hidden="true" /> {TypeMeta.label}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-caption font-medium">
+              <Clock size={14} aria-hidden="true" /> {mission.durationMinutes} นาที
+            </span>
+            <XPBadge amount={mission.xp} />
           </div>
-        )}
 
-        {/* Instructions */}
-        <div className="bg-white rounded-2xl border border-green-50 p-4 mb-3 shadow-sm">
-          <h2 className="flex items-center gap-2 font-bold text-green-800 text-sm mb-3">
-            <BookOpen size={15} />
-            วิธีทำ
-          </h2>
-          <ol className="space-y-2.5">
-            {mission.instructions.map((step, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
-                <span className="w-5 h-5 rounded-full text-[10px] flex items-center justify-center shrink-0 mt-0.5 font-bold text-white"
-                  style={{ background: 'linear-gradient(135deg, #16a34a, #22c55e)' }}>
-                  {i + 1}
-                </span>
-                {step}
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        {/* Learning Point */}
-        <div className="rounded-2xl border border-green-100 p-4 mb-4" style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)' }}>
-          <h2 className="font-bold text-green-800 text-sm mb-2">💡 สิ่งที่ได้เรียนรู้</h2>
-          <p className="text-sm text-green-700">{mission.learningPoint}</p>
-        </div>
-
-        {/* Note */}
-        {canComplete && (
-          <div className="mb-4">
-            <label className="block text-xs text-gray-500 mb-1.5 font-medium">บันทึก (ถ้ามี)</label>
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="เล่าสิ่งที่ทำ..."
-              rows={2}
-              maxLength={200}
-              className="w-full bg-white border border-green-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none shadow-sm"
-            />
-          </div>
-        )}
-
-        {/* Action Button */}
-        {justCompleted ? (
-          <div className="flex items-center justify-center gap-2 rounded-2xl py-4 font-bold text-green-800"
-            style={{ background: 'linear-gradient(135deg, #bbf7d0, #86efac)' }}>
-            <CheckCircle2 size={22} />
-            <span>สำเร็จแล้ว! +{mission.xp} XP</span>
-          </div>
-        ) : canComplete ? (
-          <button
-            onClick={handleComplete}
-            className="w-full text-white py-3.5 rounded-2xl font-bold text-sm active:scale-[0.97] transition-transform shadow-lg"
-            style={{ background: 'linear-gradient(135deg, #16a34a, #22c55e)' }}
-          >
-            ทำสำเร็จแล้ว ✓
-          </button>
-        ) : (
-          <div className="text-center py-3">
-            <div className="flex items-center justify-center gap-2 text-gray-400 text-sm">
-              <CheckCircle2 size={18} />
-              <span>
-                {status === 'completed-once'
-                  ? 'ภารกิจนี้ทำได้ครั้งเดียว'
-                  : 'ทำสำเร็จแล้ววันนี้ กลับมาใหม่พรุ่งนี้'}
-              </span>
+          {mission.type === 'self-reported' && (
+            <div className="flex items-start gap-2 rounded-control border border-warning/40 bg-warning/10 p-3 text-caption">
+              <Info size={16} className="mt-0.5 shrink-0 text-warning" aria-hidden="true" />
+              <p>ภารกิจนี้เป็นการรายงานด้วยตนเอง ระบบไม่ได้ตรวจจับหรือยืนยันการกระทำจริง กรุณากดยืนยันเมื่อคุณทำจริงแล้วเท่านั้น</p>
             </div>
-          </div>
-        )}
+          )}
 
-        <p className="text-center text-[10px] text-gray-400 mt-3 mb-4">
-          {mission.repeatPolicy === 'daily' ? 'ทำซ้ำได้ทุกวัน' : 'ทำได้ครั้งเดียว'}
-        </p>
+          <Card>
+            <SectionTitle title="วิธีทำ" icon={<BookOpen size={18} className="text-primary" aria-hidden="true" />} />
+            <ol className="space-y-3">
+              {mission.instructions.map((step, i) => (
+                <li key={i} className="flex items-start gap-3 text-body">
+                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-caption font-semibold text-white">
+                    {i + 1}
+                  </span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+          </Card>
+
+          <Card tone="mint">
+            <SectionTitle title="สิ่งที่ได้เรียนรู้" icon={<Lightbulb size={18} className="text-primary" aria-hidden="true" />} className="mb-2" />
+            <p className="text-body">{mission.learningPoint}</p>
+          </Card>
+        </div>
+
+        <aside className="lg:sticky lg:top-6 lg:self-start">
+          <Card>
+            {justCompleted ? (
+              <motion.div
+                className="flex flex-col items-center text-center"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: 'spring', damping: 14 }}
+              >
+                <EcoMascot size={112} mood="cheer" title="Sprouty ดีใจที่คุณทำภารกิจสำเร็จ" />
+                <h2 className="mt-2 text-section font-semibold">ภารกิจสำเร็จ!</h2>
+                <XPBadge amount={mission.xp} plus className="mt-2" />
+                <p className="mt-2 text-caption text-muted">
+                  {mission.repeatPolicy === 'daily' ? 'กลับมาทำได้อีกครั้งพรุ่งนี้' : 'ภารกิจนี้ทำได้ครั้งเดียว'}
+                </p>
+                <Link to="/missions" className={`${buttonClasses('secondary', 'md', true)} mt-4`}>เลือกภารกิจอื่น</Link>
+              </motion.div>
+            ) : canComplete ? (
+              <>
+                <label htmlFor="mission-note" className="mb-1.5 block text-caption font-semibold">บันทึกสั้น ๆ (ไม่บังคับ)</label>
+                <textarea
+                  id="mission-note"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="เล่าสิ่งที่คุณทำ..."
+                  rows={3}
+                  maxLength={200}
+                  className="w-full resize-none rounded-control border border-border bg-surface px-3 py-2 text-body placeholder:text-muted focus:border-primary focus:outline-none"
+                />
+                <PrimaryButton size="lg" fullWidth className="mt-3" icon={<CheckCircle2 size={18} />} onClick={handleComplete}>
+                  {mission.type === 'self-reported' ? 'ฉันทำภารกิจนี้แล้ว' : 'ทำภารกิจสำเร็จ'}
+                </PrimaryButton>
+                <p className="mt-2 text-center text-caption text-muted">
+                  {mission.repeatPolicy === 'daily' ? 'ทำซ้ำได้วันละครั้ง' : 'ทำได้ครั้งเดียว'}
+                </p>
+              </>
+            ) : (
+              <div className="flex flex-col items-center py-2 text-center">
+                <CheckCircle2 size={28} className="text-success" aria-hidden="true" />
+                <p className="mt-2 text-body font-semibold">
+                  {status === 'completed-once' ? 'คุณทำภารกิจนี้สำเร็จแล้ว' : 'ทำสำเร็จแล้ววันนี้'}
+                </p>
+                <p className="mt-1 text-caption text-muted">
+                  {status === 'completed-once' ? 'ภารกิจนี้ทำได้ครั้งเดียว' : 'กลับมาทำใหม่ได้พรุ่งนี้'}
+                </p>
+              </div>
+            )}
+          </Card>
+        </aside>
       </div>
-    </div>
+    </>
   );
 }

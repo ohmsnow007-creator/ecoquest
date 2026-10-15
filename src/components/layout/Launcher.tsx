@@ -1,90 +1,75 @@
-import { useState, useEffect, type ReactNode } from 'react';
-import { Leaf, Power, X, Minus } from 'lucide-react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
+import { motion } from 'framer-motion';
+import { Power } from 'lucide-react';
+import { useMediaQuery, DESKTOP_QUERY } from '../../hooks/useMediaQuery';
+import { EcoMascot } from '../ui/EcoMascot';
 
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 768px)');
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-  return isMobile;
+const SESSION_KEY = 'ecoquest_launcher_open';
+
+const LauncherContext = createContext<(() => void) | null>(null);
+
+export function useCloseApp() {
+  return useContext(LauncherContext);
+}
+
+function readOpen(): boolean {
+  try {
+    return sessionStorage.getItem(SESSION_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeOpen(value: boolean) {
+  try {
+    if (value) sessionStorage.setItem(SESSION_KEY, '1');
+    else sessionStorage.removeItem(SESSION_KEY);
+  } catch {
+    // Storage unavailable (private mode); the launcher still works for this page view.
+  }
 }
 
 export function Launcher({ children }: { children: ReactNode }) {
-  const isMobile = useIsMobile();
-  const [isOpen, setIsOpen] = useState(false);
+  const isDesktop = useMediaQuery(DESKTOP_QUERY);
+  const [isOpen, setIsOpen] = useState(readOpen);
 
-  if (isMobile) {
-    return <>{children}</>;
-  }
+  if (!isDesktop) return <>{children}</>;
+
+  const open = () => {
+    writeOpen(true);
+    setIsOpen(true);
+  };
+  const close = () => {
+    writeOpen(false);
+    setIsOpen(false);
+  };
 
   if (!isOpen) {
     return (
       <div className="launcher-bg">
-        <div className="launcher-particles">
-          <div className="particle p1" />
-          <div className="particle p2" />
-          <div className="particle p3" />
-          <div className="particle p4" />
-          <div className="particle p5" />
-        </div>
-
-        <div className="launcher-content animate-fade-in">
-          <div className="launcher-logo">
-            <div className="launcher-logo-ring">
-              <Leaf size={48} strokeWidth={1.5} />
-            </div>
-          </div>
-          <h1 className="launcher-title">EcoQuest</h1>
-          <p className="launcher-subtitle">ภารกิจพิชิตโลกสีเขียว</p>
-          <p className="launcher-desc">
-            เปลี่ยนนิสัยเล็ก ๆ ให้กลายเป็นการเปลี่ยนแปลงที่ยิ่งใหญ่
-          </p>
-
-          <button onClick={() => setIsOpen(true)} className="launcher-btn">
-            <Power size={20} />
-            <span>เปิดแอพ</span>
+        <motion.div
+          className="flex max-w-md flex-col items-center text-center"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <EcoMascot size={168} mood="happy" float />
+          <h1 className="mt-6 text-[2.5rem] leading-tight font-bold">EcoQuest</h1>
+          <p className="mt-1 text-section font-medium text-mint">ภารกิจพิชิตโลกสีเขียว</p>
+          <p className="mt-2 text-body text-white/70">เปลี่ยนนิสัยเล็ก ๆ ให้กลายเป็นการเปลี่ยนแปลงที่ยิ่งใหญ่</p>
+          <button
+            type="button"
+            onClick={open}
+            className="mt-8 inline-flex min-h-12 items-center gap-2 rounded-full bg-lime px-8 text-base font-semibold text-forest shadow-raised transition-colors hover:bg-mint"
+          >
+            <Power size={18} aria-hidden="true" />
+            เปิดแอป
           </button>
-
-          <div className="launcher-footer">
-            <span>EcoQuest v1.0.0</span>
-            <span>ผลงานโปรเจกต์มหาวิทยาลัย</span>
-          </div>
-        </div>
+          <p className="mt-10 text-caption text-white/45">EcoQuest v1.1 · ผลงานโปรเจกต์มหาวิทยาลัย</p>
+        </motion.div>
       </div>
     );
   }
 
-  return (
-    <div className="app-desktop-bg">
-      {/* Desktop window controls */}
-      <div className="app-window-bar">
-        <div className="window-bar-left">
-          <Leaf size={16} />
-          <span>EcoQuest — ภารกิจพิชิตโลกสีเขียว</span>
-        </div>
-        <div className="window-bar-right">
-          <button className="window-btn minimize" onClick={() => {}}>
-            <Minus size={14} />
-          </button>
-          <button className="window-btn close" onClick={() => setIsOpen(false)}>
-            <X size={14} />
-          </button>
-        </div>
-      </div>
-
-      {/* Phone frame */}
-      <div className="phone-frame-wrapper">
-        <div className="phone-frame">
-          <div className="phone-notch" />
-          <div className="phone-screen">
-            {children}
-          </div>
-          <div className="phone-home-indicator" />
-        </div>
-      </div>
-    </div>
-  );
+  return <LauncherContext.Provider value={close}>{children}</LauncherContext.Provider>;
 }

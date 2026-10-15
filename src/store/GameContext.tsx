@@ -1,25 +1,32 @@
 import { createContext, useContext, useCallback, useState, useEffect, type ReactNode } from 'react';
-import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, Badge, MissionCategory, QuizCompletion } from '../types';
+import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, MissionCategory, QuizCompletion } from '../types';
 import { storageService } from '../services/storageService';
 import { missions } from '../data/missions';
 import { checkNewBadges } from '../utils/badges';
 import { getLocalDate } from '../utils/streak';
+import { getLevelFromXp } from '../utils/xp';
 
-interface Toast {
+export interface Toast {
   id: string;
   message: string;
   type: 'xp' | 'badge' | 'level' | 'info' | 'error';
 }
 
+export type Celebration =
+  | { id: string; type: 'level'; level: number }
+  | { id: string; type: 'badge'; badgeId: string };
+
 interface GameState {
   profile: PlayerProfile | null;
   progress: PlayerProgress;
   toasts: Toast[];
+  celebrations: Celebration[];
 }
 
 interface GameActions {
   createProfile: (name: string, avatarId: string, goalIds?: string[]) => void;
   updateProfile: (name: string, avatarId: string) => void;
+  setReducedMotion: (value: boolean) => void;
   completeMission: (missionId: string, note?: string) => boolean;
   canCompleteMission: (missionId: string) => boolean;
   getMissionStatus: (missionId: string) => 'available' | 'completed-today' | 'completed-once';
@@ -27,16 +34,20 @@ interface GameActions {
   isQuizCompleted: (quizId: string) => boolean;
   resetAll: () => void;
   dismissToast: (id: string) => void;
+  dismissCelebration: () => void;
   getCompletionsByCategory: () => Record<MissionCategory, number>;
   getTodayCompletionCount: () => number;
 }
 
 const GameContext = createContext<(GameState & GameActions) | null>(null);
 
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
 export function GameProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<PlayerProfile | null>(() => storageService.getProfile());
   const [progress, setProgress] = useState<PlayerProgress>(() => storageService.getProgress());
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [celebrations, setCelebrations] = useState<Celebration[]>([]);
 
   useEffect(() => {
     if (profile) storageService.saveProfile(profile);
@@ -47,7 +58,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [progress]);
 
   const addToast = useCallback((message: string, type: Toast['type']) => {
-    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const id = newId();
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -58,69 +69,75 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  const dismissCelebration = useCallback(() => {
+    setCelebrations((prev) => prev.slice(1));
+  }, []);
+
+  // Applies an XP gain, records newly unlocked badges and queues level-up / badge celebrations.
+  const commitProgress = useCallback((prev: PlayerProgress, next: PlayerProgress) => {
+    const newBadges = checkNewBadges(next);
+    const now = new Date().toISOString();
+    if (newBadges.length > 0) {
+      const records: BadgeRecord[] = newBadges.map((b) => ({ badgeId: b.id, unlockedAt: now }));
+      next = { ...next, unlockedBadges: [...next.unlockedBadges, ...records] };
+    }
+    setProgress(next);
+
+    const queued: Celebration[] = [];
+    const prevLevel = getLevelFromXp(prev.totalXp);
+    const nextLevel = getLevelFromXp(next.totalXp);
+    if (nextLevel > prevLevel) queued.push({ id: newId(), type: 'level', level: nextLevel });
+    for (const b of newBadges) queued.push({ id: newId(), type: 'badge', badgeId: b.id });
+    if (queued.length > 0) setCelebrations((c) => [...c, ...queued]);
+  }, []);
+
   const createProfile = useCallback((name: string, avatarId: string, goalIds: string[] = []) => {
     const now = new Date().toISOString();
-    const newProfile: PlayerProfile = {
+    setProfile({
       id: crypto.randomUUID(),
       displayName: name,
       avatarId,
       createdAt: now,
       updatedAt: now,
       preferences: { reducedMotion: false, selectedGoalIds: goalIds },
-    };
-    setProfile(newProfile);
+    });
   }, []);
 
   const updateProfile = useCallback((name: string, avatarId: string) => {
-    setProfile((prev) => {
-      if (!prev) return prev;
-      return { ...prev, displayName: name, avatarId, updatedAt: new Date().toISOString() };
-    });
+    setProfile((prev) => (prev ? { ...prev, displayName: name, avatarId, updatedAt: new Date().toISOString() } : prev));
+  }, []);
+
+  const setReducedMotion = useCallback((value: boolean) => {
+    setProfile((prev) =>
+      prev ? { ...prev, preferences: { ...prev.preferences, reducedMotion: value }, updatedAt: new Date().toISOString() } : prev,
+    );
   }, []);
 
   const canCompleteMission = useCallback((missionId: string): boolean => {
     const mission = missions.find((m) => m.id === missionId);
     if (!mission || !mission.active) return false;
-
-    const today = getLocalDate();
-
     if (mission.repeatPolicy === 'once') {
       return !progress.completions.some((c) => c.missionId === missionId);
     }
-
-    if (mission.repeatPolicy === 'daily') {
-      return !progress.completions.some(
-        (c) => c.missionId === missionId && c.localDate === today
-      );
-    }
-
-    return false;
+    const today = getLocalDate();
+    return !progress.completions.some((c) => c.missionId === missionId && c.localDate === today);
   }, [progress.completions]);
 
   const getMissionStatus = useCallback((missionId: string): 'available' | 'completed-today' | 'completed-once' => {
     const mission = missions.find((m) => m.id === missionId);
     if (!mission) return 'available';
-
-    const today = getLocalDate();
-
     if (mission.repeatPolicy === 'once') {
-      return progress.completions.some((c) => c.missionId === missionId)
-        ? 'completed-once'
-        : 'available';
+      return progress.completions.some((c) => c.missionId === missionId) ? 'completed-once' : 'available';
     }
-
-    return progress.completions.some(
-      (c) => c.missionId === missionId && c.localDate === today
-    )
+    const today = getLocalDate();
+    return progress.completions.some((c) => c.missionId === missionId && c.localDate === today)
       ? 'completed-today'
       : 'available';
   }, [progress.completions]);
 
   const completeMission = useCallback((missionId: string, note?: string): boolean => {
     const mission = missions.find((m) => m.id === missionId);
-    if (!mission || !mission.active) return false;
-
-    if (!canCompleteMission(missionId)) return false;
+    if (!mission || !mission.active || !canCompleteMission(missionId)) return false;
 
     const now = new Date();
     const completion: MissionCompletion = {
@@ -133,37 +150,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
       note,
     };
 
-    setProgress((prev) => {
-      const updated: PlayerProgress = {
-        ...prev,
-        totalXp: prev.totalXp + mission.xp,
-        completions: [...prev.completions, completion],
-      };
-
-      const newBadges = checkNewBadges(updated);
-      if (newBadges.length > 0) {
-        const newRecords: BadgeRecord[] = newBadges.map((b) => ({
-          badgeId: b.id,
-          unlockedAt: now.toISOString(),
-        }));
-        updated.unlockedBadges = [...prev.unlockedBadges, ...newRecords];
-
-        setTimeout(() => {
-          newBadges.forEach((b: Badge) => {
-            addToast(`ปลดล็อก Badge: ${b.title}!`, 'badge');
-          });
-        }, 500);
-      }
-
-      return updated;
+    commitProgress(progress, {
+      ...progress,
+      totalXp: progress.totalXp + mission.xp,
+      completions: [...progress.completions, completion],
     });
-
     addToast(`+${mission.xp} XP`, 'xp');
     return true;
-  }, [canCompleteMission, addToast]);
+  }, [progress, canCompleteMission, commitProgress, addToast]);
 
   const completeQuiz = useCallback((quizId: string, correct: boolean, xp: number) => {
-    if (progress.quizCompletions?.some((q) => q.quizId === quizId)) return;
+    if ((progress.quizCompletions ?? []).some((q) => q.quizId === quizId)) return;
 
     const record: QuizCompletion = {
       quizId,
@@ -172,52 +169,27 @@ export function GameProvider({ children }: { children: ReactNode }) {
       xpAwarded: correct ? xp : 0,
     };
 
-    setProgress((prev) => {
-      const updated: PlayerProgress = {
-        ...prev,
-        totalXp: prev.totalXp + (correct ? xp : 0),
-        quizCompletions: [...(prev.quizCompletions || []), record],
-      };
-
-      const newBadges = checkNewBadges(updated);
-      if (newBadges.length > 0) {
-        const newRecords: BadgeRecord[] = newBadges.map((b) => ({
-          badgeId: b.id,
-          unlockedAt: new Date().toISOString(),
-        }));
-        updated.unlockedBadges = [...prev.unlockedBadges, ...newRecords];
-        setTimeout(() => {
-          newBadges.forEach((b: Badge) => addToast(`ปลดล็อก Badge: ${b.title}!`, 'badge'));
-        }, 500);
-      }
-
-      return updated;
+    commitProgress(progress, {
+      ...progress,
+      totalXp: progress.totalXp + (correct ? xp : 0),
+      quizCompletions: [...(progress.quizCompletions ?? []), record],
     });
-
-    if (correct) addToast(`+${xp} XP จากควิซ!`, 'xp');
-    else addToast('ตอบผิด ลองใหม่ได้ในครั้งหน้า', 'info');
-  }, [progress.quizCompletions, addToast]);
+    if (correct) addToast(`+${xp} XP จากควิซ`, 'xp');
+  }, [progress, commitProgress, addToast]);
 
   const isQuizCompleted = useCallback((quizId: string): boolean => {
-    return (progress.quizCompletions || []).some((q) => q.quizId === quizId);
+    return (progress.quizCompletions ?? []).some((q) => q.quizId === quizId);
   }, [progress.quizCompletions]);
 
   const resetAll = useCallback(() => {
     storageService.resetAll();
     setProfile(null);
-    setProgress({
-      totalXp: 0,
-      completions: [],
-      unlockedBadges: [],
-      quizCompletions: [],
-      schemaVersion: 1,
-    });
+    setCelebrations([]);
+    setProgress({ totalXp: 0, completions: [], unlockedBadges: [], quizCompletions: [], schemaVersion: 1 });
   }, []);
 
   const getCompletionsByCategory = useCallback((): Record<MissionCategory, number> => {
-    const counts: Record<MissionCategory, number> = {
-      waste: 0, energy: 0, water: 0, transport: 0, consumption: 0, nature: 0,
-    };
+    const counts: Record<MissionCategory, number> = { waste: 0, energy: 0, water: 0, transport: 0, consumption: 0, nature: 0 };
     for (const completion of progress.completions) {
       const mission = missions.find((m) => m.id === completion.missionId);
       if (mission) counts[mission.category]++;
@@ -236,8 +208,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         profile,
         progress,
         toasts,
+        celebrations,
         createProfile,
         updateProfile,
+        setReducedMotion,
         completeMission,
         canCompleteMission,
         getMissionStatus,
@@ -245,6 +219,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         isQuizCompleted,
         resetAll,
         dismissToast,
+        dismissCelebration,
         getCompletionsByCategory,
         getTodayCompletionCount,
       }}

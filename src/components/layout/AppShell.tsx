@@ -1,20 +1,42 @@
-import { Outlet } from 'react-router-dom';
-import { MobileNav } from './MobileNav';
-import { ToastContainer } from '../feedback/Toast';
+import { Suspense } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { BottomNavigation } from './BottomNavigation';
+import { DesktopSidebar } from './DesktopSidebar';
+import { ToastNotification } from '../feedback/Toast';
+import { CelebrationModal } from '../feedback/CelebrationModal';
+import { ErrorBoundary, LoadingSkeleton } from '../ui/States';
 import { useGame } from '../../store/GameContext';
 
 export function AppShell() {
   const { profile } = useGame();
+  const { pathname } = useLocation();
 
-  if (!profile) return <Outlet />;
+  if (!profile) {
+    return (
+      <Suspense fallback={<LoadingSkeleton />}>
+        <Outlet />
+      </Suspense>
+    );
+  }
 
   return (
-    <div className="flex flex-col" style={{ minHeight: '100%' }}>
-      <main className="flex-1 pb-20 overflow-y-auto">
-        <Outlet />
+    <div className="min-h-dvh lg:pl-64">
+      <DesktopSidebar />
+      <main className="pb-nav lg:pb-12">
+        <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-10">
+          <ErrorBoundary key={pathname}>
+            <Suspense fallback={<LoadingSkeleton />}>
+              <motion.div key={pathname} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.22 }}>
+                <Outlet />
+              </motion.div>
+            </Suspense>
+          </ErrorBoundary>
+        </div>
       </main>
-      <MobileNav />
-      <ToastContainer />
+      <BottomNavigation />
+      <ToastNotification />
+      <CelebrationModal />
     </div>
   );
 }

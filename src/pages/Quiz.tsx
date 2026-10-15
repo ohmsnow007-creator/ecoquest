@@ -1,270 +1,237 @@
-import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, CheckCircle2, XCircle, Brain, Sparkles } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CheckCircle2, XCircle, Brain, LogOut, ArrowRight } from 'lucide-react';
 import { useGame } from '../store/GameContext';
-import { quizzes } from '../data/quizzes';
+import { quizzes, type QuizQuestion } from '../data/quizzes';
 import { CATEGORY_LABELS } from '../types';
 import type { MissionCategory } from '../types';
+import { CATEGORY_ICON, CATEGORY_ORDER } from '../data/icons';
+import { PageHeader } from '../components/ui/PageHeader';
+import { Card } from '../components/ui/Card';
+import { FilterChips, type ChipOption } from '../components/ui/Controls';
+import { ProgressBar } from '../components/ui/ProgressBar';
+import { PrimaryButton, SecondaryButton } from '../components/ui/Button';
+import { XPBadge } from '../components/ui/Badges';
+import { EcoMascot } from '../components/ui/EcoMascot';
+import { EmptyState } from '../components/ui/States';
 
-const categoryEmojis: Record<MissionCategory, string> = {
-  waste: '♻️', energy: '⚡', water: '💧',
-  transport: '🚲', consumption: '🛍️', nature: '🌿',
-};
+type View = 'list' | 'playing' | 'result';
+type Filter = MissionCategory | 'all';
 
-type QuizState = 'list' | 'playing' | 'result';
+const CHIPS: ChipOption<Filter>[] = [
+  { value: 'all', label: 'ทั้งหมด' },
+  ...CATEGORY_ORDER.map((c) => ({ value: c, label: CATEGORY_LABELS[c], icon: CATEGORY_ICON[c] })),
+];
+
+const SESSION_SIZE = 5;
 
 export function Quiz() {
   const { completeQuiz, isQuizCompleted, progress } = useGame();
-  const [selectedCategory, setSelectedCategory] = useState<MissionCategory | 'all'>('all');
-  const [state, setState] = useState<QuizState>('list');
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [showExplanation, setShowExplanation] = useState(false);
-  const [sessionResults, setSessionResults] = useState<{ correct: number; total: number; xp: number }>({ correct: 0, total: 0, xp: 0 });
-  const [currentQuizSet, setCurrentQuizSet] = useState<typeof quizzes>([]);
+  const [filter, setFilter] = useState<Filter>('all');
+  const [view, setView] = useState<View>('list');
+  const [set, setSet] = useState<QuizQuestion[]>([]);
+  const [index, setIndex] = useState(0);
+  const [answer, setAnswer] = useState<number | null>(null);
+  const [result, setResult] = useState({ correct: 0, total: 0, xp: 0 });
 
-  const filteredQuizzes = useMemo(() => {
-    if (selectedCategory === 'all') return quizzes;
-    return quizzes.filter((q) => q.category === selectedCategory);
-  }, [selectedCategory]);
+  const filtered = useMemo(() => (filter === 'all' ? quizzes : quizzes.filter((q) => q.category === filter)), [filter]);
+  const available = filtered.filter((q) => !isQuizCompleted(q.id));
+  const records = progress.quizCompletions ?? [];
+  const answeredCount = records.length;
+  const correctCount = records.filter((r) => r.correct).length;
 
-  const completedCount = quizzes.filter((q) => isQuizCompleted(q.id)).length;
-  const correctCount = (progress.quizCompletions || []).filter((q) => q.correct).length;
-
-  const startQuiz = (category: MissionCategory | 'all') => {
-    const available = category === 'all'
-      ? quizzes.filter((q) => !isQuizCompleted(q.id))
-      : quizzes.filter((q) => q.category === category && !isQuizCompleted(q.id));
-
+  const start = () => {
     if (available.length === 0) return;
-
-    const shuffled = [...available].sort(() => Math.random() - 0.5).slice(0, 5);
-    setCurrentQuizSet(shuffled);
-    setCurrentIndex(0);
-    setSelectedAnswer(null);
-    setShowExplanation(false);
-    setSessionResults({ correct: 0, total: 0, xp: 0 });
-    setState('playing');
+    setSet([...available].sort(() => Math.random() - 0.5).slice(0, SESSION_SIZE));
+    setIndex(0);
+    setAnswer(null);
+    setResult({ correct: 0, total: 0, xp: 0 });
+    setView('playing');
   };
 
-  const handleAnswer = (choiceIndex: number) => {
-    if (selectedAnswer !== null) return;
-    setSelectedAnswer(choiceIndex);
-    setShowExplanation(true);
-
-    const q = currentQuizSet[currentIndex];
-    const correct = choiceIndex === q.correctIndex;
+  const choose = (i: number) => {
+    if (answer !== null) return;
+    const q = set[index];
+    const correct = i === q.correctIndex;
+    setAnswer(i);
     completeQuiz(q.id, correct, q.xp);
-
-    setSessionResults((prev) => ({
-      correct: prev.correct + (correct ? 1 : 0),
-      total: prev.total + 1,
-      xp: prev.xp + (correct ? q.xp : 0),
-    }));
+    setResult((r) => ({ correct: r.correct + (correct ? 1 : 0), total: r.total + 1, xp: r.xp + (correct ? q.xp : 0) }));
   };
 
-  const nextQuestion = () => {
-    if (currentIndex < currentQuizSet.length - 1) {
-      setCurrentIndex((i) => i + 1);
-      setSelectedAnswer(null);
-      setShowExplanation(false);
+  const next = () => {
+    if (index < set.length - 1) {
+      setIndex((i) => i + 1);
+      setAnswer(null);
     } else {
-      setState('result');
+      setView('result');
     }
   };
 
-  if (state === 'playing' && currentQuizSet.length > 0) {
-    const q = currentQuizSet[currentIndex];
-    const isCorrect = selectedAnswer === q.correctIndex;
+  if (view === 'playing' && set.length > 0) {
+    const q = set[index];
+    const isCorrect = answer === q.correctIndex;
+    const CatIcon = CATEGORY_ICON[q.category];
 
     return (
-      <div className="animate-fade-in">
-        <div className="dark-header px-4 pt-6 pb-5 rounded-b-[28px]">
-          <button onClick={() => setState('list')} className="flex items-center gap-1 text-green-300 font-medium text-sm mb-3 py-1">
-            <ArrowLeft size={18} /><span>ออกจากควิซ</span>
-          </button>
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-bold text-white">ข้อ {currentIndex + 1}/{currentQuizSet.length}</h1>
-            <span className="text-xs bg-white/10 px-2 py-1 rounded-full text-green-300">
-              {categoryEmojis[q.category]} {CATEGORY_LABELS[q.category]}
-            </span>
-          </div>
-          <div className="bg-white/10 rounded-full h-1.5 mt-3 overflow-hidden">
-            <motion.div className="bg-green-400 h-full rounded-full" initial={{ width: 0 }}
-              animate={{ width: `${((currentIndex + 1) / currentQuizSet.length) * 100}%` }} />
-          </div>
-        </div>
+      <div className="mx-auto max-w-2xl">
+        <header className="safe-top flex items-center justify-between gap-3 pt-5 pb-4 lg:pt-10">
+          <SecondaryButton icon={<LogOut size={16} />} onClick={() => setView('list')}>ออกจากควิซ</SecondaryButton>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-caption font-medium text-primary">
+            <CatIcon size={14} aria-hidden="true" /> {CATEGORY_LABELS[q.category]}
+          </span>
+        </header>
 
-        <div className="px-4 -mt-3 max-w-lg mx-auto">
-          <div className="bg-white rounded-2xl border border-green-50 p-5 mb-4 shadow-sm">
-            <p className="text-base font-bold text-green-900 leading-relaxed">{q.question}</p>
-          </div>
+        <ProgressBar
+          value={(index + (answer !== null ? 1 : 0)) / set.length}
+          label="ความคืบหน้าควิซ"
+          showLabel
+          valueText={`ข้อ ${index + 1} จาก ${set.length}`}
+        />
 
-          <div className="space-y-2 mb-4">
-            {q.choices.map((choice, i) => {
-              let style = 'bg-white border-gray-100';
-              if (selectedAnswer !== null) {
-                if (i === q.correctIndex) style = 'bg-green-50 border-green-400 ring-2 ring-green-400';
-                else if (i === selectedAnswer && !isCorrect) style = 'bg-rose-50 border-rose-400 ring-2 ring-rose-400';
-              }
-              return (
-                <motion.button key={i} whileTap={selectedAnswer === null ? { scale: 0.98 } : {}}
-                  onClick={() => handleAnswer(i)} disabled={selectedAnswer !== null}
-                  className={`w-full text-left p-4 rounded-xl border transition-all ${style}`}>
-                  <div className="flex items-center gap-3">
-                    <span className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">
+        <AnimatePresence mode="wait">
+          <motion.div key={q.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.22 }}>
+            <Card className="mt-4">
+              <p className="text-section font-semibold">{q.question}</p>
+            </Card>
+
+            <div className="mt-4 space-y-2" role="group" aria-label="ตัวเลือกคำตอบ">
+              {q.choices.map((choice, i) => {
+                let state = 'border-border bg-surface hover:border-primary/40';
+                if (answer !== null) {
+                  if (i === q.correctIndex) state = 'border-success bg-success/10';
+                  else if (i === answer) state = 'border-danger bg-danger/10';
+                  else state = 'border-border bg-surface opacity-60';
+                }
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => choose(i)}
+                    disabled={answer !== null}
+                    className={`flex min-h-14 w-full items-center gap-3 rounded-control border-2 px-4 py-3 text-left text-body transition-colors disabled:cursor-default ${state}`}
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background text-caption font-semibold" aria-hidden="true">
                       {String.fromCharCode(65 + i)}
                     </span>
-                    <span className="text-sm text-gray-700 font-medium">{choice}</span>
-                    {selectedAnswer !== null && i === q.correctIndex && <CheckCircle2 size={18} className="text-green-500 ml-auto shrink-0" />}
-                    {selectedAnswer !== null && i === selectedAnswer && !isCorrect && i !== q.correctIndex && <XCircle size={18} className="text-rose-500 ml-auto shrink-0" />}
+                    <span className="flex-1 font-medium">{choice}</span>
+                    {answer !== null && i === q.correctIndex && <CheckCircle2 size={20} className="text-success" aria-label="คำตอบที่ถูก" />}
+                    {answer !== null && i === answer && !isCorrect && <XCircle size={20} className="text-danger" aria-label="คำตอบของคุณ" />}
+                  </button>
+                );
+              })}
+            </div>
+
+            <AnimatePresence>
+              {answer !== null && (
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-4" aria-live="polite">
+                  <div className={`rounded-card border p-4 ${isCorrect ? 'border-success/40 bg-success/10' : 'border-danger/30 bg-danger/5'}`}>
+                    <p className={`flex items-center gap-2 text-card font-semibold ${isCorrect ? 'text-success' : 'text-danger'}`}>
+                      {isCorrect ? <CheckCircle2 size={18} aria-hidden="true" /> : <XCircle size={18} aria-hidden="true" />}
+                      {isCorrect ? 'ถูกต้อง!' : 'ยังไม่ถูก'}
+                      {isCorrect && <XPBadge amount={q.xp} plus className="ml-1" />}
+                    </p>
+                    <p className="mt-1 text-body">{q.explanation}</p>
                   </div>
-                </motion.button>
-              );
-            })}
-          </div>
-
-          <AnimatePresence>
-            {showExplanation && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                className={`rounded-2xl p-4 mb-4 ${isCorrect ? 'bg-green-50 border border-green-200' : 'bg-rose-50 border border-rose-200'}`}>
-                <div className="flex items-center gap-2 mb-2">
-                  {isCorrect ? <CheckCircle2 size={16} className="text-green-600" /> : <XCircle size={16} className="text-rose-600" />}
-                  <span className={`font-bold text-sm ${isCorrect ? 'text-green-700' : 'text-rose-700'}`}>
-                    {isCorrect ? `ถูกต้อง! +${q.xp} XP` : 'ไม่ถูกต้อง'}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-600">{q.explanation}</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {selectedAnswer !== null && (
-            <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={nextQuestion}
-              className="w-full text-white py-3 rounded-xl font-bold text-sm shadow-md"
-              style={{ background: 'linear-gradient(135deg, #16a34a, #22c55e)' }}>
-              {currentIndex < currentQuizSet.length - 1 ? 'ข้อถัดไป' : 'ดูผลลัพธ์'}
-            </motion.button>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  if (state === 'result') {
-    const pct = sessionResults.total > 0 ? Math.round((sessionResults.correct / sessionResults.total) * 100) : 0;
-    return (
-      <div className="animate-fade-in">
-        <div className="dark-header px-4 pt-8 pb-8 rounded-b-[28px] text-center">
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', bounce: 0.5 }}>
-            <div className="w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-3"
-              style={{ background: pct >= 60 ? 'rgba(134, 239, 172, 0.2)' : 'rgba(251, 191, 36, 0.2)' }}>
-              <span className="text-4xl">{pct >= 80 ? '🎉' : pct >= 60 ? '👍' : '💪'}</span>
-            </div>
+                  <PrimaryButton size="lg" fullWidth className="mt-4" iconRight={<ArrowRight size={18} />} onClick={next}>
+                    {index < set.length - 1 ? 'ข้อถัดไป' : 'ดูผลลัพธ์'}
+                  </PrimaryButton>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
-          <h1 className="text-2xl font-bold text-white mb-1">{pct >= 80 ? 'ยอดเยี่ยม!' : pct >= 60 ? 'ดีมาก!' : 'พยายามต่อ!'}</h1>
-          <p className="text-green-300/60 text-sm">ตอบถูก {sessionResults.correct} จาก {sessionResults.total} ข้อ ({pct}%)</p>
-        </div>
-
-        <div className="px-4 -mt-3 max-w-lg mx-auto">
-          <div className="bg-white rounded-2xl border border-green-50 p-5 mb-4 shadow-sm text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <Sparkles size={18} className="text-amber-500" />
-              <span className="text-2xl font-extrabold text-green-800">+{sessionResults.xp} XP</span>
-            </div>
-            <p className="text-xs text-gray-400">ได้รับจากการตอบถูก</p>
-          </div>
-
-          <button onClick={() => setState('list')}
-            className="w-full text-white py-3 rounded-xl font-bold text-sm shadow-md mb-3"
-            style={{ background: 'linear-gradient(135deg, #16a34a, #22c55e)' }}>
-            กลับหน้าควิซ
-          </button>
-        </div>
+        </AnimatePresence>
       </div>
     );
   }
 
-  const categories: (MissionCategory | 'all')[] = ['all', 'waste', 'energy', 'water', 'transport', 'consumption', 'nature'];
-  const catLabels: Record<string, string> = { all: 'ทั้งหมด', ...CATEGORY_LABELS };
-  const catEmojis: Record<string, string> = { all: '📚', ...categoryEmojis };
-
-  const availableInCategory = filteredQuizzes.filter((q) => !isQuizCompleted(q.id)).length;
+  if (view === 'result') {
+    const pct = result.total > 0 ? Math.round((result.correct / result.total) * 100) : 0;
+    return (
+      <div className="mx-auto max-w-md pt-8 text-center lg:pt-16">
+        <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', damping: 12 }} className="flex justify-center">
+          <EcoMascot size={148} mood={pct >= 60 ? 'cheer' : 'calm'} title="Sprouty กับผลควิซของคุณ" />
+        </motion.div>
+        <h1 className="mt-3 text-page font-bold">{pct >= 80 ? 'ยอดเยี่ยม!' : pct >= 60 ? 'ทำได้ดีมาก!' : 'เรียนรู้เพิ่มอีกนิดนะ'}</h1>
+        <p className="mt-1 text-body text-muted">ตอบถูก {result.correct} จาก {result.total} ข้อ ({pct}%)</p>
+        <Card className="mt-6">
+          <p className="text-caption text-muted">XP ที่ได้จากชุดนี้</p>
+          <p className="mt-1 text-[2rem] leading-tight font-bold text-primary">+{result.xp} XP</p>
+          <p className="mt-1 text-caption text-muted">ได้ XP เฉพาะข้อที่ตอบถูก และแต่ละข้อทำได้ครั้งเดียว</p>
+        </Card>
+        <PrimaryButton size="lg" fullWidth className="mt-6" onClick={() => setView('list')}>กลับหน้าควิซ</PrimaryButton>
+      </div>
+    );
+  }
 
   return (
-    <div className="animate-fade-in">
-      <div className="dark-header px-4 pt-8 pb-6 rounded-b-[28px]">
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="text-xl font-bold text-white">ควิซสิ่งแวดล้อม</h1>
-          <div className="flex items-center gap-2 bg-white/10 rounded-full px-3 py-1.5">
-            <Brain size={14} className="text-green-300" />
-            <span className="text-white text-sm font-bold">{correctCount}</span>
-            <span className="text-white/40 text-sm">/ {quizzes.length}</span>
-          </div>
-        </div>
-        <p className="text-sm text-green-300/60 mb-3">ทดสอบความรู้ด้านสิ่งแวดล้อม รับ XP จากการตอบถูก</p>
-        <div className="bg-white/10 rounded-full h-2 overflow-hidden">
-          <div className="bg-green-400 h-full rounded-full transition-all duration-500"
-            style={{ width: `${(completedCount / quizzes.length) * 100}%` }} />
-        </div>
-        <p className="text-[10px] text-green-300/40 mt-1">ทำแล้ว {completedCount}/{quizzes.length} ข้อ</p>
-      </div>
+    <>
+      <PageHeader
+        title="ควิซสิ่งแวดล้อม"
+        subtitle="ทดสอบความรู้ รับ XP เมื่อตอบถูก แต่ละข้อทำได้ครั้งเดียว"
+        actions={
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-forest px-3 py-1 text-caption font-semibold text-white">
+            <Brain size={14} className="text-lime" aria-hidden="true" /> ถูก {correctCount}/{quizzes.length}
+          </span>
+        }
+      />
 
-      <div className="px-4 -mt-3 max-w-lg mx-auto">
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
-          {categories.map((cat) => (
-            <button key={cat} onClick={() => setSelectedCategory(cat)}
-              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                selectedCategory === cat ? 'text-white shadow-md' : 'bg-gray-100 text-gray-500'
-              }`}
-              style={selectedCategory === cat ? { background: 'linear-gradient(135deg, #16a34a, #22c55e)' } : {}}>
-              {catEmojis[cat]} {catLabels[cat]}
-            </button>
-          ))}
-        </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
+          <FilterChips options={CHIPS} value={filter} onChange={setFilter} ariaLabel="กรองควิซตามหมวดหมู่" />
 
-        {availableInCategory > 0 ? (
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => startQuiz(selectedCategory)}
-            className="w-full text-white py-3.5 rounded-2xl font-bold text-sm shadow-lg mb-4"
-            style={{ background: 'linear-gradient(135deg, #16a34a, #22c55e)' }}>
-            <div className="flex items-center justify-center gap-2">
-              <Brain size={18} />
-              <span>เริ่มทำควิซ ({availableInCategory} ข้อที่ยังไม่ได้ทำ)</span>
-            </div>
-          </motion.button>
-        ) : (
-          <div className="bg-green-50 rounded-2xl p-4 mb-4 text-center border border-green-100">
-            <CheckCircle2 size={24} className="text-green-500 mx-auto mb-2" />
-            <p className="text-sm text-green-700 font-semibold">ทำครบทุกข้อในหมวดนี้แล้ว!</p>
-          </div>
-        )}
-
-        <div className="space-y-2 mb-4">
-          {filteredQuizzes.map((q) => {
-            const done = isQuizCompleted(q.id);
-            const record = (progress.quizCompletions || []).find((c) => c.quizId === q.id);
-            return (
-              <div key={q.id} className={`bg-white rounded-xl border p-3 ${done ? 'border-green-100' : 'border-gray-100'}`}>
-                <div className="flex items-start gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0 ${done ? '' : 'bg-gray-100'}`}
-                    style={done ? { background: record?.correct ? 'linear-gradient(135deg, #d1fae5, #a7f3d0)' : 'linear-gradient(135deg, #fef2f2, #fecaca)' } : {}}>
-                    {done ? (record?.correct ? '✅' : '❌') : catEmojis[q.category]}
+          <ul className="space-y-2">
+            {filtered.map((q) => {
+              const record = records.find((r) => r.quizId === q.id);
+              const Icon = CATEGORY_ICON[q.category];
+              return (
+                <li key={q.id} className="flex items-start gap-3 rounded-card border border-border bg-surface p-4">
+                  <span
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-control ${
+                      !record ? 'bg-primary/10 text-primary' : record.correct ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
+                    }`}
+                  >
+                    {!record ? <Icon size={18} aria-hidden="true" /> : record.correct ? <CheckCircle2 size={18} aria-label="ตอบถูก" /> : <XCircle size={18} aria-label="ตอบผิด" />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-body font-medium">{q.question}</p>
+                    <p className="mt-0.5 text-caption text-muted">
+                      {CATEGORY_LABELS[q.category]}
+                      {!record && ` · ${q.xp} XP`}
+                      {record?.correct && ` · ได้ ${record.xpAwarded} XP`}
+                      {record && !record.correct && ' · ตอบผิด ไม่ได้ XP'}
+                    </p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-gray-800 line-clamp-2">{q.question}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[10px] text-gray-400">{CATEGORY_LABELS[q.category]}</span>
-                      {done && record?.correct && (
-                        <span className="text-[10px] text-green-600 font-bold">+{q.xp} XP</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        <aside className="order-first lg:order-none lg:sticky lg:top-6 lg:self-start">
+          <Card tone="forest">
+            {available.length > 0 ? (
+              <>
+                <p className="text-caption text-white/70">{filter === 'all' ? 'ทุกหมวดหมู่' : CATEGORY_LABELS[filter]}</p>
+                <p className="mt-1 text-section font-semibold">เหลือ {available.length} ข้อที่ยังไม่ได้ทำ</p>
+                <p className="mt-1 text-caption text-white/70">สุ่มครั้งละไม่เกิน {SESSION_SIZE} ข้อ</p>
+                <PrimaryButton tone="onDark" size="lg" fullWidth className="mt-4" icon={<Brain size={18} />} onClick={start}>
+                  เริ่มทำควิซ
+                </PrimaryButton>
+              </>
+            ) : (
+              <div className="text-center">
+                <CheckCircle2 size={28} className="mx-auto text-lime" aria-hidden="true" />
+                <p className="mt-2 text-card font-semibold">ทำครบทุกข้อในหมวดนี้แล้ว</p>
+                <p className="mt-1 text-caption text-white/70">ลองเลือกหมวดหมู่อื่นด้านล่าง</p>
               </div>
-            );
-          })}
-        </div>
+            )}
+            <div className="mt-5">
+              <ProgressBar value={answeredCount / quizzes.length} label="ทำควิซไปแล้ว" tone="lime" onDark showLabel valueText={`${answeredCount}/${quizzes.length} ข้อ`} />
+            </div>
+          </Card>
+          {filtered.length === 0 && <EmptyState title="ยังไม่มีควิซในหมวดนี้" />}
+        </aside>
       </div>
-    </div>
+    </>
   );
 }

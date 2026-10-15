@@ -77,10 +77,19 @@ src/
 │   └── storageService.ts  # จัดการ localStorage
 ├── store/
 │   └── GameContext.tsx     # React Context (state management)
-├── test/             # Vitest tests (34 test cases)
+├── test/             # Vitest tests (45 test cases)
 ├── types/            # TypeScript interfaces
 └── utils/            # xp, streak, world helpers
 ```
+
+## Design System
+
+- **Color tokens** — กำหนดใน `src/index.css` (`@theme`) เช่น `forest`, `primary`, `emerald`, `mint`, `lime`, `background`, `surface`, `text`, `muted`, `border`, `warning`, `danger`, `success` พาเลตต์เริ่มต้นของ Tailwind ถูกล้างออก จึงใช้ได้เฉพาะสีตามบทบาทเท่านั้น
+- **Typography** — IBM Plex Sans Thai (fallback: Noto Sans Thai, Leelawadee UI, Tahoma) ขนาด `text-page`, `text-section`, `text-card`, `text-body`, `text-caption`
+- **Shared components** — `src/components/ui/` (ปุ่ม, การ์ด, ProgressBar/Ring, XPBadge, LevelBadge, StatCard, MissionCard, AchievementBadge, EmptyState, LoadingSkeleton, ErrorState, Modal/ConfirmationDialog, SegmentedControl, FilterChips, ResponsiveChart, AvatarPicker, PageHeader, EcoMascot) และ `src/components/layout/` (AppShell, BottomNavigation, DesktopSidebar, Launcher)
+- **Responsive** — มือถือใช้ Bottom Navigation, เดสก์ท็อป (≥1024px) ใช้ Sidebar และ Dashboard หลายคอลัมน์ ความกว้างเนื้อหาสูงสุด 1200px
+- **Motion** — Framer Motion สำหรับ page fade, card entrance, XP toast, Level Up, Badge Unlock และ progress รองรับ `prefers-reduced-motion` และสวิตช์ "ลดการเคลื่อนไหว" ในหน้าตั้งค่า
+- **Mascot** — Sprouty เป็น SVG ของโปรเจกต์เอง ไม่พึ่งพาภาพจากลิงก์ภายนอก
 
 ## สถาปัตยกรรม
 

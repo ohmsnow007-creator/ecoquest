@@ -1,56 +1,26 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Sparkles } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowRight, Check, Sparkles, Globe2, BookOpen } from 'lucide-react';
 import { useGame } from '../store/GameContext';
+import { AVATARS, GOAL_OPTIONS } from '../data/icons';
+import { EcoMascot } from '../components/ui/EcoMascot';
+import { AvatarPicker } from '../components/ui/AvatarPicker';
+import { PrimaryButton, SecondaryButton } from '../components/ui/Button';
 
-const avatars = [
-  { id: 'avatar-leaf', emoji: '🌿', label: 'ใบไม้' },
-  { id: 'avatar-tree', emoji: '🌳', label: 'ต้นไม้' },
-  { id: 'avatar-flower', emoji: '🌻', label: 'ดอกไม้' },
-  { id: 'avatar-earth', emoji: '🌍', label: 'โลก' },
-  { id: 'avatar-water', emoji: '💧', label: 'หยดน้ำ' },
-  { id: 'avatar-sun', emoji: '☀️', label: 'ดวงอาทิตย์' },
+const FEATURES = [
+  { icon: Sparkles, text: 'ทำภารกิจรักษ์โลก สะสม XP และเลื่อนเลเวล' },
+  { icon: Globe2, text: 'ดูโลกเสมือนของคุณเติบโตตามความตั้งใจ' },
+  { icon: BookOpen, text: 'เรียนรู้เรื่องสิ่งแวดล้อมผ่านควิซสั้น ๆ' },
 ];
 
-const goals = [
-  { id: 'goal-waste', label: 'ลดขยะ', emoji: '♻️' },
-  { id: 'goal-energy', label: 'ประหยัดพลังงาน', emoji: '⚡' },
-  { id: 'goal-water', label: 'ประหยัดน้ำ', emoji: '💧' },
-  { id: 'goal-transport', label: 'เดินทางยั่งยืน', emoji: '🚲' },
-  { id: 'goal-nature', label: 'รักธรรมชาติ', emoji: '🌿' },
-];
-
-function MascotSvg() {
+function StepDots({ step }: { step: number }) {
   return (
-    <svg viewBox="0 0 200 200" className="w-40 h-40 mx-auto" xmlns="http://www.w3.org/2000/svg">
-      {/* Glow */}
-      <defs>
-        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#86efac" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#86efac" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <circle cx="100" cy="110" r="80" fill="url(#glow)" />
-      {/* Soil */}
-      <ellipse cx="100" cy="155" rx="50" ry="12" fill="#8B6914" opacity="0.5" />
-      {/* Body (seed/sprout shape) */}
-      <ellipse cx="100" cy="135" rx="30" ry="28" fill="#C7E5A0" />
-      <ellipse cx="100" cy="130" rx="28" ry="25" fill="#A8D88A" />
-      {/* Face */}
-      <circle cx="88" cy="128" r="4" fill="#2d5016" />
-      <circle cx="112" cy="128" r="4" fill="#2d5016" />
-      <circle cx="89" cy="126" r="1.5" fill="white" />
-      <circle cx="113" cy="126" r="1.5" fill="white" />
-      {/* Smile */}
-      <path d="M92 138 Q100 146 108 138" stroke="#2d5016" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      {/* Cheeks */}
-      <circle cx="82" cy="135" r="5" fill="#f9a8d4" opacity="0.3" />
-      <circle cx="118" cy="135" r="5" fill="#f9a8d4" opacity="0.3" />
-      {/* Leaf on head */}
-      <path d="M100 108 Q85 85 95 70 Q100 80 100 108" fill="#22c55e" />
-      <path d="M100 108 Q115 85 105 70 Q100 80 100 108" fill="#16a34a" />
-      <line x1="100" y1="108" x2="100" y2="75" stroke="#15803d" strokeWidth="1.5" />
-    </svg>
+    <div className="flex items-center gap-1.5" aria-label={`ขั้นตอนที่ ${step + 1} จาก 3`}>
+      {[0, 1, 2].map((i) => (
+        <span key={i} className={`h-2 rounded-full transition-all ${i === step ? 'w-6 bg-primary' : 'w-2 bg-border'}`} />
+      ))}
+    </div>
   );
 }
 
@@ -59,157 +29,121 @@ export function Welcome() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState(avatars[0].id);
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [avatar, setAvatar] = useState(AVATARS[0].id);
+  const [goals, setGoals] = useState<string[]>([]);
 
-  const toggleGoal = (goalId: string) => {
-    setSelectedGoals((prev) =>
-      prev.includes(goalId) ? prev.filter((g) => g !== goalId) : [...prev, goalId]
-    );
-  };
+  const toggleGoal = (id: string) =>
+    setGoals((prev) => (prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]));
 
   const handleStart = () => {
-    const displayName = name.trim() || 'นักสำรวจ';
-    createProfile(displayName, selectedAvatar, selectedGoals);
+    createProfile(name.trim() || 'นักสำรวจ', avatar, goals);
     navigate('/');
   };
 
   return (
-    <div className="flex flex-col" style={{
-      minHeight: '100%',
-      background: 'linear-gradient(180deg, #0d3320 0%, #14532d 40%, #166534 70%, #15803d 100%)',
-    }}>
-      {step === 0 && (
-        <div className="flex-1 flex flex-col items-center justify-center px-6 text-white animate-fade-in">
-          {/* Speech bubble */}
-          <div className="relative bg-white/15 backdrop-blur-sm rounded-2xl px-5 py-3 mb-2">
-            <p className="text-sm text-green-100 text-center font-medium">
-              สวัสดี! ฉันคือ Sprouty<br />มาสร้างโลกสีเขียวด้วยกัน!
-            </p>
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white/15 rotate-45 backdrop-blur-sm" />
-          </div>
-
-          <MascotSvg />
-
-          <div className="mt-6 text-center">
-            <h1 className="text-3xl font-extrabold mb-1 tracking-tight">EcoQuest</h1>
-            <p className="text-green-200 text-sm mb-1">ภารกิจพิชิตโลกสีเขียว</p>
-          </div>
-
-          <div className="w-full max-w-xs mt-6 space-y-2.5">
-            <div className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3 backdrop-blur-sm">
-              <Sparkles size={16} className="text-amber-300 shrink-0" />
-              <p className="text-xs text-green-50">ทำภารกิจสะสม XP เพิ่มเลเวล</p>
-            </div>
-            <div className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3 backdrop-blur-sm">
-              <Sparkles size={16} className="text-amber-300 shrink-0" />
-              <p className="text-xs text-green-50">ปลดล็อก Badge และฟื้นฟูโลกเสมือน</p>
-            </div>
-            <div className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3 backdrop-blur-sm">
-              <Sparkles size={16} className="text-amber-300 shrink-0" />
-              <p className="text-xs text-green-50">เรียนรู้เรื่องความยั่งยืนอย่างสนุก</p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setStep(1)}
-            className="mt-8 w-full max-w-xs flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-sm active:scale-[0.97] transition-transform shadow-lg"
-            style={{ background: 'linear-gradient(135deg, #86efac, #4ade80)', color: '#052e16' }}
-          >
-            เริ่มต้นเลย
-            <ChevronRight size={18} />
-          </button>
+    <div className="min-h-dvh bg-background lg:grid lg:grid-cols-2">
+      {/* Hero */}
+      <div className="relative flex flex-col items-center justify-center overflow-hidden bg-mint/60 px-6 pt-12 pb-20 lg:min-h-dvh lg:pb-12">
+        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-lime/70" aria-hidden="true" />
+        <div className="absolute -bottom-28 -left-20 h-64 w-64 rounded-full bg-emerald/20" aria-hidden="true" />
+        <div className="relative mb-2 rounded-card bg-surface px-5 py-3 text-center shadow-card">
+          <p className="text-body font-medium">
+            สวัสดี! ฉันชื่อ Sprouty
+            <br />
+            มาช่วยกันดูแล<span className="font-semibold text-primary">โลกสีเขียว</span>กันนะ
+          </p>
+          <span className="absolute -bottom-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 bg-surface" aria-hidden="true" />
         </div>
-      )}
+        <EcoMascot size={200} mood={step === 2 ? 'cheer' : 'happy'} float className="relative" />
+      </div>
 
-      {step === 1 && (
-        <div className="flex-1 flex flex-col items-center justify-center px-6 text-white animate-fade-in">
-          <h2 className="text-2xl font-bold mb-1">ตั้งชื่อของคุณ</h2>
-          <p className="text-sm text-green-200 mb-6">เลือก Avatar และตั้งชื่อนักสำรวจ</p>
-
-          <div className="w-full max-w-xs grid grid-cols-3 gap-3 mb-6">
-            {avatars.map((av) => (
-              <button
-                key={av.id}
-                onClick={() => setSelectedAvatar(av.id)}
-                className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all ${
-                  selectedAvatar === av.id
-                    ? 'bg-green-500/30 ring-2 ring-green-400 scale-105'
-                    : 'bg-white/10 hover:bg-white/15'
-                }`}
-              >
-                <span className="text-3xl">{av.emoji}</span>
-                <span className="text-[11px] font-medium">{av.label}</span>
-              </button>
-            ))}
+      {/* Content */}
+      <div className="relative -mt-10 flex justify-center px-4 pb-10 lg:mt-0 lg:items-center lg:px-12">
+        <div className="w-full max-w-md rounded-card bg-surface p-6 shadow-raised lg:shadow-none lg:bg-transparent">
+          <div className="mb-5 flex justify-center lg:justify-start">
+            <StepDots step={step} />
           </div>
 
-          <input
-            type="text"
-            placeholder="ชื่อของคุณ"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={20}
-            className="w-full max-w-xs bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder:text-green-300/50 focus:outline-none focus:ring-2 focus:ring-green-400 mb-6 backdrop-blur-sm"
-          />
+          <AnimatePresence mode="wait">
+            {step === 0 && (
+              <motion.div key="s0" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}>
+                <p className="text-caption font-semibold text-primary">EcoQuest · ภารกิจพิชิตโลกสีเขียว</p>
+                <h1 className="mt-1 text-page font-bold lg:text-[2.25rem]">ปลูกนิสัยดีวันนี้ เพื่อโลกที่ดีกว่าในวันหน้า</h1>
+                <ul className="mt-5 space-y-3">
+                  {FEATURES.map(({ icon: Icon, text }) => (
+                    <li key={text} className="flex items-center gap-3 text-body">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary" aria-hidden="true">
+                        <Icon size={18} />
+                      </span>
+                      {text}
+                    </li>
+                  ))}
+                </ul>
+                <PrimaryButton size="lg" fullWidth className="mt-7" iconRight={<ArrowRight size={18} />} onClick={() => setStep(1)}>
+                  เริ่มต้นใช้งาน
+                </PrimaryButton>
+                <p className="mt-3 text-center text-caption text-muted">ข้อมูลทั้งหมดเก็บไว้ในเครื่องของคุณเท่านั้น ไม่ต้องสมัครสมาชิก</p>
+              </motion.div>
+            )}
 
-          <div className="w-full max-w-xs flex gap-3">
-            <button
-              onClick={() => setStep(0)}
-              className="flex-1 border border-white/20 py-3 rounded-xl font-medium hover:bg-white/10 transition-colors"
-            >
-              กลับ
-            </button>
-            <button
-              onClick={() => setStep(2)}
-              className="flex-1 py-3 rounded-xl font-bold active:scale-[0.97] transition-transform"
-              style={{ background: 'linear-gradient(135deg, #86efac, #4ade80)', color: '#052e16' }}
-            >
-              ถัดไป
-            </button>
-          </div>
+            {step === 1 && (
+              <motion.div key="s1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}>
+                <h2 className="text-page font-bold">ตั้งชื่อนักสำรวจ</h2>
+                <p className="mt-1 text-body text-muted">เลือกอวาตาร์และชื่อที่จะแสดงในแอป</p>
+                <div className="mt-5">
+                  <AvatarPicker value={avatar} onChange={setAvatar} />
+                </div>
+                <label htmlFor="player-name" className="mt-5 mb-1.5 block text-caption font-semibold">ชื่อของคุณ</label>
+                <input
+                  id="player-name"
+                  type="text"
+                  placeholder="เช่น นักรักษ์โลก"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  maxLength={20}
+                  className="min-h-12 w-full rounded-control border border-border bg-surface px-4 text-body placeholder:text-muted focus:border-primary focus:outline-none"
+                />
+                <p className="mt-1 text-caption text-muted">หากเว้นว่างไว้ ระบบจะใช้ชื่อ "นักสำรวจ"</p>
+                <div className="mt-6 flex gap-3">
+                  <SecondaryButton className="flex-1" onClick={() => setStep(0)}>ย้อนกลับ</SecondaryButton>
+                  <PrimaryButton className="flex-1" onClick={() => setStep(2)}>ถัดไป</PrimaryButton>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 2 && (
+              <motion.div key="s2" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}>
+                <h2 className="text-page font-bold">เลือกเป้าหมาย</h2>
+                <p className="mt-1 text-body text-muted">เลือกได้หลายข้อ หรือข้ามขั้นตอนนี้ก็ได้</p>
+                <div className="mt-5 space-y-2" role="group" aria-label="เป้าหมาย">
+                  {GOAL_OPTIONS.map(({ id, label, icon: Icon }) => {
+                    const active = goals.includes(id);
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => toggleGoal(id)}
+                        className={`flex min-h-12 w-full items-center gap-3 rounded-control border-2 px-4 text-left text-body transition-colors ${
+                          active ? 'border-primary bg-primary/10 font-semibold' : 'border-border bg-surface hover:border-primary/40'
+                        }`}
+                      >
+                        <Icon size={20} className="text-primary" aria-hidden="true" />
+                        <span className="flex-1">{label}</span>
+                        {active && <Check size={18} className="text-primary" aria-hidden="true" />}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-6 flex gap-3">
+                  <SecondaryButton className="flex-1" onClick={() => setStep(1)}>ย้อนกลับ</SecondaryButton>
+                  <PrimaryButton className="flex-1" onClick={handleStart}>เริ่มผจญภัย</PrimaryButton>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      )}
-
-      {step === 2 && (
-        <div className="flex-1 flex flex-col items-center justify-center px-6 text-white animate-fade-in">
-          <h2 className="text-2xl font-bold mb-1">เลือกเป้าหมาย</h2>
-          <p className="text-sm text-green-200 mb-6">เลือกได้หลายข้อ หรือข้ามก็ได้</p>
-
-          <div className="w-full max-w-xs space-y-2 mb-8">
-            {goals.map((goal) => (
-              <button
-                key={goal.id}
-                onClick={() => toggleGoal(goal.id)}
-                className={`w-full flex items-center gap-3 p-4 rounded-xl transition-all ${
-                  selectedGoals.includes(goal.id)
-                    ? 'bg-green-500/30 ring-2 ring-green-400'
-                    : 'bg-white/10 hover:bg-white/15'
-                }`}
-              >
-                <span className="text-2xl">{goal.emoji}</span>
-                <span className="font-medium text-sm">{goal.label}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="w-full max-w-xs flex gap-3">
-            <button
-              onClick={() => setStep(1)}
-              className="flex-1 border border-white/20 py-3 rounded-xl font-medium hover:bg-white/10 transition-colors"
-            >
-              กลับ
-            </button>
-            <button
-              onClick={handleStart}
-              className="flex-1 py-3 rounded-xl font-bold active:scale-[0.97] transition-transform shadow-lg"
-              style={{ background: 'linear-gradient(135deg, #86efac, #4ade80)', color: '#052e16' }}
-            >
-              เริ่มผจญภัย!
-            </button>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

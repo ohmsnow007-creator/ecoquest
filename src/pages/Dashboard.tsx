@@ -1,219 +1,188 @@
 import { Link } from 'react-router-dom';
-import { Target, Flame, ChevronRight, Trophy, Sparkles } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Flame, Target, Medal, ChevronRight, Brain, Settings } from 'lucide-react';
 import { useGame } from '../store/GameContext';
 import { getLevelFromXp, getXpInCurrentLevel, getXpToNextLevel, getLevelProgress } from '../utils/xp';
 import { calculateStreak } from '../utils/streak';
-import { getCurrentStage, getNextStage } from '../utils/world';
+import { getCurrentStage, getNextStage, getStageProgress } from '../utils/world';
 import { badges as allBadges } from '../data/badges';
 import { missions } from '../data/missions';
+import { quizzes } from '../data/quizzes';
+import { getBadgeIcon } from '../data/icons';
 import { WorldPreview } from '../components/world/WorldPreview';
-
-const avatarEmojis: Record<string, string> = {
-  'avatar-leaf': '🌿', 'avatar-tree': '🌳', 'avatar-flower': '🌻',
-  'avatar-earth': '🌍', 'avatar-water': '💧', 'avatar-sun': '☀️',
-};
-
-function CircleProgress({ pct, size = 80, stroke = 6 }: { pct: number; size?: number; stroke?: number }) {
-  const r = (size - stroke) / 2;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (pct / 100) * circ;
-  return (
-    <svg width={size} height={size}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={stroke} />
-      <circle
-        cx={size / 2} cy={size / 2} r={r} fill="none"
-        stroke="#86efac" strokeWidth={stroke} strokeLinecap="round"
-        strokeDasharray={circ} strokeDashoffset={offset}
-        style={{ transform: 'rotate(-90deg)', transformOrigin: 'center', transition: 'stroke-dashoffset 0.5s ease' }}
-      />
-    </svg>
-  );
-}
+import { PageHeader } from '../components/ui/PageHeader';
+import { Card, SectionTitle } from '../components/ui/Card';
+import { ProgressRing, ProgressBar } from '../components/ui/ProgressBar';
+import { StatCard } from '../components/ui/StatCard';
+import { MissionCard } from '../components/ui/MissionCard';
+import { EmptyState } from '../components/ui/States';
+import { XPBadge } from '../components/ui/Badges';
+import { Avatar } from '../components/ui/AvatarPicker';
+import { buttonClasses } from '../components/ui/Button';
 
 export function Dashboard() {
-  const { profile, progress, getTodayCompletionCount } = useGame();
+  const { profile, progress, getTodayCompletionCount, getMissionStatus, isQuizCompleted } = useGame();
   if (!profile) return null;
 
   const level = getLevelFromXp(progress.totalXp);
-  const xpInLevel = getXpInCurrentLevel(progress.totalXp);
-  const xpNeeded = getXpToNextLevel(progress.totalXp);
-  const levelPct = getLevelProgress(progress.totalXp) * 100;
   const streak = calculateStreak(progress.completions);
   const todayCount = getTodayCompletionCount();
-  const dailyMissions = missions.filter((m) => m.repeatPolicy === 'daily' && m.active);
-  const currentStage = getCurrentStage(progress.totalXp);
+  const stage = getCurrentStage(progress.totalXp);
   const nextStage = getNextStage(progress.totalXp);
+
+  const dailyAvailable = missions.filter((m) => m.active && m.repeatPolicy === 'daily' && getMissionStatus(m.id) === 'available');
+  const quizLeft = quizzes.filter((q) => !isQuizCompleted(q.id)).length;
 
   const recentBadges = progress.unlockedBadges
     .slice()
     .sort((a, b) => new Date(b.unlockedAt).getTime() - new Date(a.unlockedAt).getTime())
     .slice(0, 3)
     .map((r) => allBadges.find((b) => b.id === r.badgeId))
-    .filter(Boolean);
+    .filter((b): b is NonNullable<typeof b> => Boolean(b));
 
   return (
-    <div className="animate-fade-in">
-      {/* Dark Header */}
-      <div className="dark-header px-4 pt-8 pb-6 rounded-b-[28px]">
-        {/* Greeting Row */}
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full flex items-center justify-center text-xl"
-              style={{ background: 'rgba(134, 239, 172, 0.2)', border: '2px solid rgba(134, 239, 172, 0.4)' }}>
-              {avatarEmojis[profile.avatarId] || '🌿'}
-            </div>
-            <div>
-              <p className="text-green-300 text-xs font-medium">สวัสดี!</p>
-              <h1 className="text-white text-lg font-bold">{profile.displayName}</h1>
-            </div>
-          </div>
-          <Link to="/settings" className="p-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.08)' }}>
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-300">
-              <path d="M10.11 1h-.22a1 1 0 0 0-1 1v.09a1 1 0 0 1-.5.87l-.22.12a1 1 0 0 1-1 0l-.07-.04a1 1 0 0 0-1.37.37l-.11.19a1 1 0 0 0 .37 1.37l.07.04a1 1 0 0 1 .5.86v.26a1 1 0 0 1-.5.87l-.07.05a1 1 0 0 0-.37 1.36l.11.19a1 1 0 0 0 1.37.37l.07-.04a1 1 0 0 1 1 0l.22.13a1 1 0 0 1 .5.86V10a1 1 0 0 0 1 1h.22a1 1 0 0 0 1-1v-.09a1 1 0 0 1 .5-.87l.22-.12a1 1 0 0 1 1 0l.07.04a1 1 0 0 0 1.37-.37l.11-.19a1 1 0 0 0-.37-1.37l-.07-.04a1 1 0 0 1-.5-.87v-.25a1 1 0 0 1 .5-.87l.07-.05a1 1 0 0 0 .37-1.36l-.11-.19a1 1 0 0 0-1.37-.37l-.07.04a1 1 0 0 1-1 0l-.22-.12a1 1 0 0 1-.5-.87V2a1 1 0 0 0-1-1z" />
-              <circle cx="10" cy="6" r="1.5" />
-            </svg>
-          </Link>
-        </div>
-
-        {/* Level Circle + XP */}
-        <div className="flex items-center gap-5">
-          <div className="relative">
-            <CircleProgress pct={levelPct} size={76} stroke={5} />
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-white text-xs font-medium opacity-70">Lvl</span>
-              <span className="text-white text-xl font-extrabold leading-none">{level}</span>
-            </div>
-          </div>
-          <div className="flex-1">
-            <p className="text-green-200 text-xs mb-0.5">XP {xpInLevel} / {xpNeeded}</p>
-            <div className="bg-white/10 rounded-full h-2 overflow-hidden mb-2">
-              <div className="bg-green-400 h-full rounded-full transition-all duration-500" style={{ width: `${levelPct}%` }} />
-            </div>
-            <div className="flex gap-4">
-              <div>
-                <p className="text-white text-lg font-bold">{progress.totalXp.toLocaleString()}</p>
-                <p className="text-green-300/60 text-[10px]">XP สะสม</p>
-              </div>
-              <div>
-                <p className="text-white text-lg font-bold">{progress.completions.length}</p>
-                <p className="text-green-300/60 text-[10px]">ภารกิจสำเร็จ</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-4 -mt-4 max-w-lg mx-auto">
-        {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          {[
-            { icon: <Flame size={16} className="text-amber-500" />, bg: 'bg-amber-50', value: streak, label: 'Streak' },
-            { icon: <Target size={16} className="text-green-600" />, bg: 'bg-green-50', value: todayCount, label: 'วันนี้' },
-            { icon: <Sparkles size={16} className="text-purple-500" />, bg: 'bg-purple-50', value: progress.unlockedBadges.length, label: 'เหรียญ' },
-          ].map((s, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + i * 0.08 }}
-              className="bg-white rounded-2xl p-3 shadow-sm border border-green-50 text-center">
-              <div className={`w-8 h-8 ${s.bg} rounded-full flex items-center justify-center mx-auto mb-1`}>
-                {s.icon}
-              </div>
-              <p className="text-lg font-bold text-green-800">{s.value}</p>
-              <p className="text-[10px] text-gray-400">{s.label}</p>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Daily Challenge Card */}
-        <Link
-          to="/missions"
-          className="block rounded-2xl overflow-hidden mb-4 shadow-sm active:scale-[0.99] transition-transform"
-          style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)' }}
-        >
-          <div className="p-4">
-            <p className="text-[10px] font-bold text-green-600 tracking-wider mb-1">ภารกิจประจำวัน</p>
-            <h3 className="text-sm font-bold text-green-900 mb-1">ทำภารกิจรักษ์โลกวันนี้</h3>
-            <p className="text-xs text-green-600/70 mb-3">มี {dailyMissions.length} ภารกิจรอคุณอยู่</p>
-            <div className="flex items-center gap-1 text-xs font-semibold text-green-700">
-              <span>เริ่มเลย</span>
-              <ChevronRight size={14} />
-            </div>
-          </div>
-        </Link>
-
-        {/* World Preview */}
-        <Link
-          to="/world"
-          className="block bg-white rounded-2xl overflow-hidden shadow-sm border border-green-50 mb-4 active:scale-[0.99] transition-transform"
-        >
-          <div className="h-36">
-            <WorldPreview stage={currentStage.visualKey} />
-          </div>
-          <div className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-400 mb-0.5">โลกเสมือน</p>
-              <p className="text-sm font-bold text-green-800">{currentStage.title}</p>
-            </div>
-            {nextStage && (
-              <div className="text-right">
-                <p className="text-[10px] text-gray-400">ถัดไป</p>
-                <p className="text-xs text-green-600 font-medium">อีก {nextStage.requiredXp - progress.totalXp} XP</p>
-              </div>
-            )}
-            <ChevronRight size={18} className="text-gray-300 ml-2" />
-          </div>
-        </Link>
-
-        {/* Recent Badges */}
-        {recentBadges.length > 0 && (
-          <Link
-            to="/achievements"
-            className="block bg-white rounded-2xl p-4 shadow-sm border border-green-50 mb-4 active:scale-[0.99] transition-transform"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Trophy size={16} className="text-amber-500" />
-                <span className="font-bold text-green-800 text-sm">เหรียญตราที่ปลดล็อก</span>
-              </div>
-              <ChevronRight size={16} className="text-gray-300" />
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {recentBadges.map((badge) =>
-                badge ? (
-                  <div key={badge.id} className="flex items-center gap-2 bg-amber-50 rounded-xl px-3 py-2">
-                    <span className="text-base">{getBadgeEmoji(badge.icon)}</span>
-                    <span className="text-xs font-medium text-amber-800">{badge.title}</span>
-                  </div>
-                ) : null
-              )}
-            </div>
-          </Link>
-        )}
-
-        {progress.completions.length === 0 && (
-          <div className="text-center py-8">
-            <div className="text-4xl mb-3">🌱</div>
-            <p className="text-sm text-gray-500 mb-3">ยังไม่ได้เริ่มภารกิจ</p>
-            <Link
-              to="/missions"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm active:scale-[0.97] transition-transform shadow-md text-white"
-              style={{ background: 'linear-gradient(135deg, #16a34a, #22c55e)' }}
-            >
-              <Target size={16} />
-              เริ่มภารกิจแรก
+    <>
+      <PageHeader
+        eyebrow="สวัสดี"
+        title={profile.displayName}
+        actions={
+          <>
+            <XPBadge amount={progress.totalXp} variant="solid" />
+            <Link to="/settings" aria-label="ตั้งค่าโปรไฟล์" className="lg:hidden">
+              <Avatar id={profile.avatarId} size="sm" />
             </Link>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+            <Link to="/settings" aria-label="ตั้งค่า" className="hidden h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-text shadow-card hover:bg-background lg:inline-flex">
+              <Settings size={19} aria-hidden="true" />
+            </Link>
+          </>
+        }
+      />
 
-function getBadgeEmoji(iconName: string): string {
-  const map: Record<string, string> = {
-    Sprout: '🌱', Compass: '🧭', Shield: '🛡️', Globe: '🌍', Crown: '👑',
-    Recycle: '♻️', Zap: '⚡', Droplets: '💧', TreePine: '🌲', Star: '⭐',
-    Trophy: '🏆', Award: '🏅', Flame: '🔥', TrendingUp: '📈',
-  };
-  return map[iconName] || '🏅';
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {/* Level hero */}
+        <Card tone="forest" className="lg:col-span-2">
+          <div className="flex items-center gap-5">
+            <ProgressRing value={getLevelProgress(progress.totalXp)} size={96} stroke={9} onDark label="ความคืบหน้าเลเวล">
+              <span className="text-caption text-white/70">เลเวล</span>
+              <span className="text-[1.75rem] leading-none font-bold">{level}</span>
+            </ProgressRing>
+            <div className="min-w-0 flex-1">
+              <p className="text-caption text-white/70">ความคืบหน้าสู่เลเวล {level + 1}</p>
+              <p className="mt-0.5 text-section font-semibold">
+                {getXpInCurrentLevel(progress.totalXp)} / {getXpToNextLevel(progress.totalXp)} XP
+              </p>
+              <div className="mt-2">
+                <ProgressBar value={getLevelProgress(progress.totalXp)} label="XP ในเลเวลนี้" tone="lime" onDark />
+              </div>
+            </div>
+          </div>
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            <StatCard onDark icon={Flame} label="Streak" value={`${streak} วัน`} delay={0.05} />
+            <StatCard onDark icon={Target} label="ทำวันนี้" value={todayCount} delay={0.1} />
+            <StatCard onDark icon={Medal} label="เหรียญ" value={progress.unlockedBadges.length} delay={0.15} />
+          </div>
+        </Card>
+
+        {/* World */}
+        <Link to="/world" className="group block overflow-hidden rounded-card border border-border bg-surface shadow-card transition-colors hover:border-primary/40">
+          <div className="h-36 lg:h-40">
+            <WorldPreview stage={stage.visualKey} />
+          </div>
+          <div className="p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-caption text-muted">โลกสีเขียวของฉัน</p>
+                <p className="text-card font-semibold">{stage.title}</p>
+              </div>
+              <ChevronRight size={18} className="text-muted transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+            </div>
+            <div className="mt-3">
+              <ProgressBar
+                value={getStageProgress(progress.totalXp)}
+                label="ความคืบหน้าโลกเสมือน"
+                size="sm"
+                showLabel
+                valueText={nextStage ? `อีก ${nextStage.requiredXp - progress.totalXp} XP` : 'สมบูรณ์'}
+              />
+            </div>
+          </div>
+        </Link>
+
+        {/* Today's missions */}
+        <section className="lg:col-span-2" aria-labelledby="today-missions">
+          <SectionTitle
+            id="today-missions"
+            title="ภารกิจประจำวัน"
+            action={
+              <Link to="/missions" className="inline-flex min-h-11 items-center gap-1 text-caption font-semibold text-primary">
+                ดูทั้งหมด <ChevronRight size={15} aria-hidden="true" />
+              </Link>
+            }
+          />
+          {dailyAvailable.length > 0 ? (
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              {dailyAvailable.slice(0, 4).map((m) => (
+                <MissionCard key={m.id} mission={m} status="available" to={`/missions/${m.id}`} compact />
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <EmptyState compact title="ทำภารกิจประจำวันครบแล้ว" description="เก่งมาก! กลับมาพรุ่งนี้เพื่อทำภารกิจประจำวันชุดใหม่" />
+            </Card>
+          )}
+        </section>
+
+        <div className="space-y-4">
+          {/* Quiz CTA */}
+          <Card tone="lime">
+            <div className="flex items-start gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-forest text-lime" aria-hidden="true">
+                <Brain size={20} />
+              </span>
+              <div>
+                <h2 className="text-card font-semibold">ควิซสิ่งแวดล้อม</h2>
+                <p className="text-caption text-forest/80">
+                  {quizLeft > 0 ? `เหลืออีก ${quizLeft} ข้อที่ยังไม่ได้ทำ` : 'คุณทำควิซครบทุกข้อแล้ว'}
+                </p>
+              </div>
+            </div>
+            <Link to="/quiz" className={`${buttonClasses('primary', 'md', true)} mt-4`}>
+              {quizLeft > 0 ? 'ทำควิซ' : 'ดูผลควิซ'}
+            </Link>
+          </Card>
+
+          {/* Recent badges */}
+          <Card>
+            <SectionTitle
+              title="เหรียญตราล่าสุด"
+              action={
+                <Link to="/achievements" className="inline-flex min-h-11 items-center gap-1 text-caption font-semibold text-primary">
+                  ทั้งหมด <ChevronRight size={15} aria-hidden="true" />
+                </Link>
+              }
+            />
+            {recentBadges.length > 0 ? (
+              <ul className="space-y-2">
+                {recentBadges.map((b) => {
+                  const Icon = getBadgeIcon(b.icon);
+                  return (
+                    <li key={b.id} className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-mint text-forest" aria-hidden="true">
+                        <Icon size={18} />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-body font-semibold">{b.title}</p>
+                        <p className="truncate text-caption text-muted">{b.description}</p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="text-body text-muted">ทำภารกิจแรกเพื่อปลดล็อกเหรียญตราเหรียญแรก</p>
+            )}
+          </Card>
+        </div>
+      </div>
+    </>
+  );
 }

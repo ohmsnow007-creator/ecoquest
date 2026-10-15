@@ -5,7 +5,7 @@ interface WorldPreviewProps {
 
 export function WorldPreview({ stage, className = '' }: WorldPreviewProps) {
   return (
-    <svg viewBox="0 0 400 200" className={`w-full h-full ${className}`} xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="ภาพโลกเสมือน" className={`w-full h-full ${className}`} xmlns="http://www.w3.org/2000/svg">
       {/* Sky */}
       <defs>
         <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">

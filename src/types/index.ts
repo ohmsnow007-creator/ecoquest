@@ -97,15 +97,6 @@ export const CATEGORY_LABELS: Record<MissionCategory, string> = {
   nature: 'ธรรมชาติ',
 };
 
-export const CATEGORY_ICONS: Record<MissionCategory, string> = {
-  waste: 'Recycle',
-  energy: 'Zap',
-  water: 'Droplets',
-  transport: 'Bike',
-  consumption: 'ShoppingBag',
-  nature: 'TreePine',
-};
-
 export const DIFFICULTY_LABELS: Record<MissionDifficulty, string> = {
   easy: 'ง่าย',
   medium: 'ปานกลาง',
