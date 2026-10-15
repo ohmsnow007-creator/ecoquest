@@ -109,7 +109,7 @@ function Section({ icon: Icon, title, children }: { icon: typeof Medal; title: s
   );
 }
 
-export function Admin() {
+export function Admin({ standalone = false }: { standalone?: boolean }) {
   const { profile, progress, admin, notify, markCosmeticsSeen } = useGame();
   const [unlocked, setUnlocked] = useState(unlockedThisSession);
   const [level, setLevel] = useState(10);
@@ -133,7 +133,7 @@ export function Admin() {
 
   return (
     <>
-      <PageHeader title="โหมดผู้ดูแล (สาธิต)" back />
+      {!standalone && <PageHeader title="โหมดผู้ดูแล (สาธิต)" back />}
 
       {!unlocked ? (
         <PinGate onUnlock={unlock} />

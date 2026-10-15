@@ -288,10 +288,6 @@ export function Settings() {
             </ul>
             <p className="text-[0.75rem] text-muted">กิจกรรมอื่นที่ยังไม่มีค่าอ้างอิงจะไม่ถูกคำนวณเป็น CO2e</p>
 
-            <Link to="/admin" className="mt-3 inline-flex min-h-11 items-center gap-1.5 font-semibold text-primary">
-              <ShieldCheck size={15} aria-hidden="true" /> โหมดผู้ดูแล (สาธิต)
-            </Link>
-
             <details className="mt-3 text-caption">
               <summary className="min-h-11 cursor-pointer py-2 font-semibold">แหล่งอ้างอิงของคำถามควิซ ({quizSources.length})</summary>
               <ul className="list-disc space-y-0.5 pl-5 text-muted">

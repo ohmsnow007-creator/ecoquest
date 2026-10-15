@@ -118,6 +118,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
     storageService.saveProgress(progress);
   }, [progress]);
 
+  // Another tab on this site (e.g. the separate admin page) changed the saved data: pick it up so this
+  // tab doesn't overwrite it with stale in-memory state.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === null || e.key === 'ecoquest_profile') setProfile(storageService.getProfile());
+      if (e.key === null || e.key === 'ecoquest_progress') setProgress(storageService.getProgress());
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
   // Read inside stable callbacks so preference changes apply immediately.
   const prefsRef = useRef(profile?.preferences);
   useEffect(() => {
