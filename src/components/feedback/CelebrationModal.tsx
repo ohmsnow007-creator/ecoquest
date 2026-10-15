@@ -4,7 +4,7 @@ import { LeafBurst } from './LeafBurst';
 import { badges } from '../../data/badges';
 import { Modal } from '../ui/Modal';
 import { PrimaryButton } from '../ui/Button';
-import { EcoMascot } from '../ui/EcoMascot';
+import { PlayerSprouty } from '../sprouty/PlayerSprouty';
 import { LevelBadge } from '../ui/Badges';
 import { AchievementBadge } from '../ui/AchievementBadge';
 import { getBadgeStatus } from '../../utils/badges';
@@ -28,7 +28,7 @@ export function CelebrationModal() {
         <div key={current.id} className="relative flex flex-col items-center pt-2 text-center">
           <LeafBurst />
           <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', damping: 12 }}>
-            <EcoMascot size={132} mood="cheer" title="Sprouty ดีใจกับเลเวลใหม่ของคุณ" />
+            <span className="block w-32"><PlayerSprouty size={132} mood="cheer" hop={1} title="Sprouty ดีใจกับเลเวลใหม่ของคุณ" /></span>
           </motion.div>
           <p className="mt-2 text-caption font-semibold text-primary">เลเวลอัป!</p>
           <h2 className="mt-1 text-page font-bold text-forest">ยินดีด้วย</h2>

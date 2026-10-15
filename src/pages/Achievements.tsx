@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SproutyTalk } from '../components/sprouty/PlayerSprouty';
 import { motion } from 'framer-motion';
 import { Trophy, Flame, Target, CalendarCheck, BookOpen, Globe2, Info, type LucideIcon } from 'lucide-react';
 import { useGame } from '../store/GameContext';
@@ -75,6 +76,15 @@ export function Achievements() {
   const shownUnlocked = shown.filter((s) => s.unlocked);
   const shownLocked = shown.filter((s) => !s.unlocked);
 
+  // Sprouty points at the locked badge that is closest to unlocking.
+  const sproutyLine: { text: string; mood: 'happy' | 'cheer' } = !closest
+    ? { text: 'ปลดล็อกครบทุกเหรียญแล้ว! สุดยอดไปเลย', mood: 'cheer' }
+    : closest.progress >= 1
+      ? { text: `ทำครบเงื่อนไข “${closest.badge.name}” แล้ว เหรียญจะปลดล็อกเมื่อทำภารกิจหรือควิซครั้งถัดไป`, mood: 'cheer' }
+      : closest.progress >= 0.5
+      ? { text: `อีกนิดเดียวจะได้ “${closest.badge.name}” แล้ว (${closest.current}/${closest.target})`, mood: 'cheer' }
+      : { text: `ได้แล้ว ${unlockedCount} เหรียญ เหรียญถัดไป: “${closest.badge.name}” ${closest.unlockCondition}`, mood: 'happy' };
+
   return (
     <>
       <header className="safe-top flex items-center gap-3 pt-5 pb-4 lg:pt-10 lg:pb-6">
@@ -86,6 +96,7 @@ export function Achievements() {
           <p className="text-body text-muted">ทุกความพยายามมีความหมาย</p>
         </div>
       </header>
+      <SproutyTalk className="-mt-1 mb-4 max-w-md" text={sproutyLine.text} mood={sproutyLine.mood} />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-6">
         <div className="space-y-5 lg:col-span-2">

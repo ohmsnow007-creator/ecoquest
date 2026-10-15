@@ -14,7 +14,7 @@ import { PrimaryButton, SecondaryButton, buttonClasses } from '../components/ui/
 import { ConfirmationDialog } from '../components/ui/Modal';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { ErrorState } from '../components/ui/States';
-import { EcoMascot } from '../components/ui/EcoMascot';
+import { PlayerSprouty } from '../components/sprouty/PlayerSprouty';
 import { LeafBurst } from '../components/feedback/LeafBurst';
 import { LOGGABLE_BY_IMPACT, getActivityMeta } from '../data/impactActivities';
 
@@ -137,7 +137,7 @@ export function MissionDetail() {
       {celebrate ? (
         <motion.div className="relative flex flex-col items-center py-2 text-center" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', damping: 13 }}>
           <LeafBurst />
-          <EcoMascot size={110} mood="cheer" title="Sprouty ดีใจที่คุณทำภารกิจสำเร็จ" />
+          <span className="block w-28"><PlayerSprouty size={112} mood="cheer" hop={1} title="Sprouty ดีใจที่คุณทำภารกิจสำเร็จ" /></span>
           <h2 className="mt-2 text-section font-bold text-forest">ภารกิจสำเร็จ!</h2>
           <motion.div initial={{ scale: 0.4 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 8, delay: 0.15 }} className="mt-2">
             <XPBadge amount={celebrate.xp} plus />
@@ -255,6 +255,23 @@ export function MissionDetail() {
                 <Leaf size={18} className="text-primary" aria-hidden="true" /> ทำไมถึงสำคัญ?
               </h2>
               <p className="mt-1.5 text-body">{mission.environmentalExplanation}</p>
+              {mission.sources && mission.sources.length > 0 && (
+                <p className="mt-2 text-caption text-muted">
+                  แหล่งอ้างอิง:{' '}
+                  {mission.sources.map((src, i) => (
+                    <span key={src.name}>
+                      {i > 0 && ' · '}
+                      {src.url ? (
+                        <a href={src.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary underline underline-offset-2">
+                          {src.name}
+                        </a>
+                      ) : (
+                        src.name
+                      )}
+                    </span>
+                  ))}
+                </p>
+              )}
             </section>
 
             <section aria-labelledby="steps-title">

@@ -7,7 +7,7 @@ import { quizzes, getQuestion, QUIZ_CATEGORY_LABELS, QUIZ_DIFFICULTY_LABELS, QUI
 import { QUIZ_XP_BY_DIFFICULTY, correctlyAnsweredIds, type QuizDraft } from '../services/rewardService';
 import type { QuizCategory, QuizDifficulty } from '../types';
 import { createId } from '../utils/id';
-import { EcoMascot } from '../components/ui/EcoMascot';
+import { PlayerSprouty } from '../components/sprouty/PlayerSprouty';
 import { SegmentedControl } from '../components/ui/Controls';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { PrimaryButton, SecondaryButton } from '../components/ui/Button';
@@ -55,7 +55,7 @@ function QuizHero() {
         ))}
       </svg>
       <div className="absolute inset-x-0 bottom-2 flex justify-center">
-        <EcoMascot size={128} mood="happy" float title="" />
+        <span className="block w-32"><PlayerSprouty size={128} mood="happy" /></span>
       </div>
     </div>
   );

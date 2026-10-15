@@ -5,7 +5,7 @@ import { CheckCircle2, XCircle, Clock, Eye, RotateCcw, Home, BookOpen, MinusCirc
 import { useGame } from '../store/GameContext';
 import { getQuestion, QUIZ_CATEGORY_LABELS, QUIZ_DIFFICULTY_LABELS } from '../data/quizzes';
 import { QUIZ_XP_BY_DIFFICULTY } from '../services/rewardService';
-import { EcoMascot } from '../components/ui/EcoMascot';
+import { PlayerSprouty } from '../components/sprouty/PlayerSprouty';
 import { ProgressRing } from '../components/ui/ProgressBar';
 import { XPBadge } from '../components/ui/Badges';
 import { EmptyState } from '../components/ui/States';
@@ -51,7 +51,9 @@ export function QuizResult() {
       <section aria-label="ผลแบบทดสอบ" className="bg-meadow relative flex flex-col items-center overflow-hidden rounded-hero border border-mint/70 px-4 pt-5 pb-6 text-center shadow-card">
         {state.celebrate && <LeafBurst />}
         <motion.div initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', damping: 12 }}>
-          <EcoMascot size={140} mood={state.mood} title={`Sprouty กับผลแบบทดสอบของคุณ: ${state.title}`} />
+          <span className="block w-36">
+            <PlayerSprouty size={144} mood={state.mood === 'cheer' ? 'cheer' : 'happy'} hop={state.celebrate ? 1 : 0} title={`Sprouty กับผลแบบทดสอบของคุณ: ${state.title}`} />
+          </span>
         </motion.div>
         <h1 className="mt-2 text-page font-bold text-forest" data-result-state={state.state}>{state.title}</h1>
         <p className="mt-0.5 text-body text-muted">{state.message}</p>

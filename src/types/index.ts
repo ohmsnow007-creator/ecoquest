@@ -36,6 +36,8 @@ export interface Mission {
   impactType: ImpactType;
   /** Set only when a sourced impact factor exists for this mission (used by Green Impact). */
   impactFactorId?: string;
+  /** Required whenever the explanation or steps state a statistic. */
+  sources?: { name: string; url?: string }[];
 }
 
 export interface MissionCompletion {

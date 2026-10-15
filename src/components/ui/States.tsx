@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
-import { EcoMascot } from './EcoMascot';
+import { SproutySeed } from '../illustrations/SproutySeed';
 import { SecondaryButton } from './Button';
 
 interface EmptyStateProps {
@@ -13,7 +13,9 @@ interface EmptyStateProps {
 export function EmptyState({ title, description, action, compact = false }: EmptyStateProps) {
   return (
     <div className={`flex flex-col items-center text-center ${compact ? 'py-6' : 'py-10'}`}>
-      <EcoMascot size={compact ? 88 : 120} mood="calm" title="Sprouty กำลังรอคุณ" />
+      <span className={`block ${compact ? 'w-24' : 'w-32'}`}>
+        <SproutySeed size={compact ? 96 : 128} className="h-auto w-full" mood="sleepy" title="Sprouty กำลังรอคุณ" />
+      </span>
       <h3 className="mt-3 text-card font-semibold text-forest">{title}</h3>
       {description && <p className="mt-1 max-w-xs text-body text-muted">{description}</p>}
       {action && <div className="mt-4">{action}</div>}

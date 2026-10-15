@@ -21,6 +21,8 @@ import {
 import { MissionArt, CATEGORY_TONE } from '../components/illustrations/MissionArt';
 import { FilterChips, type ChipOption } from '../components/ui/Controls';
 import { MissionCard } from '../components/ui/MissionCard';
+import { SproutyTalk } from '../components/sprouty/PlayerSprouty';
+import { getDailyStatus } from '../utils/challenges';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { XPBadge } from '../components/ui/Badges';
 import { EmptyState } from '../components/ui/States';
@@ -35,7 +37,7 @@ const CATEGORY_CHIPS: ChipOption<CategoryFilter>[] = CATEGORY_FILTERS.map((f) =>
 const STATUS_ORDER: StatusFilter[] = ['all', 'new', 'in-progress', 'completed'];
 
 export function Missions() {
-  const { profile, getMissionStatus, startMission, getCompletedSteps } = useGame();
+  const { profile, progress, getMissionStatus, startMission, getCompletedSteps } = useGame();
   const [category, setCategory] = useState<CategoryFilter>('all');
   const [status, setStatus] = useState<StatusFilter>('all');
   const [sort, setSort] = useState<SortKey>('recommended');
@@ -65,6 +67,16 @@ export function Missions() {
     setQuery('');
   };
 
+  // What Sprouty says here comes from today's real records.
+  const today = profile ? getDailyStatus(progress, profile.id) : null;
+  const sproutyLine: { text: string; mood: 'happy' | 'cheer' | 'sleepy' } = !today
+    ? { text: 'เลือกภารกิจที่ชอบสักข้อ แล้วเริ่มกันเลย!', mood: 'happy' }
+    : today.complete
+      ? { text: 'ภารกิจประจำวันครบแล้ว! อยากทำเพิ่มก็เลือกได้อีกนะ', mood: 'cheer' }
+      : today.doneCount > 0
+        ? { text: `ภารกิจประจำวันเหลืออีก ${today.missions.length - today.doneCount} ข้อ สู้ ๆ นะ!`, mood: 'happy' }
+        : { text: 'วันนี้ยังไม่ได้เริ่มเลย ลองภารกิจง่าย ๆ สักข้อไหม', mood: 'sleepy' };
+
   return (
     <>
       <header className="safe-top pt-5 pb-4 lg:pt-10 lg:pb-6">
@@ -83,6 +95,7 @@ export function Missions() {
           </p>
           <ProgressBar value={overall.completed / overall.all} label="ภารกิจที่สำเร็จ" valueText={`${overall.completed} จาก ${overall.all} ภารกิจ`} />
         </div>
+        <SproutyTalk className="mt-4 max-w-md" text={sproutyLine.text} mood={sproutyLine.mood} />
       </header>
 
       <div className="space-y-3">
