@@ -4,13 +4,19 @@ import { useEffect, useRef, useState, type PointerEvent } from 'react';
 export const SHY_LINES = ['อุ๊ย… เขินนะ >///<', 'ลูบหัวแบบนี้ ใจละลายเลย~', 'หน้าแดงหมดแล้ว อย่ามองสิ!', 'ชอบจัง… อีกนิดได้ไหม~'];
 
 /**
- * Head rubs: a finger (or a held mouse button) stroking side to side over the top of Sprouty makes it
- * shy for a moment. Spread `handlers` on the element and give it `touchStyle` (`touch-action: none`):
+ * Head rubs: three strokes of a finger (or a held mouse button) over the top of Sprouty make it shy
+ * for a moment. Spread `handlers` on the element and give it `touchStyle` (`touch-action: none`):
  * otherwise a phone treats a slightly diagonal rub as a scroll and cancels the touch midway.
  * Call `consumeTap()` in the click handler: it returns true when that "click" was really the end of a rub, so the tap reaction can be skipped.
  */
+/** Rubs needed before Sprouty gets shy; a rub is one stroke across the head in either direction. */
+export const RUBS_TO_SHY = 3;
+/** Strokes further apart than this start the count again. */
+const RUB_GAP_MS = 1500;
+
 export function usePet({ durationMs = 2800 } = {}) {
-  const stroke = useRef<{ id: number; lastX: number; lastY: number; dirX: number; dirY: number; travel: number; turns: number } | null>(null);
+  const stroke = useRef<{ id: number; lastX: number; lastY: number; ax: number; ay: number; len: number; width: number } | null>(null);
+  const rubs = useRef({ count: 0, last: 0 });
   const petted = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [shy, setShy] = useState(false);
@@ -19,12 +25,29 @@ export function usePet({ durationMs = 2800 } = {}) {
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
 
   const becomeShy = () => {
-    petted.current = true;
     navigator.vibrate?.(18);
     if (!shy) setLine(SHY_LINES[Math.floor(Math.random() * SHY_LINES.length)]);
     setShy(true);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setShy(false), durationMs);
+  };
+
+  /** A stroke ended (finger turned back or lifted): count it if it was long enough. */
+  const endStroke = (s: NonNullable<typeof stroke.current>) => {
+    if (s.len >= Math.max(12, s.width * 0.15)) {
+      const now = Date.now();
+      const r = rubs.current;
+      r.count = now - r.last > RUB_GAP_MS ? 1 : r.count + 1;
+      r.last = now;
+      petted.current = true;
+      if (r.count >= RUBS_TO_SHY) {
+        r.count = 0;
+        becomeShy();
+      }
+    }
+    s.len = 0;
+    s.ax = 0;
+    s.ay = 0;
   };
 
   const handlers = {
@@ -34,7 +57,7 @@ export function usePet({ durationMs = 2800 } = {}) {
       const r = e.currentTarget.getBoundingClientRect();
       // Only the head and leaves count (top ~70% of Sprouty), not the soil.
       if (e.clientY - r.top > r.height * 0.7) return;
-      stroke.current = { id: e.pointerId, lastX: e.clientX, lastY: e.clientY, dirX: 0, dirY: 0, travel: 0, turns: 0 };
+      stroke.current = { id: e.pointerId, lastX: e.clientX, lastY: e.clientY, ax: 0, ay: 0, len: 0, width: r.width };
       // Keep following the finger even if it slides a little off Sprouty.
       try {
         e.currentTarget.setPointerCapture(e.pointerId);
@@ -48,23 +71,18 @@ export function usePet({ durationMs = 2800 } = {}) {
       const dx = e.clientX - s.lastX;
       const dy = e.clientY - s.lastY;
       if (Math.abs(dx) + Math.abs(dy) < 3) return;
-      // Any back-and-forth counts: side to side, up and down, or little circles.
-      const dirX = Math.abs(dx) >= 2 ? Math.sign(dx) : s.dirX;
-      const dirY = Math.abs(dy) >= 2 ? Math.sign(dy) : s.dirY;
-      if ((s.dirX && dirX !== s.dirX) || (s.dirY && dirY !== s.dirY)) s.turns += 1;
-      s.dirX = dirX;
-      s.dirY = dirY;
-      s.travel += Math.hypot(dx, dy);
+      // Side to side or up and down: turning back along the stroke's main direction ends one stroke.
+      // Wobble across that direction (fingers are never straight) is ignored.
+      const alongX = Math.abs(s.ax) >= Math.abs(s.ay);
+      if (alongX ? s.ax * dx < 0 && Math.abs(dx) >= 2 : s.ay * dy < 0 && Math.abs(dy) >= 2) endStroke(s);
+      s.ax += dx;
+      s.ay += dy;
+      s.len += Math.hypot(dx, dy);
       s.lastX = e.clientX;
       s.lastY = e.clientY;
-      const w = e.currentTarget.getBoundingClientRect().width;
-      if ((s.turns >= 1 && s.travel > w * 0.4) || s.travel > w * 0.8) {
-        s.travel = 0;
-        s.turns = 0;
-        becomeShy();
-      }
     },
     onPointerUp() {
+      if (stroke.current) endStroke(stroke.current);
       stroke.current = null;
     },
     onPointerCancel() {

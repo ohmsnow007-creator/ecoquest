@@ -103,13 +103,17 @@ describe('Sprouty head rubs', () => {
   const card = () => <SproutyHomeCard name="มินท์" level={1} todayCount={0} streak={0} dailyComplete={false} now={new Date(2026, 9, 15, 9)} />;
   const rect = { left: 0, top: 0, width: 120, height: 120, right: 120, bottom: 120, x: 0, y: 0, toJSON: () => ({}) };
 
-  it('rubbing side to side over the head makes Sprouty shy, without counting as a tap', () => {
+  it('two rubs are not enough; the third makes Sprouty shy, without counting as a tap', () => {
     render(card());
     const btn = screen.getByRole('button', { name: /ลูบหัว Sprouty/ });
     btn.getBoundingClientRect = () => rect as DOMRect;
     const before = screen.getByText(/./, { selector: 'p[aria-live]' }).textContent;
     fireEvent.pointerDown(btn, { pointerId: 1, clientX: 30, clientY: 30 });
+    // rub 1 (right), rub 2 (left)
     for (const x of [50, 70, 90, 70, 50, 30]) fireEvent.pointerMove(btn, { pointerId: 1, clientX: x, clientY: 30 });
+    expect(SHY_LINES).not.toContain(screen.getByText(/./, { selector: 'p[aria-live]' }).textContent);
+    // rub 3 (right), then lift
+    for (const x of [50, 70, 90]) fireEvent.pointerMove(btn, { pointerId: 1, clientX: x, clientY: 30 });
     fireEvent.pointerUp(btn, { pointerId: 1 });
     fireEvent.click(btn);
     const said = screen.getByText(/./, { selector: 'p[aria-live]' }).textContent!;
@@ -174,7 +178,9 @@ describe('Sprouty head rubs on a phone', () => {
     btn.getBoundingClientRect = () => rect as DOMRect;
     expect(btn.style.touchAction).toBe('none');
     fireEvent.pointerDown(btn, { pointerId: 2, pointerType: 'touch', clientX: 40, clientY: 40 });
-    for (const [x, y] of [[48, 46], [58, 50], [66, 44], [58, 38], [48, 44], [40, 50]]) fireEvent.pointerMove(btn, { pointerId: 2, pointerType: 'touch', clientX: x, clientY: y });
+    // three wobbly strokes: right, left, right
+    for (const [x, y] of [[50, 44], [62, 47], [72, 45], [60, 42], [48, 45], [38, 43], [50, 46], [62, 44], [72, 47]]) fireEvent.pointerMove(btn, { pointerId: 2, pointerType: 'touch', clientX: x, clientY: y });
+    fireEvent.pointerUp(btn, { pointerId: 2, pointerType: 'touch' });
     expect(SHY_LINES).toContain(screen.getByText(/./, { selector: 'p[aria-live]' }).textContent);
   });
 });

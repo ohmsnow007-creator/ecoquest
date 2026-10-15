@@ -47,7 +47,7 @@ export function buildActivityFeed(progress: PlayerProgress): ActivityEvent[] {
       at: g.at,
       title:
         g.kind === 'xp'
-          ? `ผู้ดูแลเพิ่ม XP (สาธิต)`
+          ? `ผู้ดูแลเพิ่ม XP`
           : g.kind === 'badge'
             ? `ผู้ดูแลมอบเหรียญ “${badges.find((b) => b.id === g.badgeId)?.name ?? g.badgeId}” (สาธิต)`
             : `ผู้ดูแลมอบของแต่ง (สาธิต)`,

@@ -60,6 +60,8 @@ export interface AdminActions {
   grantLevel: (level: number) => boolean;
   grantBadge: (badgeId: string) => boolean;
   grantCosmetic: (cosmeticId: string) => boolean;
+  grantAllBadges: () => boolean;
+  grantAllCosmetics: () => boolean;
   grantEverything: () => boolean;
   revoke: (grantId: string) => boolean;
   revokeAll: () => boolean;
@@ -276,6 +278,22 @@ export function GameProvider({ children }: { children: ReactNode }) {
       grantCosmetic: (cosmeticId) => {
         if (!COSMETICS.some((c) => c.id === cosmeticId) || grants.some((g) => g.kind === 'cosmetic' && g.cosmeticId === cosmeticId)) return false;
         return commitAdmin(withGrants([{ ...stamp(), kind: 'cosmetic', cosmeticId }]));
+      },
+      grantAllBadges: () => {
+        const extra: AdminGrant[] = [];
+        const records: BadgeRecord[] = [];
+        for (const b of badges) {
+          const g = badgeGrant(b.id);
+          if (g) {
+            extra.push(g[0]);
+            records.push(g[1]);
+          }
+        }
+        return extra.length ? commitAdmin(withGrants(extra, records)) : false;
+      },
+      grantAllCosmetics: () => {
+        const extra: AdminGrant[] = COSMETICS.filter((c) => !getCosmeticStatus(c, progress).unlocked).map((c) => ({ ...stamp(), kind: 'cosmetic', cosmeticId: c.id }));
+        return extra.length ? commitAdmin(withGrants(extra)) : false;
       },
       grantEverything: () => {
         const extra: AdminGrant[] = [];

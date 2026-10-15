@@ -9,6 +9,7 @@ import { createLocalLeaderboard } from '../services/leaderboardService';
 import { buildActivityFeed } from '../utils/activity';
 import { getCosmeticStatus, COSMETICS } from '../data/cosmetics';
 import { adminXp, earnedXp } from '../utils/admin';
+import { badges } from '../data/badges';
 import { getLevelFromXp, totalXpForLevel } from '../utils/xp';
 import { getLocalDate } from '../utils/streak';
 
@@ -75,7 +76,7 @@ describe('demo admin', () => {
     expect(JSON.stringify(localStorage)).not.toContain('654321');
   });
 
-  it('grants are labelled, raise the shown level, stay out of the leaderboard, and revoke cleanly', () => {
+  it('level grants become the real level (leaderboard too); items are labelled; all revocable', () => {
     renderAdmin(); // still unlocked in this session
     fireEvent.change(screen.getByRole('combobox'), { target: { value: '10' } });
     fireEvent.click(screen.getByRole('button', { name: 'ตั้งเลเวล' }));
@@ -85,19 +86,24 @@ describe('demo admin', () => {
     expect(earnedXp(p)).toBe(20);
     expect(adminXp(p)).toBe(totalXpForLevel(10) - 20);
 
-    // Leaderboard counts only earned XP
+    // The granted level is the player's real level, on the leaderboard as well
     const me = createLocalLeaderboard(storageService.getProfile()!, p).getEntries('all-time', { includeDemo: false })[0];
-    expect(me.xp).toBe(20);
-    expect(me.level).toBe(1);
+    expect(me.xp).toBe(p.totalXp);
+    expect(me.level).toBe(10);
 
     // Badge + cosmetic grants are marked
     const badgesSection = screen.getByRole('heading', { name: /เหรียญรางวัล/ }).closest('section')!;
     fireEvent.click(within(badgesSection).getAllByRole('button', { name: 'มอบ' })[0]);
     p = storageService.getProgress();
     expect(p.unlockedBadges.some((b) => b.source === 'admin')).toBe(true);
-    expect(buildActivityFeed(p).filter((e) => e.type === 'admin').every((e) => e.type === 'admin' && e.title.includes('สาธิต'))).toBe(true);
+    expect(buildActivityFeed(p).filter((e) => e.type === 'admin' && !e.title.includes('XP')).every((e) => e.type === 'admin' && e.title.includes('สาธิต'))).toBe(true);
 
-    fireEvent.click(screen.getByRole('button', { name: /ปลดล็อกทุกอย่าง/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'มอบเหรียญรางวัลทั้งหมด' }));
+    p = storageService.getProgress();
+    expect(new Set(p.unlockedBadges.map((b) => b.badgeId)).size).toBe(badges.length);
+    expect(screen.getByRole('button', { name: 'มอบเหรียญรางวัลทั้งหมด' })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'มอบของตกแต่งทั้งหมด' }));
     p = storageService.getProgress();
     for (const c of COSMETICS) expect(getCosmeticStatus(c, p).unlocked).toBe(true);
 

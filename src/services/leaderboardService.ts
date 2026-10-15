@@ -1,5 +1,4 @@
 import type { PlayerProfile, PlayerProgress } from '../types';
-import { earnedXp } from '../utils/admin';
 import { DEMO_PLAYERS } from '../data/demoLeaderboard';
 import { badges } from '../data/badges';
 import { getLevelFromXp } from '../utils/xp';
@@ -66,8 +65,9 @@ export function playerEntry(profile: PlayerProfile, progress: PlayerProgress, pe
     avatarId: profile.avatarId,
     profileColor: profile.preferences.profileColor,
     // Demo-admin XP never counts here; only what the player earned by playing.
-    xp: period === 'weekly' ? weekly.xp : earnedXp(progress),
-    level: getLevelFromXp(earnedXp(progress)),
+    // Admin XP/level grants count as the player's real level.
+    xp: period === 'weekly' ? weekly.xp : progress.totalXp,
+    level: getLevelFromXp(progress.totalXp),
     badgeCount: unlocked.length,
     topBadge: top?.name,
     lastXpAt: period === 'weekly' ? weekly.lastXpAt : lastXpTime(progress),

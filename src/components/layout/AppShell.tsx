@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { hasAdminGrants } from '../../utils/admin';
+import { hasAdminItemGrants } from '../../utils/admin';
 import { motion } from 'framer-motion';
 import { BottomNavigation } from './BottomNavigation';
 import { DesktopSidebar } from './DesktopSidebar';
@@ -29,9 +29,9 @@ export function AppShell() {
     <div className="min-h-dvh lg:pl-64">
       <DesktopSidebar />
       <ConnectionBanner />
-      {hasAdminGrants(progress) && (
+      {hasAdminItemGrants(progress) && (
         <p className="border-b border-warning/40 bg-tag-yellow px-4 py-1.5 text-center text-[0.75rem] font-semibold text-forest">
-          โหมดสาธิต: มีค่าที่ผู้ดูแลเพิ่มให้ ไม่นับเป็นผลการเล่นจริง
+          โหมดสาธิต: มีเหรียญหรือของแต่งที่ผู้ดูแลมอบให้
         </p>
       )}
       <main className="pb-nav lg:pb-12">

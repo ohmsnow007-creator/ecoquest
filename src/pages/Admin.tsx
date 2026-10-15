@@ -46,7 +46,6 @@ export function Admin() {
 
   const grants = adminGrants(progress);
   const currentLevel = getLevelFromXp(progress.totalXp);
-  const realLevel = getLevelFromXp(earnedXp(progress));
   const owned = new Set(progress.unlockedBadges.map((b) => b.badgeId));
 
   return (
@@ -61,20 +60,20 @@ export function Admin() {
             <div className="flex items-start gap-3 rounded-card border border-warning/40 bg-tag-yellow p-4 text-caption text-forest lg:col-span-2" role="note">
               <AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
               <p>
-                ทุกอย่างที่เพิ่มในหน้านี้เป็น <b>ค่าสาธิต</b> บนเครื่องนี้เท่านั้น จะมีป้าย “สาธิต” กำกับ ไม่นับใน Leaderboard
-                และย้อนคืนได้ทุกเมื่อ ข้อมูลการเล่นจริงของผู้เล่นไม่ถูกแก้ไข
+                ใช้ได้บนเครื่องนี้เท่านั้น <b>เลเวลและ XP ที่เพิ่มจะเป็นเลเวลจริงของผู้เล่น</b> (นับใน Leaderboard ด้วย)
+                ส่วนเหรียญและของแต่งที่มอบจะมีป้าย “สาธิต” กำกับ ทุกอย่างย้อนคืนได้จากประวัติด้านล่าง
               </p>
             </div>
 
             <Section icon={TrendingUp} title="เลเวลและ XP">
               <dl className="grid grid-cols-3 gap-2 text-center text-caption">
                 <div className="rounded-control bg-background p-2">
-                  <dt className="text-muted">เลเวลที่แสดง</dt>
+                  <dt className="text-muted">เลเวลปัจจุบัน</dt>
                   <dd className="text-section font-bold text-forest">{currentLevel}</dd>
                 </div>
                 <div className="rounded-control bg-background p-2">
-                  <dt className="text-muted">เลเวลจากการเล่นจริง</dt>
-                  <dd className="text-section font-bold text-forest">{realLevel}</dd>
+                  <dt className="text-muted">XP จากการเล่น</dt>
+                  <dd className="text-section font-bold text-forest">{earnedXp(progress).toLocaleString('th-TH')}</dd>
                 </div>
                 <div className="rounded-control bg-background p-2">
                   <dt className="text-muted">XP จากผู้ดูแล</dt>
@@ -96,13 +95,13 @@ export function Admin() {
                     ))}
                   </select>
                 </label>
-                <PrimaryButton className="rounded-full" disabled={level <= currentLevel} onClick={() => done(admin.grantLevel(level), `ตั้งเป็นเลเวล ${level} แล้ว (สาธิต)`)}>
+                <PrimaryButton className="rounded-full" disabled={level <= currentLevel} onClick={() => done(admin.grantLevel(level), `ตั้งเป็นเลเวล ${level} แล้ว`)}>
                   ตั้งเลเวล
                 </PrimaryButton>
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
                 {[50, 200, 1000].map((n) => (
-                  <SecondaryButton key={n} className="rounded-full" onClick={() => done(admin.grantXp(n), `เพิ่ม ${n} XP แล้ว (สาธิต)`)}>
+                  <SecondaryButton key={n} className="rounded-full" onClick={() => done(admin.grantXp(n), `เพิ่ม ${n} XP แล้ว`)}>
                     +{n} XP
                   </SecondaryButton>
                 ))}
@@ -127,6 +126,15 @@ export function Admin() {
 
           <div className="space-y-4">
             <Section icon={Medal} title={`เหรียญรางวัล (${badges.filter((b) => owned.has(b.id)).length}/${badges.length})`}>
+              <PrimaryButton
+                fullWidth
+                className="mb-3 rounded-full"
+                icon={<Medal size={16} />}
+                disabled={badges.every((b) => owned.has(b.id))}
+                onClick={() => done(admin.grantAllBadges(), 'มอบเหรียญรางวัลทั้งหมดแล้ว (สาธิต)')}
+              >
+                มอบเหรียญรางวัลทั้งหมด
+              </PrimaryButton>
               <ul className="max-h-72 divide-y divide-border overflow-y-auto pr-1">
                 {badges.map((b) => {
                   const rec = progress.unlockedBadges.find((r) => r.badgeId === b.id);
@@ -147,7 +155,21 @@ export function Admin() {
               </ul>
             </Section>
 
-            <Section icon={Shirt} title="ของแต่ง">
+            <Section icon={Shirt} title={`ของแต่ง (${COSMETICS.filter((c) => getCosmeticStatus(c, progress).unlocked).length}/${COSMETICS.length})`}>
+              <PrimaryButton
+                fullWidth
+                className="mb-3 rounded-full"
+                icon={<Shirt size={16} />}
+                disabled={COSMETICS.every((c) => getCosmeticStatus(c, progress).unlocked)}
+                onClick={() => {
+                  // One reveal per item would be 17 in a row; mark them seen instead.
+                  const ok = admin.grantAllCosmetics();
+                  if (ok) markCosmeticsSeen(COSMETICS.map((c) => c.id));
+                  done(ok, 'มอบของตกแต่งทั้งหมดแล้ว (สาธิต)');
+                }}
+              >
+                มอบของตกแต่งทั้งหมด
+              </PrimaryButton>
               <ul className="divide-y divide-border">
                 {COSMETICS.map((c) => {
                   const st = getCosmeticStatus(c, progress);

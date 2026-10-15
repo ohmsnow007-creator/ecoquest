@@ -1,9 +1,9 @@
 import type { AdminGrant, PlayerProgress } from '../types';
 
 /*
- * Demo admin: everything an admin adds is stored as an AdminGrant, apart from the player's own records.
- * Grants may raise the level and unlock items so a presenter can show features, but they are always
- * labelled "สาธิต" and never count toward the leaderboard or "real" stats.
+ * Admin: everything an admin adds is stored as an AdminGrant, apart from the player's own records, so
+ * any of it can be revoked. XP/level grants count as the player's real level everywhere (including
+ * the on-device leaderboard); granted badges and cosmetics stay labelled "สาธิต".
  */
 
 export function adminGrants(progress: PlayerProgress): AdminGrant[] {
@@ -21,6 +21,11 @@ export function earnedXp(progress: PlayerProgress): number {
 
 export function hasAdminGrants(progress: PlayerProgress): boolean {
   return adminGrants(progress).length > 0;
+}
+
+/** Badges or cosmetics handed out by an admin (these, unlike XP, stay marked as demo). */
+export function hasAdminItemGrants(progress: PlayerProgress): boolean {
+  return adminGrants(progress).some((g) => g.kind !== 'xp');
 }
 
 export function adminCosmeticIds(progress: PlayerProgress): Set<string> {
