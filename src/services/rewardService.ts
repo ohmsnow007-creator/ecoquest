@@ -1,10 +1,11 @@
-import type { Badge, BadgeRecord, MissionCompletion, PlayerProgress, QuizAttempt, QuizCategory, QuizDifficulty } from '../types';
+import type { Badge, BadgeRecord, ChallengeReward, MissionCompletion, PlayerProgress, QuizAttempt, QuizCategory, QuizDifficulty } from '../types';
 import { getQuestion } from '../data/quizzes';
 import { missions } from '../data/missions';
 import { checkNewBadges } from '../utils/badges';
 import { getLevelFromXp } from '../utils/xp';
 import { getLocalDate } from '../utils/streak';
 import { createId } from '../utils/id';
+import { getDailyStatus, getWeeklyStatus } from '../utils/challenges';
 
 export type MissionRejection = 'not-found' | 'inactive' | 'already-completed' | 'not-started';
 
@@ -122,4 +123,32 @@ export function evaluateQuizAttempt(progress: PlayerProgress, draft: QuizDraft, 
   };
   const next: PlayerProgress = { ...progress, totalXp: progress.totalXp + xp, quizAttempts: [...progress.quizAttempts, attempt] };
   return { ok: true, attempt, ...finalize(progress, next, xp, now) };
+}
+
+export type ChallengeRejection = 'not-complete' | 'already-claimed';
+export type ChallengeRewardResult = ({ ok: true; reward: ChallengeReward } & RewardOutcome) | { ok: false; reason: ChallengeRejection };
+
+/**
+ * Pure: checks that today's daily missions (or this week's challenge) are really finished in the stored
+ * records and not yet rewarded for this period, then returns the next state with the bonus.
+ */
+export function evaluateChallengeClaim(progress: PlayerProgress, kind: 'daily' | 'weekly', playerId: string, now: Date): ChallengeRewardResult {
+  const status = kind === 'daily' ? getDailyStatus(progress, playerId, now) : getWeeklyStatus(progress, playerId, now);
+  if (status.claimed) return { ok: false, reason: 'already-claimed' };
+  if (!status.complete) return { ok: false, reason: 'not-complete' };
+  const xp = kind === 'daily' ? getDailyStatus(progress, playerId, now).bonusXp : getWeeklyStatus(progress, playerId, now).challenge.bonusXp;
+  const reward: ChallengeReward = {
+    id: createId(),
+    kind,
+    periodKey: status.periodKey,
+    challengeId: kind === 'daily' ? `daily-${status.periodKey}` : getWeeklyStatus(progress, playerId, now).challenge.id,
+    xpAwarded: xp,
+    awardedAt: now.toISOString(),
+  };
+  const next: PlayerProgress = {
+    ...progress,
+    totalXp: progress.totalXp + xp,
+    challengeRewards: [...(progress.challengeRewards ?? []), reward],
+  };
+  return { ok: true, reward, ...finalize(progress, next, xp, now) };
 }

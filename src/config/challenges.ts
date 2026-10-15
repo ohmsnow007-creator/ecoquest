@@ -1,0 +1,31 @@
+import type { MissionCategory } from '../types';
+
+/** Daily missions: picked fresh each local day for each player. */
+export const DAILY_MISSION_COUNT = 3;
+/** Bonus for finishing all of today's daily missions, claimable once per day. */
+export const DAILY_BONUS_XP = 15;
+
+export type WeeklyGoal =
+  | { type: 'category'; category: MissionCategory; target: number }
+  | { type: 'missions'; target: number }
+  | { type: 'categories'; target: number }
+  | { type: 'quizzes'; target: number };
+
+export interface WeeklyChallenge {
+  id: string;
+  title: string;
+  description: string;
+  goal: WeeklyGoal;
+  bonusXp: number;
+}
+
+/** One of these runs each week (Monday to Sunday, local time). Progress counts only records made that week. */
+export const WEEKLY_CHALLENGES: WeeklyChallenge[] = [
+  { id: 'week-waste', title: 'สัปดาห์ลดขยะ', description: 'ทำภารกิจหมวดการจัดการขยะ 5 ครั้งในสัปดาห์นี้', goal: { type: 'category', category: 'waste', target: 5 }, bonusXp: 40 },
+  { id: 'week-energy', title: 'สัปดาห์ประหยัดไฟ', description: 'ทำภารกิจหมวดประหยัดพลังงาน 5 ครั้งในสัปดาห์นี้', goal: { type: 'category', category: 'energy', target: 5 }, bonusXp: 40 },
+  { id: 'week-water', title: 'สัปดาห์รักษ์น้ำ', description: 'ทำภารกิจหมวดประหยัดน้ำ 5 ครั้งในสัปดาห์นี้', goal: { type: 'category', category: 'water', target: 5 }, bonusXp: 40 },
+  { id: 'week-transport', title: 'สัปดาห์เดินทางสีเขียว', description: 'ทำภารกิจหมวดการเดินทาง 3 ครั้งในสัปดาห์นี้', goal: { type: 'category', category: 'transport', target: 3 }, bonusXp: 40 },
+  { id: 'week-missions', title: 'นักภารกิจตัวยง', description: 'ทำภารกิจอะไรก็ได้ให้ครบ 10 ครั้งในสัปดาห์นี้', goal: { type: 'missions', target: 10 }, bonusXp: 50 },
+  { id: 'week-variety', title: 'ลองให้ครบทุกแนว', description: 'ทำภารกิจให้ครบ 4 หมวดที่ต่างกันในสัปดาห์นี้', goal: { type: 'categories', target: 4 }, bonusXp: 40 },
+  { id: 'week-quiz', title: 'สัปดาห์นักเรียนรู้', description: 'ทำควิซสิ่งแวดล้อมให้ครบ 3 ชุดในสัปดาห์นี้', goal: { type: 'quizzes', target: 3 }, bonusXp: 40 },
+];

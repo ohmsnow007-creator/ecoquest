@@ -38,13 +38,18 @@ export function weeklyXp(progress: PlayerProgress, now: Date = new Date()): { xp
   const events = [
     ...progress.completions.filter((c) => c.localDate >= start).map((c) => ({ at: c.completedAt, xp: c.xpAwarded })),
     ...progress.quizAttempts.filter((a) => getLocalDate(new Date(a.submittedAt)) >= start).map((a) => ({ at: a.submittedAt, xp: a.xpAwarded })),
+    ...(progress.challengeRewards ?? []).filter((r) => getLocalDate(new Date(r.awardedAt)) >= start).map((r) => ({ at: r.awardedAt, xp: r.xpAwarded })),
   ].filter((e) => e.xp > 0);
   return { xp: events.reduce((s, e) => s + e.xp, 0), lastXpAt: events.map((e) => e.at).sort().at(-1) ?? null };
 }
 
 function lastXpTime(progress: PlayerProgress): string | null {
   return (
-    [...progress.completions.filter((c) => c.xpAwarded > 0).map((c) => c.completedAt), ...progress.quizAttempts.filter((a) => a.xpAwarded > 0).map((a) => a.submittedAt)]
+    [
+      ...progress.completions.filter((c) => c.xpAwarded > 0).map((c) => c.completedAt),
+      ...progress.quizAttempts.filter((a) => a.xpAwarded > 0).map((a) => a.submittedAt),
+      ...(progress.challengeRewards ?? []).map((r) => r.awardedAt),
+    ]
       .sort()
       .at(-1) ?? null
   );

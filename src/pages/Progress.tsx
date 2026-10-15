@@ -100,8 +100,9 @@ export function Progress() {
                 e.type === 'mission' ? `ภารกิจ: ${e.title}`
                 : e.type === 'quiz' ? `ทำ${e.title} ถูก ${e.correctCount}/${e.total} ข้อ`
                 : e.type === 'badge' ? `ปลดล็อกเหรียญ "${e.title}"`
+                : e.type === 'challenge' ? (e.kind === 'daily' ? 'ทำภารกิจประจำวันครบ' : `สำเร็จชาเลนจ์ "${e.title}"`)
                 : `เลื่อนเป็นเลเวล ${e.level}`;
-              const xp = e.type === 'mission' || e.type === 'quiz' ? e.xp : 0;
+              const xp = e.type === 'mission' || e.type === 'quiz' || e.type === 'challenge' ? e.xp : 0;
               return (
                 <li key={e.id} className="flex items-center justify-between gap-3 py-3">
                   <div className="min-w-0">

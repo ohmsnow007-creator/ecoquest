@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Settings, Flame, Target, ListChecks, Leaf, ChevronRight, Brain, Medal, TrendingUp, Sparkles, Timer, CheckCircle2, Circle,
+  Settings, Flame, Target, ListChecks, Leaf, ChevronRight, Brain, Medal, TrendingUp, Sparkles, Timer, CheckCircle2, Circle, Trophy,
   type LucideIcon,
 } from 'lucide-react';
 import { useGame } from '../store/GameContext';
@@ -12,7 +12,8 @@ import { missions } from '../data/missions';
 import { CATEGORY_LABELS, DIFFICULTY_LABELS } from '../types';
 import type { Mission, MissionProgressStatus } from '../types';
 import { CATEGORY_ICON } from '../data/icons';
-import { interestCategories } from '../data/avatars';
+import { getDailyStatus, getWeeklyStatus } from '../utils/challenges';
+import { ChallengeBonus, WeeklyChallengeCard } from '../components/challenges/ChallengeCards';
 import { GreenWorldScene } from '../components/world/GreenWorldScene';
 import { NotificationBell } from '../components/feedback/NotificationBell';
 import { Avatar } from '../components/ui/AvatarPicker';
@@ -112,6 +113,10 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
   } else if (event.type === 'badge') {
     Icon = Medal;
     text = `ปลดล็อกเหรียญ "${event.title}"`;
+  } else if (event.type === 'challenge') {
+    Icon = Trophy;
+    text = event.kind === 'daily' ? 'ทำภารกิจประจำวันครบ' : `สำเร็จชาเลนจ์ "${event.title}"`;
+    xp = event.xp;
   } else {
     Icon = TrendingUp;
     text = `เลื่อนเป็นเลเวล ${event.level}`;
@@ -135,23 +140,19 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
 }
 
 export function Dashboard() {
-  const { profile, progress, getMissionStatus } = useGame();
+  const { profile, progress, getMissionStatus, claimChallenge } = useGame();
   if (!profile) return null;
 
   const stats = getPlayerStats(progress);
   const world = getWorldState(stats.missionsCompleted);
-  const preferred = interestCategories(profile.preferences.selectedGoalIds);
   const feed = buildActivityFeed(progress).slice(0, 5);
 
-  const daily = missions
-    .filter((m) => m.active && m.repeatPolicy === 'daily')
-    .map((m) => ({ mission: m, status: getMissionStatus(m.id) }))
-    .sort(
-      (a, b) =>
-        STATUS_ORDER[a.status] - STATUS_ORDER[b.status] ||
-        Number(preferred.has(b.mission.category)) - Number(preferred.has(a.mission.category)),
-    )
-    .slice(0, 3);
+  // Today's three daily missions are fixed for the day; the order shows what is still open first.
+  const dailyStatus = getDailyStatus(progress, profile.id);
+  const weeklyStatus = getWeeklyStatus(progress, profile.id);
+  const daily = dailyStatus.missions
+    .map(({ mission }) => ({ mission, status: getMissionStatus(mission.id) }))
+    .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
 
   return (
     <>
@@ -250,12 +251,14 @@ export function Dashboard() {
 
         {/* 5. Daily missions */}
         <section aria-labelledby="daily-title" className="lg:col-span-2 lg:row-span-2">
-          <SectionTitle id="daily-title" title="ภารกิจวันนี้" action={<ViewAll to="/missions" />} />
+          <SectionTitle id="daily-title" title="ภารกิจประจำวัน" action={<ViewAll to="/missions" />} />
           <ul className="space-y-2.5">
             {daily.map(({ mission, status }) => (
               <DailyMissionRow key={mission.id} mission={mission} status={status} />
             ))}
           </ul>
+          <ChallengeBonus status={dailyStatus} onClaim={() => claimChallenge('daily')} />
+          <WeeklyChallengeCard status={weeklyStatus} onClaim={() => claimChallenge('weekly')} />
         </section>
 
         {/* 6. Quick actions */}

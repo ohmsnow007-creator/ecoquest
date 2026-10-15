@@ -4,7 +4,7 @@ import { getFactorFor } from '../data/emissionFactors';
 import { CALCULATION_VERSION } from '../services/impactCalculator';
 import { storageService } from '../services/storageService';
 import { missions } from '../data/missions';
-import { evaluateMissionCompletion, evaluateQuizAttempt, type RewardOutcome, type MissionRejection, type QuizDraft } from '../services/rewardService';
+import { evaluateChallengeClaim, evaluateMissionCompletion, evaluateQuizAttempt, type ChallengeRejection, type RewardOutcome, type MissionRejection, type QuizDraft } from '../services/rewardService';
 import { getLocalDate } from '../utils/streak';
 import { createId } from '../utils/id';
 import { playSound } from '../services/soundService';
@@ -28,6 +28,7 @@ export interface NewProfileInput {
 
 export type NewImpactRecord = Pick<ImpactRecord, 'activityType' | 'quantity' | 'unit' | 'date' | 'wasteType'>;
 
+export type ClaimChallengeResult = { ok: true; xpAwarded: number } | { ok: false; reason: ChallengeRejection | 'save-failed' | 'no-profile' };
 export type SubmitQuizResult = { ok: true; attemptId: string; xpAwarded: number } | { ok: false; reason: 'duplicate' | 'invalid' | 'save-failed' };
 
 export type BooleanPreference = 'reducedMotion' | 'soundEffects' | 'inAppToasts' | 'celebrations';
@@ -65,6 +66,7 @@ interface GameActions {
   toggleMissionStep: (missionId: string, stepIndex: number) => void;
   getCompletedSteps: (missionId: string) => number[];
   submitQuizAttempt: (draft: QuizDraft) => SubmitQuizResult;
+  claimChallenge: (kind: 'daily' | 'weekly') => ClaimChallengeResult;
   resetAll: () => void;
   dismissToast: (id: string) => void;
   notify: (message: string, type?: Toast['type']) => void;
@@ -265,6 +267,24 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return { ok: true, xpAwarded: result.xpAwarded, completedAt: result.completion.completedAt };
   }, [progress, applyReward, addToast]);
 
+  // Bonus for today's daily missions or this week's challenge: checked against stored records, paid once per period.
+  const claimChallenge = useCallback(
+    (kind: 'daily' | 'weekly'): ClaimChallengeResult => {
+      if (!profile) return { ok: false, reason: 'no-profile' };
+      const key = `challenge:${kind}`;
+      if (completingRef.current.has(key)) return { ok: false, reason: 'already-claimed' };
+      const result = evaluateChallengeClaim(progress, kind, profile.id, new Date());
+      if (!result.ok) return result;
+      completingRef.current.add(key);
+      const saved = applyReward(result);
+      completingRef.current.delete(key);
+      if (!saved) return { ok: false, reason: 'save-failed' };
+      addToast(`${kind === 'daily' ? 'โบนัสภารกิจประจำวัน' : 'โบนัสชาเลนจ์ประจำสัปดาห์'} +${result.xpAwarded} XP`, 'xp');
+      return { ok: true, xpAwarded: result.xpAwarded };
+    },
+    [profile, progress, applyReward, addToast],
+  );
+
   // Grades, rewards and saves a quiz once; the same attempt id is rejected if submitted again.
   const submitQuizAttempt = useCallback((draft: QuizDraft): SubmitQuizResult => {
     if (completingRef.current.has(draft.id)) return { ok: false, reason: 'duplicate' };
@@ -344,6 +364,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         toggleMissionStep,
         getCompletedSteps,
         submitQuizAttempt,
+        claimChallenge,
         resetAll,
         dismissToast,
         notify: addToast,

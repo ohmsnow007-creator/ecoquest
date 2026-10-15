@@ -2,6 +2,7 @@ import type { PlayerProgress } from '../types';
 import { getLocalDate } from './streak';
 import { getLevelFromXp } from './xp';
 import { missions } from '../data/missions';
+import { WEEKLY_CHALLENGES } from '../config/challenges';
 import { QUIZ_CATEGORY_LABELS } from '../data/quizzes';
 import { badges } from '../data/badges';
 
@@ -9,7 +10,8 @@ export type ActivityEvent =
   | { id: string; type: 'mission'; at: string; missionId: string; title: string; xp: number; selfReported: boolean }
   | { id: string; type: 'quiz'; at: string; attemptId: string; title: string; xp: number; correctCount: number; total: number }
   | { id: string; type: 'badge'; at: string; badgeId: string; title: string }
-  | { id: string; type: 'level'; at: string; level: number };
+  | { id: string; type: 'level'; at: string; level: number }
+  | { id: string; type: 'challenge'; at: string; kind: 'daily' | 'weekly'; title: string; xp: number };
 
 const time = (iso: string) => {
   const t = new Date(iso).getTime();
@@ -38,13 +40,21 @@ export function buildActivityFeed(progress: PlayerProgress): ActivityEvent[] {
       correctCount: q.correctCount,
       total: q.total,
     })),
+    ...(progress.challengeRewards ?? []).map((r): ActivityEvent => ({
+      id: `c-${r.id}`,
+      type: 'challenge',
+      at: r.awardedAt,
+      kind: r.kind,
+      title: r.kind === 'daily' ? 'ทำภารกิจประจำวันครบ' : (WEEKLY_CHALLENGES.find((w) => w.id === r.challengeId)?.title ?? 'ชาเลนจ์ประจำสัปดาห์'),
+      xp: r.xpAwarded,
+    })),
   ].sort((a, b) => time(a.at) - time(b.at));
 
   const levelEvents: ActivityEvent[] = [];
   let xp = 0;
   for (const e of xpEvents) {
     const before = getLevelFromXp(xp);
-    xp += e.type === 'mission' || e.type === 'quiz' ? e.xp : 0;
+    xp += e.type === 'mission' || e.type === 'quiz' || e.type === 'challenge' ? e.xp : 0;
     const after = getLevelFromXp(xp);
     for (let lv = before + 1; lv <= after; lv++) {
       levelEvents.push({ id: `l-${lv}`, type: 'level', at: new Date(time(e.at) + 1).toISOString(), level: lv });

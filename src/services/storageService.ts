@@ -1,4 +1,4 @@
-import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, QuizAttempt, QuizQuestionResult, MissionType, MissionStart, ImpactRecord, ImpactActivityType, WasteType } from '../types';
+import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, ChallengeReward, QuizAttempt, QuizQuestionResult, MissionType, MissionStart, ImpactRecord, ImpactActivityType, WasteType } from '../types';
 import { IMPACT_ACTIVITIES } from '../data/impactActivities';
 import { validateDisplayName } from '../utils/profile';
 import { DEFAULT_AVATAR_ID, DEFAULT_PROFILE_COLOR, INTERESTS, MAX_INTERESTS, isKnownAvatar, isKnownProfileColor } from '../data/avatars';
@@ -19,7 +19,7 @@ const isStr = (v: unknown): v is string => typeof v === 'string' && v.length > 0
 const isXp = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0;
 
 function getDefaultProgress(): PlayerProgress {
-  return { totalXp: 0, impactRecords: [], inProgress: [], completions: [], unlockedBadges: [], quizAttempts: [], schemaVersion: CURRENT_SCHEMA_VERSION };
+  return { totalXp: 0, impactRecords: [], inProgress: [], completions: [], unlockedBadges: [], quizAttempts: [], challengeRewards: [], schemaVersion: CURRENT_SCHEMA_VERSION };
 }
 
 // Returns a usable profile, repairing optional fields; null when the core identity is unusable.
@@ -65,6 +65,12 @@ function sanitizeCompletion(v: unknown): MissionCompletion | null {
     completionType: v.completionType as MissionType,
     ...(typeof v.note === 'string' ? { note: v.note } : {}),
   };
+}
+
+function sanitizeChallengeReward(v: unknown): ChallengeReward | null {
+  if (!isObj(v) || !isStr(v.id) || (v.kind !== 'daily' && v.kind !== 'weekly') || !isStr(v.periodKey) || !DATE_RE.test(v.periodKey)) return null;
+  if (!isStr(v.challengeId) || !isXp(v.xpAwarded) || !isStr(v.awardedAt)) return null;
+  return { id: v.id, kind: v.kind, periodKey: v.periodKey, challengeId: v.challengeId, xpAwarded: v.xpAwarded, awardedAt: v.awardedAt };
 }
 
 function sanitizeBadge(v: unknown): BadgeRecord | null {
@@ -157,12 +163,19 @@ export function sanitizeProgress(data: unknown): PlayerProgress {
   );
   const seenBadges = new Set<string>();
   const unlockedBadges = cleanList(data.unlockedBadges, sanitizeBadge).filter((b) => !seenBadges.has(b.badgeId) && seenBadges.add(b.badgeId));
+  // One bonus per kind and period, even if a tampered or duplicated save lists more.
+  const seenRewards = new Set<string>();
+  const challengeRewards = cleanList(data.challengeRewards, sanitizeChallengeReward).filter(
+    (r) => !seenRewards.has(`${r.kind}:${r.periodKey}`) && seenRewards.add(`${r.kind}:${r.periodKey}`),
+  );
   const totalXp =
-    completions.reduce((s, c) => s + c.xpAwarded, 0) + quizAttempts.reduce((s, q) => s + q.xpAwarded, 0);
+    completions.reduce((s, c) => s + c.xpAwarded, 0) +
+    quizAttempts.reduce((s, q) => s + q.xpAwarded, 0) +
+    challengeRewards.reduce((s, r) => s + r.xpAwarded, 0);
   const seenStarts = new Set<string>();
   const inProgress = cleanList(data.inProgress, sanitizeStart).filter((s) => !seenStarts.has(s.missionId) && seenStarts.add(s.missionId));
   const impactRecords = cleanList(data.impactRecords, sanitizeImpact);
-  return { totalXp, impactRecords, inProgress, completions, unlockedBadges, quizAttempts, schemaVersion: CURRENT_SCHEMA_VERSION };
+  return { totalXp, impactRecords, inProgress, completions, unlockedBadges, quizAttempts, challengeRewards, schemaVersion: CURRENT_SCHEMA_VERSION };
 }
 
 export const CORRUPT_BACKUP_SUFFIX = '_corrupt_backup';

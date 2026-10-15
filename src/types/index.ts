@@ -53,6 +53,17 @@ export interface BadgeRecord {
   unlockedAt: string;
 }
 
+/** Bonus XP for finishing the daily missions or the weekly challenge; at most one per kind and period. */
+export interface ChallengeReward {
+  id: string;
+  kind: 'daily' | 'weekly';
+  /** Local date (daily) or the week's Monday (weekly), YYYY-MM-DD. */
+  periodKey: string;
+  challengeId: string;
+  xpAwarded: number;
+  awardedAt: string;
+}
+
 export interface PlayerProfile {
   id: string;
   displayName: string;
@@ -128,6 +139,7 @@ export interface PlayerProgress {
   completions: MissionCompletion[];
   unlockedBadges: BadgeRecord[];
   quizAttempts: QuizAttempt[];
+  challengeRewards?: ChallengeReward[];
   schemaVersion: number;
 }
 

@@ -357,7 +357,7 @@ export function Impact() {
               </li>
             ))}
           </ul>
-          <p className="text-caption text-muted">น้ำ ขยะ และระยะทาง ยังไม่มีค่าปัจจัยที่ตรวจสอบวันที่ได้ จึงแสดงเป็นปริมาณเท่านั้น · เวอร์ชันการคำนวณ {CALCULATION_VERSION}</p>
+          <p className="text-caption text-muted">ขยะและระยะทางยังไม่มีค่าปัจจัยที่ตรวจสอบได้ จึงแสดงเป็นปริมาณเท่านั้น · เวอร์ชันการคำนวณ {CALCULATION_VERSION}</p>
         </div>
       </Modal>
 

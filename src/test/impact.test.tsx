@@ -48,14 +48,25 @@ describe('emission factor registry', () => {
 });
 
 describe('impact calculation service', () => {
-  it('uses only verified factors: electricity is calculated, water is not', () => {
-    const p = progress([rec({ activityType: 'electricity-saved', quantity: 10, unit: 'kWh' }), rec({ activityType: 'water-saved', quantity: 50, unit: 'L' })]);
+  it('uses only verified factors: electricity and tap water are calculated, waste is not', () => {
+    const p = progress([
+      rec({ activityType: 'electricity-saved', quantity: 10, unit: 'kWh' }),
+      rec({ activityType: 'water-saved', quantity: 1000, unit: 'L' }),
+      rec({ activityType: 'waste-sorted', quantity: 2, unit: 'kg' }),
+    ]);
     const s = summarizeImpact(p, '7d', now);
     expect(s.quantities['electricity-saved']).toBe(10);
-    expect(s.quantities['water-saved']).toBe(50);
-    expect(s.emissions.lines).toHaveLength(1);
-    expect(s.emissions.totalKg).toBe(4.75);
-    expect(s.emissions.uncalculated.map((u) => u.activityType)).toEqual(['water-saved']);
+    expect(s.quantities['water-saved']).toBe(1000);
+    expect(s.emissions.lines).toHaveLength(2);
+    // 10 kWh × 0.475 + 1 m³ (1,000 L) × 0.7836
+    expect(s.emissions.totalKg).toBe(5.53); // totals are rounded to 2 decimals
+    expect(s.emissions.uncalculated.map((u) => u.activityType)).toEqual(['waste-sorted']);
+  });
+
+  it('tap water uses TGO 0.7836 kgCO2e per m³, converted to litres exactly', () => {
+    const line = calculateRecord(rec({ activityType: 'water-saved', quantity: 500, unit: 'L' }));
+    expect(line).toMatchObject({ factor: { id: 'th-tap-water-mwa-cfp-2026' } });
+    expect('kgCO2e' in line && line.kgCO2e).toBeCloseTo(0.3918, 6);
   });
 
   it('never turns XP into CO2e', () => {
@@ -101,7 +112,7 @@ describe('impact calculation service', () => {
   });
 
   it('exports a CSV with date, unit and source on every row', () => {
-    const p = progress([rec({ activityType: 'electricity-saved', quantity: 10, unit: 'kWh' }), rec({ activityType: 'water-saved', quantity: 20, unit: 'L' })], [0]);
+    const p = progress([rec({ activityType: 'electricity-saved', quantity: 10, unit: 'kWh' }), rec({ activityType: 'waste-sorted', quantity: 2, unit: 'kg' })], [0]);
     const { csv, rows } = buildImpactCsv(p, '7d', now);
     expect(rows).toBe(3);
     const lines = csv.trim().split('\r\n');
