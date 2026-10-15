@@ -194,9 +194,18 @@ export function SproutySeed({
         <motion.g
           key={hop}
           style={{ transformOrigin: '120px 206px' }}
-          initial={hop ? { y: 0, scaleY: 1 } : false}
-          animate={hop ? { y: [0, -14, 0, -4, 0], scaleY: [1, 1.04, 0.94, 1.01, 1] } : undefined}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
+          initial={hop ? { y: 0, scaleY: 1, scaleX: 1 } : false}
+          animate={
+            hop
+              ? {
+                  // squash down, spring up tall, land squashed, wobble back
+                  y: [0, 4, -22, 0, -6, 0],
+                  scaleY: [1, 0.86, 1.1, 0.88, 1.04, 1],
+                  scaleX: [1, 1.1, 0.92, 1.1, 0.98, 1],
+                }
+              : undefined
+          }
+          transition={{ duration: 0.75, ease: 'easeOut', times: [0, 0.15, 0.4, 0.62, 0.8, 1] }}
         >
           {/* stem + leaves: lean against the look direction and sway in the breeze */}
           <motion.g style={{ transformOrigin: '122px 92px' }} animate={{ rotate: -lx * 6 }} transition={SPRING}>

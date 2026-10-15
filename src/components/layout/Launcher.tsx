@@ -197,6 +197,7 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
           if (idle.current) clearTimeout(idle.current);
           idle.current = setTimeout(() => setLook({ x: 0, y: 0 }), 1100 + Math.random() * 800);
         }
+        if (Date.now() - lastTouch.current > 3000 && Math.random() < 0.35) setHop((h) => h + 1);
         wander();
       }, 3200 + Math.random() * 2800);
     };
@@ -228,6 +229,14 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
             { left: '80%', delay: '6s', dur: '14s', size: 12 },
             { left: '92%', delay: '9s', dur: '10s', size: 9 },
             { left: '4%', delay: '7.5s', dur: '15s', size: 11 },
+            { left: '22%', delay: '5s', dur: '9s', size: 12 },
+            { left: '46%', delay: '8s', dur: '10.5s', size: 9 },
+            { left: '68%', delay: '2.5s', dur: '9.5s', size: 13 },
+            { left: '86%', delay: '11s', dur: '12.5s', size: 15 },
+            { left: '28%', delay: '10s', dur: '14.5s', size: 8 },
+            { left: '52%', delay: '12.5s', dur: '11.5s', size: 11 },
+            { left: '74%', delay: '4.5s', dur: '15.5s', size: 10 },
+            { left: '8%', delay: '13s', dur: '12s', size: 13 },
           ].map((l) => (
             <span key={l.left} style={{ left: l.left, width: l.size, height: l.size, animationDelay: l.delay, animationDuration: l.dur }} />
           ))}
@@ -261,16 +270,24 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
 
           <motion.div
             ref={mascotRef}
-            className="mt-auto -mb-3 w-[min(190px,48vw)] cursor-pointer sm:w-[210px]"
+            className="mt-auto mb-3 w-[min(240px,62vw)] cursor-pointer sm:w-[240px]"
             initial={reduce ? false : { opacity: 0, y: 24 }}
-            animate={reduce ? { opacity: 1, y: 0 } : { opacity: 1, y: [0, -6, 0] }}
-            transition={reduce ? undefined : { opacity: { duration: 0.5 }, y: { duration: 4, repeat: Infinity, ease: 'easeInOut' } }}
+            animate={reduce ? { opacity: 1, y: 0 } : { opacity: 1, y: [0, -7, 0], rotate: [0, 2.5, 0, -2.5, 0] }}
+            transition={
+              reduce
+                ? undefined
+                : {
+                    opacity: { duration: 0.5 },
+                    y: { duration: 3.2, repeat: Infinity, ease: 'easeInOut' },
+                    rotate: { duration: 6.4, repeat: Infinity, ease: 'easeInOut' },
+                  }
+            }
             onPointerDown={() => {
               setHop((h) => h + 1);
               next();
             }}
           >
-            <SproutySeed size={210} className="h-auto w-full" look={look} blinking={blinking} hop={reduce ? 0 : hop} />
+            <SproutySeed size={240} className="h-auto w-full drop-shadow-[0_10px_18px_rgba(60,40,10,0.25)]" look={look} blinking={blinking} hop={reduce ? 0 : hop} />
           </motion.div>
         </section>
 
@@ -278,7 +295,7 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
           initial={reduce ? false : { y: 40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: 'spring', damping: 22, delay: 0.1 }}
-          className="intro-card relative z-10 px-6 pt-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-center text-white"
+          className="intro-card relative z-10 px-6 pt-6 pb-5 text-center text-white"
         >
           <p className="text-caption font-semibold tracking-wide text-lime">EcoQuest · ภารกิจพิชิตโลกสีเขียว</p>
           <h1 className="mt-1 font-display text-[1.5rem] leading-tight font-bold sm:text-[1.75rem]">
