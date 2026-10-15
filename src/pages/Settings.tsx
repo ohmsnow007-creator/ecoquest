@@ -1,4 +1,4 @@
-import { startTransition, useState, type ReactNode } from 'react';
+import { startTransition, useRef, useState, type ReactNode } from 'react';
 import { useOutfit } from '../components/cosmetics/useOutfit';
 import { Link, useNavigate } from 'react-router-dom';
 import { Download, Trash2, UserX, Check, Plus, ChevronRight, RotateCcw, ShieldCheck, ExternalLink, User, HardDrive, Smartphone, BellRing, Volume2, PartyPopper, Wind, Settings2, type LucideIcon } from 'lucide-react';
@@ -65,7 +65,7 @@ const STORAGE_KEY_LABELS: Record<string, string> = {
   ecoquest_profile: 'โปรไฟล์',
   ecoquest_progress: 'ความคืบหน้า ภารกิจ ควิซ และบันทึกผลกระทบ',
   ecoquest_inbox_seen: 'สถานะการแจ้งเตือน',
-  ecoquest_admin_pin: 'PIN ผู้ดูแล (สาธิต)',
+  ecoquest_admin_lock: 'การล็อก PIN ผู้ดูแล (สาธิต)',
   ecoquest_profile_corrupt_backup: 'สำเนาโปรไฟล์ที่อ่านไม่ได้ (สำรองไว้)',
   ecoquest_progress_corrupt_backup: 'สำเนาความคืบหน้าที่อ่านไม่ได้ (สำรองไว้)',
 };
@@ -76,6 +76,17 @@ export function Settings() {
   const { profile, progress, updateProfile, setPreference, resetProgress, resetAll, notify } = useGame();
   const outfit = useOutfit();
   const navigate = useNavigate();
+  const versionTaps = useRef({ count: 0, last: 0 });
+  const tapVersion = () => {
+    const t = versionTaps.current;
+    const now = performance.now();
+    t.count = now - t.last < 800 ? t.count + 1 : 1;
+    t.last = now;
+    if (t.count >= 7) {
+      t.count = 0;
+      navigate('/admin');
+    }
+  };
   const [confirm, setConfirm] = useState<Confirm>(null);
   if (!profile) return null;
 
@@ -270,7 +281,11 @@ export function Settings() {
           <Section id="about-title" title="เกี่ยวกับ">
             <dl className="space-y-1 text-caption">
               <div className="flex justify-between gap-3"><dt className="text-muted">แอป</dt><dd className="text-right">{APP_INFO.name}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-muted">เวอร์ชัน</dt><dd>{APP_INFO.version}</dd></div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted">เวอร์ชัน</dt>
+                {/* Hidden admin entry: tap the version number 7 times in a row. */}
+                <dd onClick={tapVersion} className="cursor-default select-none">{APP_INFO.version}</dd>
+              </div>
             </dl>
             <p className="mt-3 text-caption">{APP_INFO.purpose}</p>
 

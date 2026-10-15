@@ -1,102 +1,19 @@
-import { useState, type FormEvent } from 'react';
-import { ShieldCheck, Lock, Sparkles, Medal, Shirt, TrendingUp, Undo2, Trash2, KeyRound, AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ShieldCheck, Sparkles, Medal, Shirt, TrendingUp, Undo2, Trash2, AlertTriangle } from 'lucide-react';
 import { useGame } from '../store/GameContext';
-import { storageService } from '../services/storageService';
+import { PinPad } from '../components/admin/PinPad';
 import { badges } from '../data/badges';
 import { COSMETICS, getCosmeticStatus, SLOT_LABELS } from '../data/cosmetics';
 import { MAX_LEVEL } from '../config/levels';
 import { getLevelFromXp } from '../utils/xp';
-import { adminGrants, adminXp, earnedXp, hashPin, isValidPin } from '../utils/admin';
+import { adminGrants, adminXp, earnedXp } from '../utils/admin';
 import { PageHeader } from '../components/ui/PageHeader';
 import { PrimaryButton, SecondaryButton } from '../components/ui/Button';
 import { ConfirmationDialog } from '../components/ui/Modal';
 
 // Stays unlocked while the app is open (handy during a presentation); a reload locks it again.
 let unlockedThisSession = false;
-const MAX_TRIES = 5;
-const LOCKOUT_MS = 30_000;
-
-function PinGate({ onUnlock }: { onUnlock: () => void }) {
-  const existing = storageService.getAdminPinHash();
-  const [pin, setPin] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [error, setError] = useState('');
-  const [tries, setTries] = useState(0);
-  const [lockedUntil, setLockedUntil] = useState(0);
-
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!existing) {
-      if (!isValidPin(pin)) return setError('PIN ต้องเป็นตัวเลข 4–6 หลัก');
-      if (pin !== confirm) return setError('PIN สองช่องไม่ตรงกัน');
-      if (!storageService.setAdminPinHash(hashPin(pin))) return setError('บันทึก PIN ไม่สำเร็จ');
-      onUnlock();
-      return;
-    }
-    if (Date.now() < lockedUntil) return setError('ใส่ผิดหลายครั้ง รอสักครู่แล้วลองใหม่');
-    if (hashPin(pin) === existing) {
-      onUnlock();
-      return;
-    }
-    const n = tries + 1;
-    setTries(n);
-    setPin('');
-    if (n >= MAX_TRIES) {
-      setLockedUntil(Date.now() + LOCKOUT_MS);
-      setTries(0);
-      setError('ใส่ PIN ผิด 5 ครั้ง ล็อกไว้ 30 วินาที');
-    } else {
-      setError(`PIN ไม่ถูกต้อง (เหลืออีก ${MAX_TRIES - n} ครั้ง)`);
-    }
-  };
-
-  return (
-    <form onSubmit={submit} className="mx-auto max-w-sm rounded-card border border-border bg-surface p-5 text-center shadow-card">
-      <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-forest text-lime" aria-hidden="true">
-        {existing ? <Lock size={24} /> : <KeyRound size={24} />}
-      </span>
-      <h2 className="mt-3 text-section font-bold text-forest">{existing ? 'ใส่ PIN ผู้ดูแล' : 'ตั้ง PIN ผู้ดูแล'}</h2>
-      <p className="mt-1 text-caption text-muted">
-        {existing ? 'สำหรับโหมดสาธิตบนเครื่องนี้' : 'ตัวเลข 4–6 หลัก ใช้เข้าหน้านี้ครั้งต่อไป'}
-      </p>
-      <label htmlFor="admin-pin" className="sr-only">PIN</label>
-      <input
-        id="admin-pin"
-        type="password"
-        inputMode="numeric"
-        autoComplete="off"
-        maxLength={6}
-        value={pin}
-        onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-        placeholder="PIN"
-        className="mt-4 min-h-12 w-full rounded-control border border-border bg-surface px-4 text-center text-section tracking-[0.5em] focus:border-primary focus:outline-none"
-      />
-      {!existing && (
-        <>
-          <label htmlFor="admin-pin-2" className="sr-only">ยืนยัน PIN</label>
-          <input
-            id="admin-pin-2"
-            type="password"
-            inputMode="numeric"
-            autoComplete="off"
-            maxLength={6}
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value.replace(/\D/g, ''))}
-            placeholder="ยืนยัน PIN"
-            className="mt-2 min-h-12 w-full rounded-control border border-border bg-surface px-4 text-center text-section tracking-[0.5em] focus:border-primary focus:outline-none"
-          />
-        </>
-      )}
-      <p className="mt-2 min-h-5 text-caption text-danger" role="alert">{error}</p>
-      <PrimaryButton type="submit" fullWidth className="mt-1 rounded-full">
-        {existing ? 'เข้าสู่โหมดผู้ดูแล' : 'ตั้ง PIN และเข้าใช้งาน'}
-      </PrimaryButton>
-      <p className="mt-3 text-[0.75rem] text-muted">
-        PIN นี้กันการกดเข้ามาโดยไม่ตั้งใจเท่านั้น ไม่ใช่ระบบความปลอดภัยจริง ลบได้ด้วย “ลบบัญชี” ในหน้าตั้งค่า
-      </p>
-    </form>
-  );
-}
 
 function Section({ icon: Icon, title, children }: { icon: typeof Medal; title: string; children: React.ReactNode }) {
   return (
@@ -109,7 +26,8 @@ function Section({ icon: Icon, title, children }: { icon: typeof Medal; title: s
   );
 }
 
-export function Admin({ standalone = false }: { standalone?: boolean }) {
+export function Admin() {
+  const navigate = useNavigate();
   const { profile, progress, admin, notify, markCosmeticsSeen } = useGame();
   const [unlocked, setUnlocked] = useState(unlockedThisSession);
   const [level, setLevel] = useState(10);
@@ -133,10 +51,10 @@ export function Admin({ standalone = false }: { standalone?: boolean }) {
 
   return (
     <>
-      {!standalone && <PageHeader title="โหมดผู้ดูแล (สาธิต)" back />}
+      <PageHeader title="โหมดผู้ดูแล (สาธิต)" back />
 
       {!unlocked ? (
-        <PinGate onUnlock={unlock} />
+        <PinPad onUnlock={unlock} onCancel={() => navigate('/settings')} />
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <div className="space-y-4">

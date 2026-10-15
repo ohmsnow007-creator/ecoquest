@@ -8,7 +8,7 @@ const STORAGE_KEYS = {
   profile: 'ecoquest_profile',
   progress: 'ecoquest_progress',
   inboxSeen: 'ecoquest_inbox_seen',
-  adminPin: 'ecoquest_admin_pin',
+  adminLock: 'ecoquest_admin_lock',
 } as const;
 
 const CURRENT_SCHEMA_VERSION = 1;
@@ -317,17 +317,20 @@ export const storageService = {
     return { bytes: present.reduce((s, k) => s + k.bytes, 0), keys: present };
   },
 
-  getAdminPinHash(): string | null {
+  /** Until when (ms) this device is locked out of the admin PIN pad; 0 when not locked. */
+  getAdminLockUntil(): number {
     try {
-      return localStorage.getItem(STORAGE_KEYS.adminPin);
+      const n = Number(localStorage.getItem(STORAGE_KEYS.adminLock));
+      // Ignore anything far in the future (tampered or clock change): the lockout is one minute.
+      return Number.isFinite(n) && n > 0 && n - Date.now() <= 60_000 ? n : 0;
     } catch {
-      return null;
+      return 0;
     }
   },
 
-  setAdminPinHash(hash: string): boolean {
+  setAdminLockUntil(until: number): boolean {
     try {
-      localStorage.setItem(STORAGE_KEYS.adminPin, hash);
+      localStorage.setItem(STORAGE_KEYS.adminLock, String(until));
       return true;
     } catch {
       return false;

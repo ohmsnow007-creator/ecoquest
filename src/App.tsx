@@ -6,6 +6,7 @@ import './App.css';
 import { Launcher } from './components/layout/Launcher';
 import { AppShell } from './components/layout/AppShell';
 
+const Admin = lazy(() => import('./pages/Admin').then((m) => ({ default: m.Admin })));
 const Welcome = lazy(() => import('./pages/Welcome').then((m) => ({ default: m.Welcome })));
 const ProfileCreation = lazy(() => import('./pages/ProfileCreation').then((m) => ({ default: m.ProfileCreation })));
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
@@ -63,6 +64,7 @@ function AppRoutes() {
         <Route path="/ranking" element={<Navigate to="/leaderboard" replace />} />
         <Route path="/profile" element={guard(<Profile />)} />
         <Route path="/settings" element={guard(<Settings />)} />
+        <Route path="/admin" element={guard(<Admin />)} />
         <Route path="/install" element={guard(<Install />)} />
       </Route>
       <Route

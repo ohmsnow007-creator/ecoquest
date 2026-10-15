@@ -40,6 +40,9 @@ export function hashPin(pin: string): string {
   return (h >>> 0).toString(16).padStart(8, '0');
 }
 
-export function isValidPin(pin: string): boolean {
-  return /^\d{4,6}$/.test(pin);
-}
+/**
+ * The two fixed admin PINs (entered in order), kept only as hashes. This is a demo gate against
+ * wandering in, not real security: anyone reading the client code could brute-force 6 digits.
+ */
+export const ADMIN_PIN_HASHES = ['2f74d3ad', '5d4b5a01'] as const;
+export const ADMIN_PIN_LENGTH = 6;

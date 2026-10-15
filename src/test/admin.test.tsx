@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, within, act } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { MotionConfig } from 'framer-motion';
 import { GameProvider } from '../store/GameContext';
@@ -8,7 +8,7 @@ import { storageService, sanitizeProgress } from '../services/storageService';
 import { createLocalLeaderboard } from '../services/leaderboardService';
 import { buildActivityFeed } from '../utils/activity';
 import { getCosmeticStatus, COSMETICS } from '../data/cosmetics';
-import { adminXp, earnedXp, hashPin } from '../utils/admin';
+import { adminXp, earnedXp } from '../utils/admin';
 import { getLevelFromXp, totalXpForLevel } from '../utils/xp';
 import { getLocalDate } from '../utils/streak';
 
@@ -35,6 +35,12 @@ function renderAdmin() {
   );
 }
 
+async function enter(pin: string) {
+  for (const d of pin) fireEvent.click(screen.getByRole('button', { name: d }));
+  // Let the check (and its shake animation) settle.
+  await act(async () => { await new Promise((r) => setTimeout(r, 600)); });
+}
+
 beforeEach(() => {
   cleanup();
   localStorage.clear();
@@ -43,29 +49,30 @@ beforeEach(() => {
 });
 
 describe('demo admin', () => {
-  it('first visit sets a PIN; it is stored hashed, not as plain text', () => {
+  it('five wrong PINs lock this device out for a minute, even after a reload', async () => {
     renderAdmin();
-    fireEvent.change(screen.getByPlaceholderText('PIN'), { target: { value: '1234' } });
-    fireEvent.change(screen.getByPlaceholderText('ยืนยัน PIN'), { target: { value: '1234' } });
-    fireEvent.click(screen.getByRole('button', { name: 'ตั้ง PIN และเข้าใช้งาน' }));
-    expect(screen.getByText('เลเวลและ XP')).toBeInTheDocument();
-    expect(localStorage.getItem('ecoquest_admin_pin')).toBe(hashPin('1234'));
-    expect(localStorage.getItem('ecoquest_admin_pin')).not.toContain('1234');
-  });
-
-  it('a wrong PIN is refused', () => {
-    localStorage.setItem('ecoquest_admin_pin', hashPin('2468'));
+    for (let i = 0; i < 5; i++) await enter('000000');
+    expect(await screen.findByText('ล็อกชั่วคราว')).toBeInTheDocument();
+    const until = Number(localStorage.getItem('ecoquest_admin_lock'));
+    expect(until - Date.now()).toBeGreaterThan(50_000);
     cleanup();
     renderAdmin();
-    // The panel may still be unlocked from the previous test's session; lock it first.
-    const lockBtn = screen.queryByRole('button', { name: 'ล็อกหน้าผู้ดูแล' });
-    if (lockBtn) fireEvent.click(lockBtn);
-    fireEvent.change(screen.getByPlaceholderText('PIN'), { target: { value: '0000' } });
-    fireEvent.click(screen.getByRole('button', { name: 'เข้าสู่โหมดผู้ดูแล' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('PIN ไม่ถูกต้อง');
-    fireEvent.change(screen.getByPlaceholderText('PIN'), { target: { value: '2468' } });
-    fireEvent.click(screen.getByRole('button', { name: 'เข้าสู่โหมดผู้ดูแล' }));
-    expect(screen.getByText('เลเวลและ XP')).toBeInTheDocument();
+    expect(screen.getByText('ล็อกชั่วคราว')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '1' })).toBeDisabled();
+    localStorage.removeItem('ecoquest_admin_lock');
+  });
+
+
+  it('two fixed PINs in a row unlock it; a wrong one is refused and kept nowhere in plain text', async () => {
+    renderAdmin();
+    expect(screen.getByText('ใส่รหัสผู้ดูแล')).toBeInTheDocument();
+    await enter('111111');
+    expect(await screen.findByRole('alert')).toHaveTextContent('รหัสไม่ถูกต้อง');
+    await enter('654321');
+    expect(await screen.findByText('ใส่รหัสชั้นที่ 2')).toBeInTheDocument();
+    await enter('031069');
+    expect(await screen.findByText('เลเวลและ XP')).toBeInTheDocument();
+    expect(JSON.stringify(localStorage)).not.toContain('654321');
   });
 
   it('grants are labelled, raise the shown level, stay out of the leaderboard, and revoke cleanly', () => {
