@@ -52,6 +52,20 @@ export function SecondaryButton({ icon, iconRight, fullWidth, size, className = 
   );
 }
 
+export function ChunkyButton({ icon, iconRight, fullWidth, className = '', children, type = 'button', ...rest }: ButtonProps) {
+  return (
+    <button
+      type={type}
+      className={`inline-flex min-h-13 items-center justify-center gap-2 rounded-full bg-forest px-8 font-display text-base font-semibold text-white shadow-[0_5px_0_0_rgb(2_44_34)] transition-[transform,box-shadow] select-none hover:brightness-110 active:translate-y-[3px] active:shadow-[0_2px_0_0_rgb(2_44_34)] disabled:cursor-not-allowed disabled:opacity-60 ${fullWidth ? 'w-full' : ''} ${className}`}
+      {...rest}
+    >
+      {icon}
+      {children}
+      {iconRight}
+    </button>
+  );
+}
+
 interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   'aria-label': string;
   variant?: 'ghost' | 'surface' | 'onDark';

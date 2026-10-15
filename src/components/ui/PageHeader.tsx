@@ -16,7 +16,7 @@ export function PageHeader({ title, subtitle, eyebrow, back, actions }: PageHead
   const goBack = () => {
     if (typeof back === 'string') navigate(back);
     else if (window.history.length > 1) navigate(-1);
-    else navigate('/');
+    else navigate('/home');
   };
 
   return (

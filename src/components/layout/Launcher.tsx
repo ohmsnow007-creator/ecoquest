@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Power } from 'lucide-react';
 import { useMediaQuery, DESKTOP_QUERY } from '../../hooks/useMediaQuery';
 import { EcoMascot } from '../ui/EcoMascot';
+import { markSplashSeen } from '../../utils/session';
 
 const SESSION_KEY = 'ecoquest_launcher_open';
 
@@ -36,6 +37,7 @@ export function Launcher({ children }: { children: ReactNode }) {
   if (!isDesktop) return <>{children}</>;
 
   const open = () => {
+    markSplashSeen();
     writeOpen(true);
     setIsOpen(true);
   };

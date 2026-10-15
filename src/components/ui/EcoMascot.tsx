@@ -27,8 +27,9 @@ export function EcoMascot({ size = 160, mood = 'happy', float = false, className
       width={size}
       height={size}
       viewBox="0 0 200 200"
-      role="img"
-      aria-label={title}
+      role={title ? 'img' : undefined}
+      aria-label={title || undefined}
+      aria-hidden={title ? undefined : true}
       className={className}
       animate={float ? { y: [0, -6, 0] } : undefined}
       transition={float ? { duration: 4, repeat: Infinity, ease: 'easeInOut' } : undefined}

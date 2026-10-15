@@ -7,7 +7,7 @@ export interface NavItem {
 }
 
 export const BOTTOM_NAV: NavItem[] = [
-  { to: '/', label: 'หน้าหลัก', icon: Home },
+  { to: '/home', label: 'หน้าหลัก', icon: Home },
   { to: '/missions', label: 'ภารกิจ', icon: Target },
   { to: '/quiz', label: 'ควิซ', icon: Brain },
   { to: '/ranking', label: 'อันดับ', icon: Trophy },
@@ -15,7 +15,7 @@ export const BOTTOM_NAV: NavItem[] = [
 ];
 
 export const SIDEBAR_NAV: NavItem[] = [
-  { to: '/', label: 'หน้าหลัก', icon: Home },
+  { to: '/home', label: 'หน้าหลัก', icon: Home },
   { to: '/missions', label: 'ภารกิจ', icon: Target },
   { to: '/quiz', label: 'ควิซ', icon: Brain },
   { to: '/world', label: 'โลกสีเขียวของฉัน', icon: Globe2 },

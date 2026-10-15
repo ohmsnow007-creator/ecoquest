@@ -43,7 +43,7 @@ export function Settings() {
   const handleReset = () => {
     setConfirmReset(false);
     resetAll();
-    navigate('/');
+    navigate('/welcome', { replace: true });
   };
 
   return (

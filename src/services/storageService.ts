@@ -42,11 +42,13 @@ export const storageService = {
     }
   },
 
-  saveProfile(profile: PlayerProfile): void {
+  saveProfile(profile: PlayerProfile): boolean {
     try {
       localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(profile));
+      return true;
     } catch (e) {
       console.error('Failed to save profile:', e);
+      return false;
     }
   },
 

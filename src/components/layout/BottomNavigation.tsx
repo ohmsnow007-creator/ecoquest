@@ -13,7 +13,6 @@ export function BottomNavigation() {
           <li key={to} className="flex-1">
             <NavLink
               to={to}
-              end={to === '/'}
               className={({ isActive }) =>
                 `relative flex min-h-16 flex-col items-center justify-center gap-0.5 text-[0.75rem] transition-colors ${isActive ? 'font-semibold text-primary' : 'text-muted hover:text-text'}`
               }

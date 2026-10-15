@@ -24,7 +24,7 @@ interface GameState {
 }
 
 interface GameActions {
-  createProfile: (name: string, avatarId: string, goalIds?: string[]) => void;
+  createProfile: (name: string, avatarId: string, goalIds?: string[]) => boolean;
   updateProfile: (name: string, avatarId: string) => void;
   setReducedMotion: (value: boolean) => void;
   completeMission: (missionId: string, note?: string) => boolean;
@@ -91,16 +91,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (queued.length > 0) setCelebrations((c) => [...c, ...queued]);
   }, []);
 
-  const createProfile = useCallback((name: string, avatarId: string, goalIds: string[] = []) => {
+  const createProfile = useCallback((name: string, avatarId: string, goalIds: string[] = []): boolean => {
     const now = new Date().toISOString();
-    setProfile({
+    const next: PlayerProfile = {
       id: crypto.randomUUID(),
       displayName: name,
       avatarId,
       createdAt: now,
       updatedAt: now,
       preferences: { reducedMotion: false, selectedGoalIds: goalIds },
-    });
+    };
+    if (!storageService.saveProfile(next)) return false;
+    setProfile(next);
+    return true;
   }, []);
 
   const updateProfile = useCallback((name: string, avatarId: string) => {

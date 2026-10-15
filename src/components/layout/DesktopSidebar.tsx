@@ -59,7 +59,7 @@ export function DesktopSidebar() {
         <ul className="space-y-1">
           {SIDEBAR_NAV.map(({ to, label, icon: Icon }) => (
             <li key={to}>
-              <NavLink to={to} end={to === '/'} className={linkClass}>
+              <NavLink to={to} className={linkClass}>
                 {({ isActive }) => (
                   <>
                     <Icon size={19} aria-hidden="true" className={isActive ? 'text-lime' : ''} />

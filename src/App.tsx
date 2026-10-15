@@ -1,4 +1,4 @@
-import { lazy, useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { MotionConfig } from 'framer-motion';
 import { GameProvider, useGame } from './store/GameContext';
@@ -20,12 +20,22 @@ const Ranking = lazy(() => import('./pages/Ranking').then((m) => ({ default: m.R
 
 function AppRoutes() {
   const { profile } = useGame();
-  const guard = (el: React.ReactNode) => (profile ? el : <Navigate to="/" replace />);
+  const guard = (el: React.ReactNode) => (profile ? el : <Navigate to="/welcome" replace />);
+  const entry = <Navigate to={profile ? '/home' : '/welcome'} replace />;
 
   return (
     <Routes>
+      <Route
+        path="/welcome"
+        element={
+          <Suspense fallback={<div className="min-h-dvh bg-primary" />}>
+            <Welcome />
+          </Suspense>
+        }
+      />
+      <Route path="/" element={entry} />
       <Route element={<AppShell />}>
-        <Route path="/" element={profile ? <Dashboard /> : <Welcome />} />
+        <Route path="/home" element={guard(<Dashboard />)} />
         <Route path="/missions" element={guard(<Missions />)} />
         <Route path="/missions/:id" element={guard(<MissionDetail />)} />
         <Route path="/world" element={guard(<VirtualWorld />)} />
@@ -35,8 +45,8 @@ function AppRoutes() {
         <Route path="/quiz" element={guard(<Quiz />)} />
         <Route path="/ranking" element={guard(<Ranking />)} />
         <Route path="/settings" element={guard(<Settings />)} />
-        <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
+      <Route path="*" element={entry} />
     </Routes>
   );
 }

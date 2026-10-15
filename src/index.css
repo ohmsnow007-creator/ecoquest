@@ -17,6 +17,9 @@
   --color-warning: #F59E0B;
   --color-danger: #DC2626;
   --color-success: #15803D;
+  /* Playful accent for large onboarding headlines and decoration only (3.6:1 on white — large text only). */
+  --color-sunset: #D9650A;
+  --color-cream: #FFFBF2;
 
   --color-white: #FFFFFF;
   --color-black: #000000;
@@ -24,6 +27,7 @@
   --color-current: currentColor;
 
   --font-sans: 'IBM Plex Sans Thai', 'Noto Sans Thai', 'Leelawadee UI', 'Tahoma', system-ui, sans-serif;
+  --font-display: 'Mali', 'IBM Plex Sans Thai', 'Noto Sans Thai', 'Tahoma', system-ui, sans-serif;
 
   --text-page: 1.625rem;
   --text-page--line-height: 1.35;
@@ -91,6 +95,12 @@ h1, h2, h3, h4 {
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+.text-chunky {
+  -webkit-text-stroke: 0.22em var(--color-forest);
+  paint-order: stroke fill;
+  text-shadow: 0 0.12em 0 var(--color-forest);
 }
 
 @keyframes skeleton-pulse {
