@@ -174,6 +174,7 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
 
   // Sprouty turns toward any tap, click or the dragged slider knob, then looks back after a moment.
   const lookAt = (clientX: number, clientY: number) => {
+    lastTouch.current = Date.now();
     const r = mascotRef.current?.getBoundingClientRect();
     if (!r || !r.width) return;
     const cx = r.left + r.width / 2;
@@ -183,6 +184,25 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
     idle.current = setTimeout(() => setLook({ x: 0, y: 0 }), 2200);
   };
   useEffect(() => () => void (idle.current && clearTimeout(idle.current)), []);
+
+  // When nobody is touching the screen, Sprouty glances around now and then, like it is looking at the scenery.
+  const lastTouch = useRef(0);
+  useEffect(() => {
+    if (reduce) return;
+    let t: ReturnType<typeof setTimeout>;
+    const wander = () => {
+      t = setTimeout(() => {
+        if (Date.now() - lastTouch.current > 3000) {
+          setLook({ x: Math.random() * 1.4 - 0.7, y: Math.random() * 0.7 - 0.45 });
+          if (idle.current) clearTimeout(idle.current);
+          idle.current = setTimeout(() => setLook({ x: 0, y: 0 }), 1100 + Math.random() * 800);
+        }
+        wander();
+      }, 3200 + Math.random() * 2800);
+    };
+    wander();
+    return () => clearTimeout(t);
+  }, [reduce]);
 
   return (
     <div className="intro-stage">
@@ -228,21 +248,11 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={reduce ? undefined : { opacity: 0, y: -6 }}
                 transition={{ duration: 0.22 }}
-                className="font-display text-[0.9375rem] leading-snug font-semibold whitespace-pre-line text-forest sm:text-[1.0625rem]"
+                className="intro-bubble-text font-display text-[0.875rem] leading-snug font-semibold whitespace-pre-line text-forest sm:text-[1rem]"
               >
-                {tip.lead}{' '}
-                {/* A short ending that continues the highlighted word stays on its line; a tail starting with a space is its own phrase. */}
-                {tip.tail?.startsWith(' ') ? (
-                  <>
-                    <span className="text-primary">{tip.hl}</span>
-                    {tip.tail}
-                  </>
-                ) : (
-                  <span className="whitespace-nowrap">
-                    <span className="text-primary">{tip.hl}</span>
-                    {tip.tail}
-                  </span>
-                )}
+                {/* Thai has no spaces between words; the browser's word breaker wraps it, and the bubble never lets text spill out. */}
+                {tip.lead} <span className="text-primary">{tip.hl}</span>
+                {tip.tail}
               </motion.p>
             </AnimatePresence>
             <span className="intro-bubble-dot intro-bubble-dot-lg" aria-hidden="true" />

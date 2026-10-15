@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 
 export type SproutyMood = 'happy' | 'cheer' | 'sleepy' | 'worried';
 /** 1 seed with two leaves · 2 four leaves · 3 flowering · 4 small tree. */
@@ -104,8 +104,8 @@ function Face({ mood, blinking, lx, ly }: { mood: SproutyMood; blinking: boolean
           </motion.g>
         </motion.g>
       )}
-      <ellipse cx="84" cy="168" rx="10" ry="6" fill="#F6A6A0" opacity={mood === 'worried' ? 0.3 : 0.6} />
-      <ellipse cx="156" cy="168" rx="10" ry="6" fill="#F6A6A0" opacity={mood === 'worried' ? 0.3 : 0.6} />
+      <ellipse cx="84" cy="168" rx="10" ry="6" fill="#F9939A" opacity={mood === 'worried' ? 0.3 : 0.6} />
+      <ellipse cx="156" cy="168" rx="10" ry="6" fill="#F9939A" opacity={mood === 'worried' ? 0.3 : 0.6} />
       {mood === 'cheer' ? (
         <path d="M108 168 Q120 186 132 168 Z" fill={INK} stroke={INK} strokeWidth={3} strokeLinejoin="round" />
       ) : mood === 'worried' ? (
@@ -134,6 +134,10 @@ export function SproutySeed({
   const lx = Math.max(-1, Math.min(1, look.x));
   const ly = Math.max(-1, Math.min(1, look.y));
   const label = title ?? `Sprouty ${STAGE_LABEL[stage]}`;
+  // Idle life: slow breathing and leaves moving in a light breeze (off when the user prefers less motion).
+  const still = useReducedMotion() ?? false;
+  const breathe = still ? undefined : { scaleY: [1, 1.03, 1], scaleX: [1, 0.985, 1] };
+  const breeze = still ? undefined : { rotate: [0, 3.5, -2, 1.5, 0] };
 
   return (
     <svg
@@ -146,28 +150,44 @@ export function SproutySeed({
       aria-hidden={label ? undefined : true}
     >
       <defs>
-        <radialGradient id={`${id}-body`} cx="38%" cy="32%" r="75%">
-          <stop offset="0%" stopColor="#FBFBD6" />
-          <stop offset="45%" stopColor="#E9EE9A" />
-          <stop offset="100%" stopColor="#B9C95A" />
+        <radialGradient id={`${id}-body`} cx="36%" cy="28%" r="80%">
+          <stop offset="0%" stopColor="#FFFEE8" />
+          <stop offset="35%" stopColor="#F1F5A8" />
+          <stop offset="72%" stopColor="#CFDC6C" />
+          <stop offset="100%" stopColor="#9CB84B" />
+        </radialGradient>
+        <radialGradient id={`${id}-warm`} cx="50%" cy="100%" r="60%">
+          <stop offset="0%" stopColor="#F2B35B" stopOpacity={0.35} />
+          <stop offset="100%" stopColor="#F2B35B" stopOpacity={0} />
         </radialGradient>
         <linearGradient id={`${id}-leafL`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#9BD86A" />
-          <stop offset="100%" stopColor="#4E9A3A" />
+          <stop offset="0%" stopColor="#C2F07A" />
+          <stop offset="55%" stopColor="#7CCB4F" />
+          <stop offset="100%" stopColor="#3C9238" />
         </linearGradient>
         <linearGradient id={`${id}-leafR`} x1="1" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#B4E77C" />
-          <stop offset="100%" stopColor="#5DAA43" />
+          <stop offset="0%" stopColor="#D2F58A" />
+          <stop offset="55%" stopColor="#88D257" />
+          <stop offset="100%" stopColor="#47A03F" />
         </linearGradient>
         <radialGradient id={`${id}-soil`} cx="50%" cy="20%" r="80%">
-          <stop offset="0%" stopColor="#7A5636" />
+          <stop offset="0%" stopColor="#8A6240" />
           <stop offset="100%" stopColor="#3E2A1B" />
         </radialGradient>
       </defs>
 
-      {/* soil */}
+      {/* soil with a few pebbles and grass tufts */}
       <ellipse cx="120" cy="214" rx="114" ry="25" fill={`url(#${id}-soil)`} />
       <ellipse cx="120" cy="206" rx="66" ry="10" fill="#2B1C12" opacity={0.35} />
+      <ellipse cx="40" cy="220" rx="6" ry="3.5" fill="#B9A58C" />
+      <ellipse cx="196" cy="222" rx="5" ry="3" fill="#C9B79E" />
+      <ellipse cx="168" cy="230" rx="3.5" ry="2" fill="#A8947A" />
+      <motion.g style={{ transformOrigin: '30px 212px' }} animate={breeze} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}>
+        <path d="M24 214 C22 204 24 198 28 192 M30 214 C30 204 33 198 38 194 M36 214 C37 207 40 203 44 201" stroke="#5DAA43" strokeWidth={3} strokeLinecap="round" fill="none" />
+      </motion.g>
+      <motion.g style={{ transformOrigin: '208px 212px' }} animate={breeze} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}>
+        <path d="M202 214 C200 206 202 200 206 196 M208 214 C209 205 212 200 217 197" stroke="#6FB64E" strokeWidth={3} strokeLinecap="round" fill="none" />
+      </motion.g>
 
       {/* Whole seed tilts toward where Sprouty looks and hops on tap; it pivots at the soil. */}
       <motion.g style={{ transformOrigin: '120px 206px' }} animate={{ rotate: lx * 9 }} transition={SPRING}>
@@ -178,18 +198,25 @@ export function SproutySeed({
           animate={hop ? { y: [0, -14, 0, -4, 0], scaleY: [1, 1.04, 0.94, 1.01, 1] } : undefined}
           transition={{ duration: 0.6, ease: 'easeOut' }}
         >
-          {/* stem + leaves sway a little the other way */}
+          {/* stem + leaves: lean against the look direction and sway in the breeze */}
           <motion.g style={{ transformOrigin: '122px 92px' }} animate={{ rotate: -lx * 6 }} transition={SPRING}>
-            <Leaves id={id} stage={stage} />
+            <motion.g style={{ transformOrigin: '122px 92px' }} animate={breeze} transition={{ duration: 4.6, repeat: Infinity, ease: 'easeInOut' }}>
+              <Leaves id={id} stage={stage} />
+            </motion.g>
           </motion.g>
 
-          {/* seed body */}
-          <path d="M120 88 C164 88 186 128 184 160 C182 192 154 208 120 208 C86 208 58 192 56 160 C54 128 76 88 120 88Z" fill={`url(#${id}-body)`} />
-          <ellipse cx="92" cy="118" rx="20" ry="12" fill="#FFFFFF" opacity={0.55} transform="rotate(-30 92 118)" />
+          {/* seed body breathes slowly */}
+          <motion.g style={{ transformOrigin: '120px 206px' }} animate={breathe} transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}>
+            <path d="M120 88 C164 88 186 128 184 160 C182 192 154 208 120 208 C86 208 58 192 56 160 C54 128 76 88 120 88Z" fill={`url(#${id}-body)`} />
+            <path d="M120 88 C164 88 186 128 184 160 C182 192 154 208 120 208 C86 208 58 192 56 160 C54 128 76 88 120 88Z" fill={`url(#${id}-warm)`} />
+            <path d="M172 134 C182 150 182 172 172 188" stroke="#FFFFFF" strokeOpacity={0.35} strokeWidth={4} strokeLinecap="round" fill="none" />
+            <ellipse cx="92" cy="118" rx="20" ry="12" fill="#FFFFFF" opacity={0.6} transform="rotate(-30 92 118)" />
+            <circle cx="108" cy="104" r="4" fill="#FFFFFF" opacity={0.7} />
 
-          {/* face slides toward the look direction */}
-          <motion.g animate={{ x: lx * 9, y: ly * 6 }} transition={SPRING}>
-            <Face mood={mood} blinking={blinking} lx={lx} ly={ly} />
+            {/* face slides toward the look direction */}
+            <motion.g animate={{ x: lx * 9, y: ly * 6 }} transition={SPRING}>
+              <Face mood={mood} blinking={blinking} lx={lx} ly={ly} />
+            </motion.g>
           </motion.g>
 
           {mood === 'sleepy' && (

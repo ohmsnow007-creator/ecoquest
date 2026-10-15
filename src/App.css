@@ -58,9 +58,9 @@
 
 .intro-bubble {
   position: relative;
-  max-width: min(14.5rem, 70vw);
-  min-height: 4.6rem;
-  padding: 0.8rem 1rem;
+  width: min(15rem, 72vw);
+  min-height: 4.4rem;
+  padding: 0.75rem 1rem;
   border-radius: 1.5rem;
   background: rgb(255 255 255 / 0.92);
   box-shadow: 0 10px 30px rgb(80 60 10 / 0.18);
@@ -157,4 +157,12 @@ html[data-reduced-motion='true'] .intro-leaves { display: none; }
   background: var(--color-surface);
   transform: rotate(45deg);
   border-radius: 3px;
+}
+
+/* Wrap Thai at word boundaries and never past the bubble edge. */
+.intro-bubble-text {
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-break: auto;
+  text-wrap: pretty;
 }
