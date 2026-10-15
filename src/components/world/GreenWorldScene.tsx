@@ -1,6 +1,82 @@
-import { useId } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { ART, Cloud, Face, PineTree, RoundTree, Sprout } from '../illustrations/parts';
+import { getTimeOfDay, type TimeOfDay } from '../../utils/timeOfDay';
+
+/** Sky colours for each part of the day (top → horizon), plus a tint laid over the land. */
+const SKY: Record<TimeOfDay, { top: string; low: string; tint: string; tintOpacity: number }> = {
+  morning: { top: '#9ED8F5', low: '#FFE3C2', tint: '#FFB57A', tintOpacity: 0.08 },
+  day: { top: '#7CCBF2', low: '#D8F6EC', tint: '#FFFFFF', tintOpacity: 0 },
+  evening: { top: '#F08A5D', low: '#FFD48A', tint: '#FF7A45', tintOpacity: 0.16 },
+  night: { top: '#0E1B44', low: '#3B3F7A', tint: '#0B1640', tintOpacity: 0.42 },
+};
+/** Where the sun (or moon) sits, and its colour, through the day. */
+const SUN: Record<TimeOfDay, { x: number; y: number; color: string }> = {
+  morning: { x: 64, y: 62, color: '#FFD15C' },
+  day: { x: 304, y: 42, color: ART.sun },
+  evening: { x: 300, y: 70, color: '#FF9F43' },
+  night: { x: 300, y: 44, color: '#FFF4C8' },
+};
+const STARS: [number, number, number][] = [
+  [24, 20, 1.4], [58, 46, 1], [96, 16, 1.6], [140, 34, 1.1], [178, 12, 1.3], [214, 40, 1], [246, 18, 1.5], [342, 26, 1.2], [120, 62, 0.9], [262, 60, 1],
+];
+const TIME_LABEL: Record<TimeOfDay, string> = { morning: 'ยามเช้า', day: 'ยามกลางวัน', evening: 'ยามเย็น', night: 'ยามค่ำคืน' };
+
+/** The local hour, refreshed every minute so the scene follows the real clock. */
+function useHour(fixed?: number) {
+  const [hour, setHour] = useState(() => new Date().getHours());
+  useEffect(() => {
+    if (fixed !== undefined) return;
+    const t = window.setInterval(() => setHour(new Date().getHours()), 60_000);
+    return () => window.clearInterval(t);
+  }, [fixed]);
+  return fixed ?? hour;
+}
+
+/** Sun with spinning rays and a blinking face, or a sleepy crescent moon at night. */
+function SkyBody({ time, dry }: { time: TimeOfDay; dry: boolean }) {
+  const { x, y, color } = SUN[time];
+  if (time === 'night') {
+    return (
+      <g transform={`translate(${x} ${y})`} data-testid="moon">
+        <g className="scene-bob">
+          <circle r={26} fill="#FFF4C8" opacity={0.18} />
+          <path d="M8 -20 A 21 21 0 1 0 8 20 A 16 16 0 1 1 8 -20 Z" fill={color} />
+          <circle cx={-10} cy={-9} r={2.4} fill="#E8DCA8" />
+          <circle cx={-3} cy={12} r={1.8} fill="#E8DCA8" />
+          <g className="scene-blink" style={{ animationDelay: '1.3s' }}>
+            <ellipse cx={-10} cy={0} rx={1.6} ry={2} className="fill-forest" />
+          </g>
+          <path d="M-13 6 Q-10 8.5 -7 6" className="stroke-forest" strokeWidth={1.5} strokeLinecap="round" fill="none" />
+          <ellipse cx={-15} cy={4} rx={2.4} ry={1.5} fill={ART.cheek} opacity={0.8} />
+        </g>
+      </g>
+    );
+  }
+  return (
+    <g transform={`translate(${x} ${y})`} data-testid="sun">
+      <g className="scene-spin">
+        {Array.from({ length: 10 }, (_, i) => (
+          <path key={i} d="M0 -27 L3.5 -34 L-3.5 -34 Z" fill={ART.sunRay} opacity={dry ? 0.5 : 0.85} transform={`rotate(${i * 36})`} />
+        ))}
+      </g>
+      <g className="scene-bob">
+        <circle r={22} fill={color} opacity={dry ? 0.8 : 1} />
+        <circle cx={-7} cy={-8} r={6} fill="#FFFFFF" opacity={0.35} />
+        <Face x={0} y={-1} s={0.6} blink={0.4} />
+      </g>
+    </g>
+  );
+}
+
+/** A tree that sways gently in the wind from its base. */
+function Sway({ delay = 0, children }: { delay?: number; children: ReactNode }) {
+  return (
+    <g className="scene-sway" style={{ animationDelay: `${delay}s` }}>
+      {children}
+    </g>
+  );
+}
 
 // Scene-only colors for terrain and water.
 const LAND = {
@@ -36,8 +112,10 @@ function Flower({ x, y, c }: { x: number; y: number; c: string }) {
 function Butterfly({ x, y, c }: { x: number; y: number; c: string }) {
   return (
     <g transform={`translate(${x} ${y})`}>
-      <ellipse cx={-3.5} cy={-2} rx={3.5} ry={4.5} fill={c} transform="rotate(-20)" />
-      <ellipse cx={3.5} cy={-2} rx={3.5} ry={4.5} fill={c} transform="rotate(20)" />
+      <g className="scene-flutter">
+        <ellipse cx={-3.5} cy={-2} rx={3.5} ry={4.5} fill={c} transform="rotate(-20)" />
+        <ellipse cx={3.5} cy={-2} rx={3.5} ry={4.5} fill={c} transform="rotate(20)" />
+      </g>
       <rect x={-0.6} y={-4} width={1.2} height={7} rx={0.6} className="fill-forest" />
     </g>
   );
@@ -107,14 +185,20 @@ const pop = (delay = 0) => ({
 interface GreenWorldSceneProps {
   stage: number;
   className?: string;
+  /** Fix the hour (tests, previews); otherwise the scene follows the device clock. */
+  hour?: number;
 }
 
-export function GreenWorldScene({ stage, className = '' }: GreenWorldSceneProps) {
+export function GreenWorldScene({ stage, className = '', hour: fixedHour }: GreenWorldSceneProps) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const dry = stage === 0;
+  const time = getTimeOfDay(useHour(fixedHour));
+  const sky = SKY[time];
+  const night = time === 'night';
   const skyId = `sky-${uid}`;
   const glowId = `glow-${uid}`;
   const rangeId = `range-${uid}`;
+  const tintId = `tint-${uid}`;
 
   return (
     <svg
@@ -122,17 +206,23 @@ export function GreenWorldScene({ stage, className = '' }: GreenWorldSceneProps)
       preserveAspectRatio="xMidYMid slice"
       className={`h-full w-full ${className}`}
       role="img"
-      aria-label={`ภาพโลกสีเขียวของคุณ ระดับ ${stage}`}
+      aria-label={`ภาพโลกสีเขียวของคุณ ระดับ ${stage} ${TIME_LABEL[time]}`}
     >
       <defs>
         <linearGradient id={skyId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={dry ? LAND.dustTop : LAND.skyTop} />
-          <stop offset="100%" stopColor={dry ? LAND.dustLow : LAND.skyLow} />
+          {/* A barren world keeps a dusty haze by day; the clock still sets the colour at night. */}
+          <stop offset="0%" stopColor={dry && !night ? LAND.dustTop : sky.top} />
+          <stop offset="100%" stopColor={dry && !night ? LAND.dustLow : sky.low} />
         </linearGradient>
-        <radialGradient id={glowId} cx="84%" cy="20%" r="45%">
-          <stop offset="0%" stopColor={ART.sun} stopOpacity={dry ? 0.35 : 0.45} />
-          <stop offset="100%" stopColor={ART.sun} stopOpacity={0} />
+        <radialGradient id={glowId} cx={`${(SUN[time].x / 360) * 100}%`} cy={`${(SUN[time].y / 220) * 100}%`} r="45%">
+          <stop offset="0%" stopColor={SUN[time].color} stopOpacity={night ? 0.2 : dry ? 0.35 : 0.5} />
+          <stop offset="100%" stopColor={SUN[time].color} stopOpacity={0} />
         </radialGradient>
+        {/* At night the tint fades in below the sky so the moon and stars stay bright, with no hard edge. */}
+        <linearGradient id={tintId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset={night ? '28%' : '0%'} stopColor={sky.tint} stopOpacity={night ? 0 : sky.tintOpacity} />
+          <stop offset={night ? '55%' : '100%'} stopColor={sky.tint} stopOpacity={sky.tintOpacity} />
+        </linearGradient>
         <linearGradient id={rangeId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={dry ? '#DCCDB2' : '#D6F1E1'} />
           <stop offset="100%" stopColor={dry ? LAND.dryFar : '#A8E2C4'} />
@@ -141,7 +231,7 @@ export function GreenWorldScene({ stage, className = '' }: GreenWorldSceneProps)
       <rect width={360} height={220} fill={`url(#${skyId})`} />
       <rect width={360} height={220} fill={`url(#${glowId})`} />
 
-      {stage >= 4 && (
+      {stage >= 4 && !night && (
         <motion.g {...pop()} fill="none" strokeWidth={7} opacity={0.55}>
           {LAND.rainbow.map((c, i) => (
             <path key={c} d={`M${40 + i * 8} 170 A ${140 - i * 8} ${120 - i * 8} 0 0 1 ${320 - i * 8} 170`} stroke={c} />
@@ -149,15 +239,27 @@ export function GreenWorldScene({ stage, className = '' }: GreenWorldSceneProps)
         </motion.g>
       )}
 
-      <g transform="translate(304 44)">
-        <circle r={22} fill={ART.sun} opacity={dry ? 0.75 : 1} />
-        {!dry && <Face x={0} y={-1} s={0.6} />}
-      </g>
+      {night && (
+        <g fill="#FFF8D6">
+          {STARS.map(([x, y, r], i) => (
+            <circle key={`${x}-${y}`} cx={x} cy={y} r={r} className="scene-twinkle" style={{ animationDelay: `${(i % 5) * 0.5}s` }} />
+          ))}
+        </g>
+      )}
+
+      <SkyBody time={time} dry={dry} />
 
       {stage >= 1 && (
         <motion.g {...pop()}>
-          <Cloud x={70} y={42} />
-          <Cloud x={190} y={30} s={0.7} />
+          {/* Dim clouds at night. The opacity sits on an inner group because the pop-in animates the outer one. */}
+          <g opacity={night ? 0.3 : 1}>
+            <g className="scene-drift">
+              <Cloud x={time === 'morning' ? 150 : 70} y={42} />
+            </g>
+            <g className="scene-drift" style={{ animationDelay: '-9s' }}>
+              <Cloud x={200} y={30} s={0.7} />
+            </g>
+          </g>
         </motion.g>
       )}
 
@@ -207,15 +309,25 @@ export function GreenWorldScene({ stage, className = '' }: GreenWorldSceneProps)
 
       {stage >= 2 && (
         <motion.g {...pop(0.1)}>
-          <RoundTree x={118} y={162} s={0.42} crown="fill-primary" face={false} />
-          <RoundTree x={300} y={156} s={0.4} face={false} />
+          <Sway delay={0.6}>
+            <RoundTree x={118} y={162} s={0.42} crown="fill-primary" blink={1.1} />
+          </Sway>
+          <Sway delay={1.8}>
+            <RoundTree x={300} y={156} s={0.4} blink={2.7} />
+          </Sway>
         </motion.g>
       )}
       {stage >= 4 && (
         <motion.g {...pop(0.2)}>
-          <PineTree x={40} y={164} s={0.5} />
-          <RoundTree x={222} y={158} s={0.38} face={false} />
-          <PineTree x={338} y={162} s={0.42} />
+          <Sway delay={0.2}>
+            <PineTree x={40} y={164} s={0.5} blink={0.3} />
+          </Sway>
+          <Sway delay={1.2}>
+            <RoundTree x={222} y={158} s={0.38} crown="fill-primary" blink={3.4} />
+          </Sway>
+          <Sway delay={2.4}>
+            <PineTree x={338} y={162} s={0.42} blink={1.9} />
+          </Sway>
         </motion.g>
       )}
 
@@ -270,7 +382,9 @@ export function GreenWorldScene({ stage, className = '' }: GreenWorldSceneProps)
         <motion.g {...pop(0.15)}>
           <Bush x={60} y={196} s={0.9} />
           <Bush x={330} y={200} s={0.8} />
-          <RoundTree x={196} y={192} s={0.5} face={stage >= 3} />
+          <Sway delay={0.9}>
+            <RoundTree x={196} y={192} s={0.5} blink={2.1} />
+          </Sway>
         </motion.g>
       )}
 
@@ -296,6 +410,16 @@ export function GreenWorldScene({ stage, className = '' }: GreenWorldSceneProps)
         <motion.g {...pop(0.3)}>
           <Rabbit x={112} y={206} />
         </motion.g>
+      )}
+
+      {/* Light of the hour over the land; the moon and stars stay bright above it. */}
+      {sky.tintOpacity > 0 && <rect width={360} height={220} fill={`url(#${tintId})`} pointerEvents="none" />}
+      {night && stage >= 2 && (
+        <g fill="#FDF59A">
+          {[[70, 170], [140, 186], [208, 168], [262, 182], [320, 172], [36, 190]].map(([x, y], i) => (
+            <circle key={`${x}`} cx={x} cy={y} r={1.8} className="scene-firefly" style={{ animationDelay: `${i * 0.55}s` }} />
+          ))}
+        </g>
       )}
     </svg>
   );

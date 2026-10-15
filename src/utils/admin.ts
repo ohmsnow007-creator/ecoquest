@@ -23,11 +23,6 @@ export function hasAdminGrants(progress: PlayerProgress): boolean {
   return adminGrants(progress).length > 0;
 }
 
-/** Badges or cosmetics handed out by an admin (these, unlike XP, stay marked as demo). */
-export function hasAdminItemGrants(progress: PlayerProgress): boolean {
-  return adminGrants(progress).some((g) => g.kind !== 'xp');
-}
-
 export function adminCosmeticIds(progress: PlayerProgress): Set<string> {
   return new Set(adminGrants(progress).flatMap((g) => (g.kind === 'cosmetic' ? [g.cosmeticId] : [])));
 }

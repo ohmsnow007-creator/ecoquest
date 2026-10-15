@@ -15,11 +15,14 @@ export const ART = {
   star: '#FFE58A',
 };
 
-export function Face({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
+/** `blink` (seconds) makes the eyes blink now and then, starting after that delay. */
+export function Face({ x, y, s = 1, blink }: { x: number; y: number; s?: number; blink?: number }) {
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`}>
-      <ellipse cx={-9} cy={0} rx={2.6} ry={3.2} className="fill-forest" />
-      <ellipse cx={9} cy={0} rx={2.6} ry={3.2} className="fill-forest" />
+      <g className={blink === undefined ? undefined : 'scene-blink'} style={blink === undefined ? undefined : { animationDelay: `${blink}s` }}>
+        <ellipse cx={-9} cy={0} rx={2.6} ry={3.2} className="fill-forest" />
+        <ellipse cx={9} cy={0} rx={2.6} ry={3.2} className="fill-forest" />
+      </g>
       <path d="M-5 6 Q0 11 5 6" className="stroke-forest" strokeWidth={2.2} strokeLinecap="round" fill="none" />
       <ellipse cx={-15} cy={6} rx={4.5} ry={3} fill={ART.cheek} opacity={0.8} />
       <ellipse cx={15} cy={6} rx={4.5} ry={3} fill={ART.cheek} opacity={0.8} />
@@ -37,7 +40,7 @@ export function Cloud({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
   );
 }
 
-export function RoundTree({ x, y, s = 1, crown = 'fill-emerald', face = true }: { x: number; y: number; s?: number; crown?: string; face?: boolean }) {
+export function RoundTree({ x, y, s = 1, crown = 'fill-emerald', face = true, blink }: { x: number; y: number; s?: number; crown?: string; face?: boolean; blink?: number }) {
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`}>
       <path d="M-7 0 L-5 -46 Q0 -52 5 -46 L7 0 Z" fill={ART.trunk} />
@@ -54,18 +57,18 @@ export function RoundTree({ x, y, s = 1, crown = 'fill-emerald', face = true }: 
         <circle cx={-12} cy={-84} r={8} />
         <circle cx={-30} cy={-60} r={6} />
       </g>
-      {face && <Face x={0} y={-64} />}
+      {face && <Face x={0} y={-64} blink={blink} />}
     </g>
   );
 }
 
-export function PineTree({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
+export function PineTree({ x, y, s = 1, blink }: { x: number; y: number; s?: number; blink?: number }) {
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`}>
       <rect x={-5} y={-14} width={10} height={16} fill={ART.trunkDark} />
       <path d="M0 -110 L34 -56 L20 -56 L42 -14 L-42 -14 L-20 -56 L-34 -56 Z" className="fill-primary" />
       <path d="M0 -110 L12 -90 L-4 -84 Z" className="fill-mint" opacity={0.4} />
-      <Face x={0} y={-44} s={0.9} />
+      <Face x={0} y={-44} s={0.9} blink={blink} />
     </g>
   );
 }

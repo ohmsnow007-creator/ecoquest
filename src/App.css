@@ -306,3 +306,60 @@ html[data-reduced-motion='true'] .intro-firefly { animation: none; opacity: 0.8;
 html[data-reduced-motion='true'] .unlock-rays,
 html[data-reduced-motion='true'] .unlock-glow,
 html[data-reduced-motion='true'] .unlock-sparkle { animation: none; }
+
+/* ---- Living world scene: blinking faces, swaying trees, sun/moon, drifting clouds ---- */
+.scene-blink {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: scene-blink 4.6s infinite;
+}
+@keyframes scene-blink {
+  0%, 90%, 96%, 100% { transform: scaleY(1); }
+  93% { transform: scaleY(0.1); }
+}
+.scene-sway {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: scene-sway 4.8s ease-in-out infinite alternate;
+}
+@keyframes scene-sway {
+  from { transform: rotate(-2.2deg); }
+  to { transform: rotate(2.2deg); }
+}
+.scene-spin {
+  transform-box: view-box;
+  animation: scene-spin 24s linear infinite;
+}
+@keyframes scene-spin { to { transform: rotate(360deg); } }
+.scene-bob { animation: scene-bob 5s ease-in-out infinite; }
+@keyframes scene-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.scene-drift { animation: scene-drift 26s ease-in-out infinite alternate; }
+@keyframes scene-drift {
+  from { transform: translateX(-12px); }
+  to { transform: translateX(14px); }
+}
+.scene-twinkle { animation: scene-twinkle 2.6s ease-in-out infinite; }
+@keyframes scene-twinkle {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+.scene-flutter {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: scene-flutter 0.5s ease-in-out infinite alternate;
+}
+@keyframes scene-flutter {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0.35); }
+}
+.scene-firefly { animation: scene-firefly 3.4s ease-in-out infinite; }
+@keyframes scene-firefly {
+  0%, 100% { transform: translate(0, 0); opacity: 0.2; }
+  50% { transform: translate(6px, -8px); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-blink, .scene-sway, .scene-spin, .scene-bob, .scene-drift, .scene-twinkle, .scene-flutter, .scene-firefly { animation: none; }
+}

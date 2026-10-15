@@ -26,3 +26,26 @@ describe('page loading on a flaky network', () => {
     expect(calls).toBe(2);
   });
 });
+
+describe('world scene follows the clock', () => {
+  it('shows the sun by day and a moon with stars at night', async () => {
+    const { GreenWorldScene } = await import('../components/world/GreenWorldScene');
+    const day = render(<GreenWorldScene stage={3} hour={12} />);
+    expect(day.getByTestId('sun')).toBeInTheDocument();
+    expect(day.queryByTestId('moon')).toBeNull();
+    expect(day.getByRole('img').getAttribute('aria-label')).toContain('ยามกลางวัน');
+    day.unmount();
+    const night = render(<GreenWorldScene stage={3} hour={22} />);
+    expect(night.getByTestId('moon')).toBeInTheDocument();
+    expect(night.queryByTestId('sun')).toBeNull();
+    expect(night.container.querySelectorAll('.scene-twinkle').length).toBeGreaterThan(5);
+    night.unmount();
+  });
+
+  it('trees blink and sway once the world is green', async () => {
+    const { GreenWorldScene } = await import('../components/world/GreenWorldScene');
+    const { container } = render(<GreenWorldScene stage={4} hour={8} />);
+    expect(container.querySelectorAll('.scene-sway').length).toBeGreaterThanOrEqual(5);
+    expect(container.querySelectorAll('.scene-blink').length).toBeGreaterThanOrEqual(6);
+  });
+});

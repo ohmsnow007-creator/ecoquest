@@ -104,14 +104,14 @@ describe('My Green World dashboard', () => {
     expect(screen.getByText('พื้นที่เริ่มต้น')).toBeInTheDocument();
     expect(screen.getByText('เริ่มบันทึกกิจกรรมเพื่อดูผลลัพธ์')).toBeInTheDocument();
     expect(screen.getByText('ยังไม่มีกิจกรรม')).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'ภาพโลกสีเขียวของคุณ ระดับ 0' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /^ภาพโลกสีเขียวของคุณ ระดับ 0 / })).toBeInTheDocument();
   });
 
   it('after 5 completed missions the world reaches stage 2, and it survives a reload', () => {
     localStorage.setItem('ecoquest_progress', JSON.stringify(progressWith(5)));
     const { unmount } = renderHome();
     expect(screen.getByText('ต้นไม้และพุ่มไม้')).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'ภาพโลกสีเขียวของคุณ ระดับ 2' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /^ภาพโลกสีเขียวของคุณ ระดับ 2 / })).toBeInTheDocument();
     const stats = screen.getByRole('region', { name: 'สถิติโดยย่อ' });
     expect(within(stats).getAllByText('5')).toHaveLength(2);
     expect(within(stats).getByText('5 ครั้ง')).toBeInTheDocument();
