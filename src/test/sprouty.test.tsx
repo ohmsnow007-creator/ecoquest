@@ -61,3 +61,35 @@ describe('intro time of day', () => {
     ]);
   });
 });
+
+describe('Sprouty gets (cutely) angry when poked too fast', () => {
+  it('5 quick taps make it angry, it calms down by itself, and 4 taps do nothing', async () => {
+    const { renderHook, act } = await import('@testing-library/react');
+    const { vi } = await import('vitest');
+    const { useTantrum, ANGRY_LINES } = await import('../components/sprouty/useTantrum');
+    vi.useFakeTimers();
+    const { result } = renderHook(() => useTantrum());
+    for (let i = 0; i < 4; i++) act(() => void result.current.tap());
+    expect(result.current.angry).toBe(false);
+    act(() => void result.current.tap());
+    expect(result.current.angry).toBe(true);
+    expect(ANGRY_LINES).toContain(result.current.line);
+    act(() => void vi.advanceTimersByTime(3000));
+    expect(result.current.angry).toBe(false);
+    // slow taps (more than 1.5 s apart) never add up
+    for (let i = 0; i < 6; i++) {
+      act(() => void result.current.tap());
+      act(() => void vi.advanceTimersByTime(1600));
+    }
+    expect(result.current.angry).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it('the angry face renders at every growth stage', () => {
+    for (const stage of [1, 2, 3, 4] as const) {
+      const { container, unmount } = render(<SproutySeed stage={stage} mood="angry" />);
+      expect(container.querySelector('svg')).not.toBeNull();
+      unmount();
+    }
+  });
+});

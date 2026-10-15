@@ -30,10 +30,20 @@ export default defineConfig({
         theme_color: '#123C2E',
         background_color: '#123C2E',
         display: 'standalone',
+        display_override: ['standalone', 'minimal-ui'],
+        // Reopening the installed app returns to the open window instead of starting another one.
+        launch_handler: { client_mode: 'focus-existing' },
+        prefer_related_applications: false,
         orientation: 'portrait',
         start_url: `${BASE}#/home`,
         scope: BASE,
         categories: ['education', 'games', 'lifestyle'],
+        // Long-press the app icon for these shortcuts.
+        shortcuts: [
+          { name: 'ภารกิจ', short_name: 'ภารกิจ', url: `${BASE}#/missions?open=1`, icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }] },
+          { name: 'ควิซ', short_name: 'ควิซ', url: `${BASE}#/quiz?open=1`, icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }] },
+          { name: 'โลกของฉัน', short_name: 'โลก', url: `${BASE}#/world?open=1`, icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }] },
+        ],
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },

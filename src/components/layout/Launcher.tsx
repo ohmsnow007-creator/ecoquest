@@ -1,13 +1,14 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { AnimatePresence, motion, useMotionValue, useTransform, animate, useReducedMotion, type PanInfo } from 'framer-motion';
 import { ChevronsRight, ArrowRight, Flame, Target } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { SproutySeed } from '../illustrations/SproutySeed';
 import { IntroLandscape } from '../illustrations/IntroLandscape';
 import { markSplashSeen } from '../../utils/session';
 import { useGame } from '../../store/GameContext';
 import { SPROUTY_TIPS, nextTipOrder, type SproutyTip } from '../../data/sproutyTips';
 import { getTimeOfDay } from '../../utils/timeOfDay';
+import { useTantrum } from '../sprouty/useTantrum';
 import { getSproutyStage } from '../../utils/sprouty';
 import { getPlayerStats } from '../../utils/playerStats';
 import { getDailyStatus } from '../../utils/challenges';
@@ -234,7 +235,8 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
     return () => clearTimeout(t);
   }, [reduce]);
 
-  const mood = leaving ? 'cheer' : timeOfDay === 'night' && !touched ? 'sleepy' : 'happy';
+  const tantrum = useTantrum();
+  const mood = leaving ? 'cheer' : tantrum.angry ? 'angry' : timeOfDay === 'night' && !touched ? 'sleepy' : 'happy';
 
   // Unlocking: Sprouty cheers, leaves burst out, the card drops away, then the app opens.
   const unlock = () => {
@@ -303,7 +305,7 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
           >
             <AnimatePresence mode="wait" initial={false}>
               <motion.p
-                key={key}
+                key={tantrum.angry ? `angry-${tantrum.line}` : key}
                 data-testid="sprouty-says"
                 initial={reduce ? false : { opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -312,8 +314,14 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
                 className="intro-bubble-text font-display text-[0.875rem] leading-snug font-semibold whitespace-pre-line text-forest sm:text-[1rem]"
               >
                 {/* Thai has no spaces between words; the browser's word breaker wraps it, and the bubble never lets text spill out. */}
-                {tip.lead} <span className="text-primary">{tip.hl}</span>
-                {tip.tail}
+                {tantrum.angry ? (
+                  <span className="text-[#C2410C]">{tantrum.line}</span>
+                ) : (
+                  <>
+                    {tip.lead} <span className="text-primary">{tip.hl}</span>
+                    {tip.tail}
+                  </>
+                )}
               </motion.p>
             </AnimatePresence>
             <span className="intro-bubble-dot intro-bubble-dot-lg" aria-hidden="true" />
@@ -338,9 +346,14 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
             }
             onPointerDown={() => {
               setHop((h) => h + 1);
-              next();
+              if (!tantrum.tap() && !tantrum.angry) next();
             }}
           >
+            <motion.span
+              className="block"
+              animate={tantrum.angry && !reduce ? { x: [0, -7, 7, -6, 6, -3, 3, 0], rotate: [0, -4, 4, -3, 3, 0] } : { x: 0, rotate: 0 }}
+              transition={{ duration: 0.5 }}
+            >
             <SproutySeed
               size={240}
               className="h-auto w-full drop-shadow-[0_10px_18px_rgba(60,40,10,0.25)]"
@@ -351,6 +364,7 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
               stage={growth.stage}
               sprout={!reduce}
             />
+            </motion.span>
             {leaving && (
               <span className="pointer-events-none absolute inset-0" aria-hidden="true">
                 {BURST.map((l, i) => (
@@ -428,11 +442,14 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
 export function Launcher({ children }: { children: ReactNode }) {
   const { profile } = useGame();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(startOpen);
 
   const open = () => {
     markSplashSeen();
-    navigate(profile ? '/home' : '/welcome', { replace: true });
+    // App-icon shortcuts (…#/missions?open=1) go straight to their page; every other open lands on Home.
+    const shortcut = new URLSearchParams(location.search).get('open') === '1';
+    navigate(!profile ? '/welcome' : shortcut ? location.pathname : '/home', { replace: true });
     setIsOpen(true);
   };
   const close = () => setIsOpen(false);

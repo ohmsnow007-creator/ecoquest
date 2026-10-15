@@ -196,6 +196,14 @@ describe('Intro — slide to unlock', () => {
     expect(window.location.hash).toBe('#/home');
   });
 
+  it('an app-icon shortcut opens its own page after the intro', async () => {
+    sessionStorage.clear();
+    seedProfile();
+    openApp('#/missions?open=1');
+    fireEvent.keyDown(screen.getByRole('button', { name: /เลื่อนเพื่อเข้าเกม/ }), { key: 'Enter' });
+    await vi.waitFor(() => expect(window.location.hash).toBe('#/missions'), { timeout: 3000 });
+  });
+
   it('shows again every time the site is opened', async () => {
     sessionStorage.clear();
     seedProfile();

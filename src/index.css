@@ -70,6 +70,29 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* Feel like an installed app on phones: */
+/* taps fire at once (no double-tap zoom), and pull-down never reloads the page. */
+body {
+  overscroll-behavior-y: none;
+}
+a,
+button,
+[role='switch'],
+[role='radio'],
+label,
+.intro-screen {
+  touch-action: manipulation;
+}
+/* Rapid taps on buttons and Sprouty must not select text or open the long-press menu. */
+button,
+[role='switch'],
+.intro-screen,
+svg {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);

@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { SproutySeed } from '../illustrations/SproutySeed';
 import { SPROUTY_STAGES, getSproutyGreeting, getSproutyStage } from '../../utils/sprouty';
 import { SPROUTY_TIPS } from '../../data/sproutyTips';
+import { useTantrum } from './useTantrum';
 
 interface Props {
   name: string;
@@ -14,13 +15,15 @@ interface Props {
 }
 
 /** Sprouty on Home: greets by time of day, shows a mood from today's real records, and grows with the level. */
-export function SproutyHomeCard({ name, level, todayCount, streak, dailyComplete, now = new Date() }: Props) {
+export function SproutyHomeCard({ name, level, todayCount, streak, dailyComplete, now }: Props) {
   const reduce = useReducedMotion();
-  const { mood, hello, line } = getSproutyGreeting({ hour: now.getHours(), name, todayCount, streak, dailyComplete });
+  const [hour] = useState(() => (now ?? new Date()).getHours());
+  const { mood, hello, line } = getSproutyGreeting({ hour, name, todayCount, streak, dailyComplete });
   const growth = getSproutyStage(level);
   const [hop, setHop] = useState(0);
   const [tip, setTip] = useState<number | null>(null);
   const [blinking, setBlinking] = useState(false);
+  const tantrum = useTantrum();
 
   useEffect(() => {
     if (mood === 'sleepy') return;
@@ -40,9 +43,10 @@ export function SproutyHomeCard({ name, level, todayCount, streak, dailyComplete
 
   const tap = () => {
     setHop((h) => h + 1);
+    if (tantrum.tap() || tantrum.angry) return;
     setTip((i) => (i === null ? Math.floor(Math.random() * SPROUTY_TIPS.length) : (i + 1) % SPROUTY_TIPS.length));
   };
-  const said = tip === null ? line : `${SPROUTY_TIPS[tip].lead} ${SPROUTY_TIPS[tip].hl}${SPROUTY_TIPS[tip].tail ?? ''}`;
+  const said = tantrum.angry ? tantrum.line : tip === null ? line : `${SPROUTY_TIPS[tip].lead} ${SPROUTY_TIPS[tip].hl}${SPROUTY_TIPS[tip].tail ?? ''}`;
 
   return (
     <section aria-label="Sprouty" className="sprouty-card relative overflow-hidden rounded-hero p-4 shadow-card sm:p-5">
@@ -53,8 +57,11 @@ export function SproutyHomeCard({ name, level, todayCount, streak, dailyComplete
           aria-label="แตะ Sprouty เพื่อฟังเคล็ดลับ"
           className="-mb-2 w-[104px] shrink-0 rounded-full sm:w-[120px]"
         >
-          <motion.div animate={reduce ? undefined : { y: [0, -4, 0] }} transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}>
-            <SproutySeed size={120} className="h-auto w-full" mood={mood} stage={growth.stage} blinking={blinking} hop={reduce ? 0 : hop} title="" />
+          <motion.div
+            animate={reduce ? undefined : tantrum.angry ? { x: [0, -7, 7, -6, 6, -3, 3, 0], rotate: [0, -4, 4, -3, 3, 0] } : { y: [0, -4, 0] }}
+            transition={tantrum.angry ? { duration: 0.5 } : { duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <SproutySeed size={120} className="h-auto w-full" mood={tantrum.angry ? 'angry' : mood} stage={growth.stage} blinking={blinking} hop={reduce ? 0 : hop} title="" />
           </motion.div>
         </button>
         <div className="min-w-0 flex-1 pb-1">

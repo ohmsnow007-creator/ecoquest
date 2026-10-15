@@ -24,6 +24,15 @@ if (!('serviceWorker' in navigator)) {
     },
     onOfflineReady: () => swCallbacks.offlineReady(),
     onRegisterError: () => swCallbacks.setStatus('error'),
+    // A new version is active. Never reload in front of the player: reload the next time the page is hidden
+    // (switching apps or tabs), and offer an "update now" button meanwhile.
+    onNeedReload: () => {
+      const reloadWhenHidden = () => {
+        if (document.visibilityState === 'hidden') window.location.reload()
+      }
+      document.addEventListener('visibilitychange', reloadWhenHidden)
+      swCallbacks.needRefresh(async () => window.location.reload())
+    },
   })
 }
 

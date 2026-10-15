@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { SproutySeed, type SproutyMood } from '../illustrations/SproutySeed';
 import { useGame } from '../../store/GameContext';
 import { getSproutyStage } from '../../utils/sprouty';
 import { getLevelFromXp } from '../../utils/xp';
 import { SPROUTY_TIPS } from '../../data/sproutyTips';
+import { useTantrum } from './useTantrum';
 
 /** Natural blinking for small Sprouties around the app. */
 function useBlinking(enabled: boolean) {
@@ -56,18 +57,22 @@ interface SproutyTalkProps {
 export function SproutyTalk({ text, mood = 'happy', tips = true, className = '' }: SproutyTalkProps) {
   const [hop, setHop] = useState(0);
   const [tip, setTip] = useState<number | null>(null);
-  const said = tip === null ? text : `${SPROUTY_TIPS[tip].lead} ${SPROUTY_TIPS[tip].hl}${SPROUTY_TIPS[tip].tail ?? ''}`;
+  const tantrum = useTantrum();
+  const reduce = useReducedMotion();
+  const said = tantrum.angry ? tantrum.line : tip === null ? text : `${SPROUTY_TIPS[tip].lead} ${SPROUTY_TIPS[tip].hl}${SPROUTY_TIPS[tip].tail ?? ''}`;
 
   const tap = () => {
     setHop((h) => h + 1);
-    if (!tips) return;
+    if (tantrum.tap() || tantrum.angry || !tips) return;
     setTip((i) => (i === null ? Math.floor(Math.random() * SPROUTY_TIPS.length) : i + 1 >= SPROUTY_TIPS.length ? null : i + 1));
   };
 
   return (
     <div className={`flex items-end gap-2 ${className}`}>
       <button type="button" onClick={tap} aria-label="แตะ Sprouty" className="-mb-1 w-[72px] shrink-0 rounded-full">
-        <PlayerSprouty size={72} mood={mood} hop={hop} />
+        <motion.span className="block" animate={tantrum.angry && !reduce ? { x: [0, -7, 7, -6, 6, -3, 3, 0], rotate: [0, -4, 4, -3, 3, 0] } : { x: 0, rotate: 0 }} transition={{ duration: 0.5 }}>
+          <PlayerSprouty size={72} mood={tantrum.angry ? 'angry' : mood} hop={hop} />
+        </motion.span>
       </button>
       <p
         className="sprouty-bubble relative min-w-0 flex-1 rounded-2xl rounded-bl-md border border-mint bg-surface px-3 py-2 text-caption leading-snug font-medium text-forest shadow-card"

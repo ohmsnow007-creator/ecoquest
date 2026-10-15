@@ -1,7 +1,7 @@
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
-export type SproutyMood = 'happy' | 'cheer' | 'sleepy' | 'worried';
+export type SproutyMood = 'happy' | 'cheer' | 'sleepy' | 'worried' | 'angry';
 /** 1 seed with two leaves · 2 four leaves · 3 flowering · 4 small tree. */
 export type SproutyStage = 1 | 2 | 3 | 4;
 
@@ -85,6 +85,13 @@ function Face({ mood, blinking, lx, ly }: { mood: SproutyMood; blinking: boolean
           <path d="M152 141 L136 134" stroke={INK} strokeWidth={3} strokeLinecap="round" />
         </>
       )}
+      {mood === 'angry' && (
+        // Cute grumpy: thick brows pointing down to the middle
+        <>
+          <path d="M86 134 L106 142" stroke={INK} strokeWidth={4.5} strokeLinecap="round" />
+          <path d="M154 134 L134 142" stroke={INK} strokeWidth={4.5} strokeLinecap="round" />
+        </>
+      )}
       {closed ? (
         mood === 'cheer' ? (
           <>
@@ -107,9 +114,12 @@ function Face({ mood, blinking, lx, ly }: { mood: SproutyMood; blinking: boolean
           </motion.g>
         </motion.g>
       )}
-      <ellipse cx="84" cy="168" rx="10" ry="6" fill="#F9939A" opacity={mood === 'worried' ? 0.3 : 0.6} />
-      <ellipse cx="156" cy="168" rx="10" ry="6" fill="#F9939A" opacity={mood === 'worried' ? 0.3 : 0.6} />
-      {mood === 'cheer' ? (
+      <ellipse cx="84" cy="168" rx={mood === 'angry' ? 13 : 10} ry={mood === 'angry' ? 8 : 6} fill={mood === 'angry' ? '#F4707A' : '#F9939A'} opacity={mood === 'worried' ? 0.3 : mood === 'angry' ? 0.85 : 0.6} />
+      <ellipse cx="156" cy="168" rx={mood === 'angry' ? 13 : 10} ry={mood === 'angry' ? 8 : 6} fill={mood === 'angry' ? '#F4707A' : '#F9939A'} opacity={mood === 'worried' ? 0.3 : mood === 'angry' ? 0.85 : 0.6} />
+      {mood === 'angry' ? (
+        // pouty little frown with puffed cheeks
+        <path d="M110 178 Q115 172 120 176 Q125 172 130 178" stroke={INK} strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      ) : mood === 'cheer' ? (
         <path d="M108 168 Q120 186 132 168 Z" fill={INK} stroke={INK} strokeWidth={3} strokeLinejoin="round" />
       ) : mood === 'worried' ? (
         <path d="M112 176 Q120 168 128 176" stroke={INK} strokeWidth={3.5} strokeLinecap="round" fill="none" />
@@ -141,6 +151,10 @@ export function SproutySeed({
   const label = title ?? `Sprouty ${STAGE_LABEL[stage]}`;
   // Idle life: slow breathing and leaves moving in a light breeze (off when the user prefers less motion).
   const still = useReducedMotion() ?? false;
+  // The sprouting entrance plays once. A tap remounts the hop group, and replaying the entrance there
+  // made the leaves shrink to nothing (and sometimes stay hidden on phones).
+  const [sprouted, setSprouted] = useState(false);
+  const playSprout = sprout && !still && !sprouted && hop === 0;
   const breathe = still ? undefined : { scaleY: [1, 1.03, 1], scaleX: [1, 0.985, 1] };
   const breeze = still ? undefined : { rotate: [0, 3.5, -2, 1.5, 0] };
 
@@ -217,7 +231,8 @@ export function SproutySeed({
             <motion.g style={{ transformOrigin: '122px 92px' }} animate={breeze} transition={{ duration: 4.6, repeat: Infinity, ease: 'easeInOut' }}>
               <motion.g
                 style={{ transformOrigin: '122px 92px' }}
-                initial={sprout && !still ? { scale: 0, rotate: -25 } : false}
+                initial={playSprout ? { scale: 0, rotate: -25 } : false}
+                onAnimationComplete={() => setSprouted(true)}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ delay: sproutDelay, type: 'spring', damping: 9, stiffness: 140 }}
               >
@@ -253,6 +268,19 @@ export function SproutySeed({
             </g>
           )}
           {mood === 'worried' && <path d="M176 120 q6 10 0 14 q-6 -4 0 -14Z" fill="#7DD3FC" />}
+          {mood === 'angry' && (
+            // little steam puffs and an anime anger mark
+            <motion.g
+              animate={still ? undefined : { y: [0, -6, 0], opacity: [0.6, 1, 0.6] }}
+              transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <circle cx="52" cy="108" r="9" fill="#FFFFFF" opacity={0.85} />
+              <circle cx="40" cy="96" r="6" fill="#FFFFFF" opacity={0.7} />
+              <circle cx="188" cy="108" r="9" fill="#FFFFFF" opacity={0.85} />
+              <circle cx="200" cy="96" r="6" fill="#FFFFFF" opacity={0.7} />
+              <path d="M160 112 l6 6 M172 112 l-6 6 M160 124 l6 -6 M172 124 l-6 -6" stroke="#E5484D" strokeWidth={3.5} strokeLinecap="round" />
+            </motion.g>
+          )}
         </motion.g>
       </motion.g>
     </svg>
