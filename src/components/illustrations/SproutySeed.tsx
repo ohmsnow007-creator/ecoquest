@@ -17,6 +17,9 @@ interface SproutySeedProps {
   stage?: SproutyStage;
   /** Accessible name; pass '' when a nearby text already describes Sprouty. */
   title?: string;
+  /** Play the "just sprouted" entrance: leaves unfurl from the stem after `sproutDelay` seconds. */
+  sprout?: boolean;
+  sproutDelay?: number;
 }
 
 const SPRING = { type: 'spring', stiffness: 160, damping: 14 } as const;
@@ -129,6 +132,8 @@ export function SproutySeed({
   mood = 'happy',
   stage = 1,
   title,
+  sprout = false,
+  sproutDelay = 0.9,
 }: SproutySeedProps) {
   const id = useId().replace(/:/g, '');
   const lx = Math.max(-1, Math.min(1, look.x));
@@ -210,7 +215,14 @@ export function SproutySeed({
           {/* stem + leaves: lean against the look direction and sway in the breeze */}
           <motion.g style={{ transformOrigin: '122px 92px' }} animate={{ rotate: -lx * 6 }} transition={SPRING}>
             <motion.g style={{ transformOrigin: '122px 92px' }} animate={breeze} transition={{ duration: 4.6, repeat: Infinity, ease: 'easeInOut' }}>
-              <Leaves id={id} stage={stage} />
+              <motion.g
+                style={{ transformOrigin: '122px 92px' }}
+                initial={sprout && !still ? { scale: 0, rotate: -25 } : false}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: sproutDelay, type: 'spring', damping: 9, stiffness: 140 }}
+              >
+                <Leaves id={id} stage={stage} />
+              </motion.g>
             </motion.g>
           </motion.g>
 

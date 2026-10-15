@@ -52,3 +52,12 @@ describe('Sprouty greeting', () => {
     expect(screen.getByText('โตเป็นต้นไม้น้อยที่เลเวล 15')).toBeInTheDocument();
   });
 });
+
+describe('intro time of day', () => {
+  it('maps the local hour to a scene', async () => {
+    const { getTimeOfDay } = await import('../utils/timeOfDay');
+    expect([4, 5, 9, 10, 15, 16, 18, 19, 23].map(getTimeOfDay)).toEqual([
+      'night', 'morning', 'morning', 'day', 'day', 'evening', 'evening', 'night', 'night',
+    ]);
+  });
+});

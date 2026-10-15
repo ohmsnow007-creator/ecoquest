@@ -178,7 +178,10 @@ describe('Intro — slide to unlock', () => {
     openApp('#/missions');
     expect(screen.getByRole('heading', { name: /ปลูกวันนี้/ })).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole('button', { name: /เลื่อนเพื่อเริ่มต้น/ }), { key: 'Enter' });
-    await vi.waitFor(() => expect(window.location.hash).toBe('#/welcome'));
+    // Unlocking first plays a short celebration (leaf burst), then opens the app.
+    await vi.waitFor(() => expect(document.querySelectorAll('.intro-burst-leaf')).toHaveLength(14));
+    expect(window.location.hash).not.toBe('#/welcome');
+    await vi.waitFor(() => expect(window.location.hash).toBe('#/welcome'), { timeout: 3000 });
   });
 
   it('an existing player sees the intro first, then goes to Home', async () => {
@@ -186,7 +189,8 @@ describe('Intro — slide to unlock', () => {
     seedProfile();
     openApp('#/settings');
     expect(screen.getByRole('heading', { name: /ปลูกวันนี้/ })).toBeInTheDocument();
-    expect(screen.getByText('Tester')).toBeInTheDocument();
+    expect(screen.getByText('Tester · เลเวล 1')).toBeInTheDocument();
+    expect(screen.getByText(/วันนี้ 0\/3/)).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole('button', { name: /เลื่อนเพื่อเข้าเกม/ }), { key: 'Enter' });
     expect(await screen.findByText('สวัสดี Tester', undefined, { timeout: 5000 })).toBeInTheDocument();
     expect(window.location.hash).toBe('#/home');

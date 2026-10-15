@@ -169,3 +169,75 @@ html[data-reduced-motion='true'] .intro-leaves { display: none; }
   line-break: auto;
   text-wrap: pretty;
 }
+
+/* ---------- Intro: time of day (local clock) ---------- */
+.intro-tint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: background 0.6s;
+}
+.intro-screen[data-time='morning'] {
+  background:
+    radial-gradient(70% 45% at 25% 22%, rgb(255 214 200 / 0.95) 0%, transparent 70%),
+    linear-gradient(180deg, #F6C9C2 0%, #F3D9A6 35%, #BFD08A 60%, #5E8A3C 80%, #2F5426 100%);
+}
+.intro-screen[data-time='morning'] .intro-tint {
+  background: linear-gradient(180deg, rgb(255 190 200 / 0.28) 0%, rgb(255 230 210 / 0.18) 45%, transparent 75%);
+}
+.intro-screen[data-time='day'] {
+  background:
+    radial-gradient(60% 40% at 78% 14%, rgb(255 255 230 / 0.95) 0%, transparent 70%),
+    linear-gradient(180deg, #9ED8F5 0%, #CFEFF7 35%, #BFE0A0 60%, #5E8A3C 80%, #2F5426 100%);
+}
+.intro-screen[data-time='day'] .intro-tint {
+  background: linear-gradient(180deg, rgb(140 205 245 / 0.45) 0%, rgb(190 230 250 / 0.2) 40%, transparent 65%);
+}
+.intro-screen[data-time='night'] {
+  background:
+    radial-gradient(40% 25% at 78% 12%, rgb(255 250 220 / 0.55) 0%, transparent 70%),
+    linear-gradient(180deg, #121A3A 0%, #1E2D5A 35%, #2C4A4A 60%, #1E3A2A 80%, #0F2418 100%);
+}
+.intro-screen[data-time='night'] .intro-tint {
+  background: linear-gradient(180deg, rgb(14 22 58 / 0.78) 0%, rgb(20 32 70 / 0.62) 45%, rgb(10 28 22 / 0.5) 100%);
+}
+.intro-night { position: absolute; inset: 0; pointer-events: none; }
+.intro-star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: #FFF8D6;
+  box-shadow: 0 0 6px 1px rgb(255 248 214 / 0.8);
+  animation: intro-twinkle 2.8s ease-in-out infinite;
+}
+.intro-firefly {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: #F4FF9A;
+  box-shadow: 0 0 10px 3px rgb(230 255 120 / 0.75);
+  animation: intro-firefly 6s ease-in-out infinite;
+}
+@keyframes intro-twinkle {
+  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+@keyframes intro-firefly {
+  0%, 100% { transform: translate(0, 0); opacity: 0.2; }
+  25% { transform: translate(14px, -18px); opacity: 1; }
+  50% { transform: translate(-8px, -30px); opacity: 0.4; }
+  75% { transform: translate(-16px, -10px); opacity: 1; }
+}
+.intro-burst-leaf {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  border-radius: 0 70% 0 70%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-star, .intro-firefly { animation: none; opacity: 0.8; }
+}
+html[data-reduced-motion='true'] .intro-star,
+html[data-reduced-motion='true'] .intro-firefly { animation: none; opacity: 0.8; }
