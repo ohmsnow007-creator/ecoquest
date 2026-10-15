@@ -15,10 +15,14 @@ if (!('serviceWorker' in navigator)) {
 } else if (import.meta.env.DEV) {
   swCallbacks.setStatus('dev-disabled')
 } else {
-  const updateSW = registerSW({
-    onRegisteredSW: (_url, reg) => swCallbacks.setStatus(reg ? 'active' : 'error'),
+  registerSW({
+    immediate: true,
+    onRegisteredSW: (_url, reg) => {
+      swCallbacks.setStatus(reg ? 'active' : 'error')
+      // Check for a new build when the app comes back to the foreground (phones keep tabs alive for days).
+      if (reg) document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && reg.update())
+    },
     onOfflineReady: () => swCallbacks.offlineReady(),
-    onNeedRefresh: () => swCallbacks.needRefresh(() => updateSW(true)),
     onRegisterError: () => swCallbacks.setStatus('error'),
   })
 }

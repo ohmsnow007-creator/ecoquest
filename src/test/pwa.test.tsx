@@ -91,5 +91,7 @@ describe('manifest config', () => {
     }
     expect(config).toContain("purpose: 'maskable'");
     expect(config).toContain('cleanupOutdatedCaches: true');
+    expect(config).toContain("registerType: 'autoUpdate'");
+    expect(config).toContain('skipWaiting: true');
   });
 });
