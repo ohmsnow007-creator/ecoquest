@@ -61,8 +61,16 @@ export interface QuizCompletion {
   xpAwarded: number;
 }
 
+export interface MissionStart {
+  missionId: string;
+  startedAt: string;
+}
+
+export type MissionProgressStatus = 'available' | 'in-progress' | 'completed-today' | 'completed-once';
+
 export interface PlayerProgress {
   totalXp: number;
+  inProgress: MissionStart[];
   completions: MissionCompletion[];
   unlockedBadges: BadgeRecord[];
   quizCompletions: QuizCompletion[];
@@ -82,10 +90,10 @@ export interface Badge {
 
 export interface WorldStage {
   id: string;
+  stage: number;
   title: string;
   description: string;
-  requiredXp: number;
-  visualKey: string;
+  requiredMissions: number;
   unlockedMessage: string;
 }
 

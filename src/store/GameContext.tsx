@@ -1,5 +1,5 @@
 import { createContext, useContext, useCallback, useState, useEffect, type ReactNode } from 'react';
-import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, MissionCategory, QuizCompletion } from '../types';
+import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, MissionCategory, QuizCompletion, MissionProgressStatus } from '../types';
 import { storageService } from '../services/storageService';
 import { missions } from '../data/missions';
 import { checkNewBadges } from '../utils/badges';
@@ -46,7 +46,8 @@ interface GameActions {
   setReducedMotion: (value: boolean) => void;
   completeMission: (missionId: string, note?: string) => boolean;
   canCompleteMission: (missionId: string) => boolean;
-  getMissionStatus: (missionId: string) => 'available' | 'completed-today' | 'completed-once';
+  getMissionStatus: (missionId: string) => MissionProgressStatus;
+  startMission: (missionId: string) => void;
   completeQuiz: (quizId: string, correct: boolean, xp: number) => void;
   isQuizCompleted: (quizId: string) => boolean;
   resetAll: () => void;
@@ -168,17 +169,23 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return !progress.completions.some((c) => c.missionId === missionId && c.localDate === today);
   }, [progress.completions]);
 
-  const getMissionStatus = useCallback((missionId: string): 'available' | 'completed-today' | 'completed-once' => {
+  const getMissionStatus = useCallback((missionId: string): MissionProgressStatus => {
     const mission = missions.find((m) => m.id === missionId);
     if (!mission) return 'available';
-    if (mission.repeatPolicy === 'once') {
-      return progress.completions.some((c) => c.missionId === missionId) ? 'completed-once' : 'available';
-    }
+    if (mission.repeatPolicy === 'once' && progress.completions.some((c) => c.missionId === missionId)) return 'completed-once';
     const today = getLocalDate();
-    return progress.completions.some((c) => c.missionId === missionId && c.localDate === today)
-      ? 'completed-today'
-      : 'available';
-  }, [progress.completions]);
+    if (mission.repeatPolicy === 'daily' && progress.completions.some((c) => c.missionId === missionId && c.localDate === today)) return 'completed-today';
+    return progress.inProgress.some((s) => s.missionId === missionId) ? 'in-progress' : 'available';
+  }, [progress.completions, progress.inProgress]);
+
+  const startMission = useCallback((missionId: string) => {
+    if (!canCompleteMission(missionId)) return;
+    setProgress((prev) =>
+      prev.inProgress.some((s) => s.missionId === missionId)
+        ? prev
+        : { ...prev, inProgress: [...prev.inProgress, { missionId, startedAt: new Date().toISOString() }] },
+    );
+  }, [canCompleteMission]);
 
   const completeMission = useCallback((missionId: string, note?: string): boolean => {
     const mission = missions.find((m) => m.id === missionId);
@@ -198,6 +205,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     commitProgress(progress, {
       ...progress,
       totalXp: progress.totalXp + mission.xp,
+      inProgress: progress.inProgress.filter((s) => s.missionId !== missionId),
       completions: [...progress.completions, completion],
     });
     addToast(`+${mission.xp} XP`, 'xp');
@@ -230,7 +238,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     storageService.resetAll();
     setProfile(null);
     setCelebrations([]);
-    setProgress({ totalXp: 0, completions: [], unlockedBadges: [], quizCompletions: [], schemaVersion: 1 });
+    setProgress(storageService.getDefaultProgress());
   }, []);
 
   const getCompletionsByCategory = useCallback((): Record<MissionCategory, number> => {
@@ -260,6 +268,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         completeMission,
         canCompleteMission,
         getMissionStatus,
+        startMission,
         completeQuiz,
         isQuizCompleted,
         resetAll,

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Clock, ChevronRight, BookOpen, Gamepad2, Hand, type LucideIcon } from 'lucide-react';
-import type { Mission, MissionType } from '../../types';
+import { CheckCircle2, Clock, ChevronRight, BookOpen, Gamepad2, Hand, Timer, type LucideIcon } from 'lucide-react';
+import type { Mission, MissionProgressStatus, MissionType } from '../../types';
 import { CATEGORY_LABELS, DIFFICULTY_LABELS } from '../../types';
 import { CATEGORY_ICON } from '../../data/icons';
 import { XPBadge } from './Badges';
@@ -19,7 +19,7 @@ const DIFFICULTY_STYLE = {
 
 interface MissionCardProps {
   mission: Mission;
-  status: 'available' | 'completed-today' | 'completed-once';
+  status: MissionProgressStatus;
   to: string;
   compact?: boolean;
 }
@@ -27,7 +27,7 @@ interface MissionCardProps {
 export function MissionCard({ mission, status, to, compact = false }: MissionCardProps) {
   const Icon = CATEGORY_ICON[mission.category];
   const TypeIcon = MISSION_TYPE_META[mission.type].icon;
-  const done = status !== 'available';
+  const done = status === 'completed-today' || status === 'completed-once';
 
   return (
     <Link
@@ -60,6 +60,12 @@ export function MissionCard({ mission, status, to, compact = false }: MissionCar
             {mission.durationMinutes} นาที
           </span>
         </div>
+        {status === 'in-progress' && (
+          <p className="mt-2 inline-flex items-center gap-1 text-caption font-semibold text-text">
+            <Timer size={14} className="text-warning" aria-hidden="true" />
+            กำลังทำ
+          </p>
+        )}
         {done && (
           <p className="mt-2 inline-flex items-center gap-1 text-caption font-semibold text-success">
             <CheckCircle2 size={14} aria-hidden="true" />

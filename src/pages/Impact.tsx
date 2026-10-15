@@ -1,6 +1,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { Info, Hand, BookOpen, ListChecks } from 'lucide-react';
 import { useGame } from '../store/GameContext';
+import { getPlayerStats } from '../utils/playerStats';
 import { missions } from '../data/missions';
 import { CATEGORY_LABELS } from '../types';
 import { CATEGORY_ORDER } from '../data/icons';
@@ -10,10 +11,9 @@ import { StatCard } from '../components/ui/StatCard';
 import { ResponsiveChart, ChartTooltip, CHART_THEME } from '../components/ui/ResponsiveChart';
 
 export function Impact() {
-  const { progress, getCompletionsByCategory } = useGame();
-  const byCategory = getCompletionsByCategory();
-  const total = progress.completions.length;
-  const selfReported = progress.completions.filter((c) => c.completionType === 'self-reported').length;
+  const { progress } = useGame();
+  const stats = getPlayerStats(progress);
+  const { byCategory, missionsCompleted: total, selfReportedCount: selfReported } = stats;
 
   const xpByCategory = (cat: string) =>
     progress.completions

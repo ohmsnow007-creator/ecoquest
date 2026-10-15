@@ -1,10 +1,11 @@
-import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, QuizCompletion, MissionType } from '../types';
+import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, QuizCompletion, MissionType, MissionStart } from '../types';
 import { validateDisplayName } from '../utils/profile';
 import { DEFAULT_AVATAR_ID, DEFAULT_PROFILE_COLOR, INTERESTS, MAX_INTERESTS, isKnownAvatar, isKnownProfileColor } from '../data/avatars';
 
 const STORAGE_KEYS = {
   profile: 'ecoquest_profile',
   progress: 'ecoquest_progress',
+  inboxSeen: 'ecoquest_inbox_seen',
 } as const;
 
 const CURRENT_SCHEMA_VERSION = 1;
@@ -17,7 +18,7 @@ const isStr = (v: unknown): v is string => typeof v === 'string' && v.length > 0
 const isXp = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0;
 
 function getDefaultProgress(): PlayerProgress {
-  return { totalXp: 0, completions: [], unlockedBadges: [], quizCompletions: [], schemaVersion: CURRENT_SCHEMA_VERSION };
+  return { totalXp: 0, inProgress: [], completions: [], unlockedBadges: [], quizCompletions: [], schemaVersion: CURRENT_SCHEMA_VERSION };
 }
 
 // Returns a usable profile, repairing optional fields; null when the core identity is unusable.
@@ -71,6 +72,10 @@ function sanitizeQuiz(v: unknown): QuizCompletion | null {
   return { quizId: v.quizId, completedAt: v.completedAt, correct: v.correct, xpAwarded: v.xpAwarded };
 }
 
+function sanitizeStart(v: unknown): MissionStart | null {
+  return isObj(v) && isStr(v.missionId) && isStr(v.startedAt) ? { missionId: v.missionId, startedAt: v.startedAt } : null;
+}
+
 function cleanList<T>(v: unknown, fn: (x: unknown) => T | null): T[] {
   return Array.isArray(v) ? v.map(fn).filter((x): x is T => x !== null) : [];
 }
@@ -84,7 +89,9 @@ export function sanitizeProgress(data: unknown): PlayerProgress {
   const unlockedBadges = cleanList(data.unlockedBadges, sanitizeBadge).filter((b) => !seenBadges.has(b.badgeId) && seenBadges.add(b.badgeId));
   const totalXp =
     completions.reduce((s, c) => s + c.xpAwarded, 0) + quizCompletions.reduce((s, q) => s + q.xpAwarded, 0);
-  return { totalXp, completions, unlockedBadges, quizCompletions, schemaVersion: CURRENT_SCHEMA_VERSION };
+  const seenStarts = new Set<string>();
+  const inProgress = cleanList(data.inProgress, sanitizeStart).filter((s) => !seenStarts.has(s.missionId) && seenStarts.add(s.missionId));
+  return { totalXp, inProgress, completions, unlockedBadges, quizCompletions, schemaVersion: CURRENT_SCHEMA_VERSION };
 }
 
 function readJson(key: string): unknown {
@@ -125,10 +132,27 @@ export const storageService = {
     return writeJson(STORAGE_KEYS.progress, progress, 'progress');
   },
 
+  getInboxSeenAt(): string | null {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.inboxSeen);
+    } catch {
+      return null;
+    }
+  },
+
+  setInboxSeenAt(iso: string): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.inboxSeen, iso);
+    } catch {
+      // Not critical: the unread dot simply returns next visit.
+    }
+  },
+
   resetAll(): void {
     try {
       localStorage.removeItem(STORAGE_KEYS.profile);
       localStorage.removeItem(STORAGE_KEYS.progress);
+      localStorage.removeItem(STORAGE_KEYS.inboxSeen);
     } catch (e) {
       console.error('Failed to reset:', e);
     }

@@ -35,9 +35,10 @@ export function Missions() {
     const q = search.trim().toLowerCase();
     return !q || mission.title.toLowerCase().includes(q) || mission.description.toLowerCase().includes(q);
   });
-  const todoCount = inCategory.filter((m) => m.status === 'available').length;
+  const isDone = (s: string) => s === 'completed-today' || s === 'completed-once';
+  const todoCount = inCategory.filter((m) => !isDone(m.status)).length;
   const visible = inCategory.filter((m) =>
-    status === 'all' ? true : status === 'todo' ? m.status === 'available' : m.status !== 'available',
+    status === 'all' ? true : status === 'todo' ? !isDone(m.status) : isDone(m.status),
   );
 
   const clearFilters = () => {

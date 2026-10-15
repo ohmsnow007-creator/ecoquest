@@ -1,8 +1,7 @@
 import { motion } from 'framer-motion';
 import { Sprout, Leaf, Shield, Trophy, Crown, Star, TrendingUp, Flame, Brain, Target, Info, CheckCircle2, Lock, type LucideIcon } from 'lucide-react';
 import { useGame } from '../store/GameContext';
-import { getLevelFromXp } from '../utils/xp';
-import { calculateStreak } from '../utils/streak';
+import { getPlayerStats } from '../utils/playerStats';
 import { quizzes } from '../data/quizzes';
 import { missions } from '../data/missions';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -27,14 +26,12 @@ const RANK_TIERS: RankTier[] = [
 export function Ranking() {
   const { progress, profile } = useGame();
   const xp = progress.totalXp;
-  const level = getLevelFromXp(xp);
-  const streak = calculateStreak(progress.completions);
+  const { level, streak, quizzesCorrect: quizCorrect } = getPlayerStats(progress);
   const currentIdx = RANK_TIERS.reduce((acc, t, i) => (xp >= t.minXp ? i : acc), 0);
   const current = RANK_TIERS[currentIdx];
   const next = RANK_TIERS[currentIdx + 1];
   const CurrentIcon = current.icon;
 
-  const quizCorrect = (progress.quizCompletions ?? []).filter((q) => q.correct).length;
   const activeMissions = missions.filter((m) => m.active);
   const triedMissions = new Set(progress.completions.map((c) => c.missionId)).size;
 

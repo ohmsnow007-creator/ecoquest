@@ -1,191 +1,298 @@
 import { Link } from 'react-router-dom';
-import { Flame, Target, Medal, ChevronRight, Brain, Settings } from 'lucide-react';
+import { motion } from 'framer-motion';
+import {
+  Settings, Flame, Target, ListChecks, Leaf, ChevronRight, Brain, Medal, TrendingUp, Sparkles, Timer, CheckCircle2, Circle,
+  type LucideIcon,
+} from 'lucide-react';
 import { useGame } from '../store/GameContext';
-import { getLevelFromXp, getXpInCurrentLevel, getXpToNextLevel, getLevelProgress } from '../utils/xp';
-import { calculateStreak } from '../utils/streak';
-import { getCurrentStage, getNextStage, getStageProgress } from '../utils/world';
-import { badges as allBadges } from '../data/badges';
+import { getPlayerStats } from '../utils/playerStats';
+import { getWorldState, explainWorld } from '../utils/world';
+import { buildActivityFeed, formatRelativeTime, type ActivityEvent } from '../utils/activity';
 import { missions } from '../data/missions';
-import { quizzes } from '../data/quizzes';
-import { getBadgeIcon } from '../data/icons';
+import { CATEGORY_LABELS, DIFFICULTY_LABELS } from '../types';
+import type { Mission, MissionProgressStatus } from '../types';
+import { CATEGORY_ICON } from '../data/icons';
 import { interestCategories } from '../data/avatars';
-import { WorldPreview } from '../components/world/WorldPreview';
-import { PageHeader } from '../components/ui/PageHeader';
-import { Card, SectionTitle } from '../components/ui/Card';
-import { ProgressRing, ProgressBar } from '../components/ui/ProgressBar';
-import { StatCard } from '../components/ui/StatCard';
-import { MissionCard } from '../components/ui/MissionCard';
-import { EmptyState } from '../components/ui/States';
-import { XPBadge } from '../components/ui/Badges';
+import { GreenWorldScene } from '../components/world/GreenWorldScene';
+import { NotificationBell } from '../components/feedback/NotificationBell';
 import { Avatar } from '../components/ui/AvatarPicker';
+import { LevelBadge, XPBadge } from '../components/ui/Badges';
+import { ProgressBar } from '../components/ui/ProgressBar';
+import { SectionTitle } from '../components/ui/Card';
+import { EcoMascot } from '../components/ui/EcoMascot';
+import { EmptyState } from '../components/ui/States';
 import { buttonClasses } from '../components/ui/Button';
 
+const STATUS_META: Record<MissionProgressStatus, { label: string; icon: LucideIcon; className: string }> = {
+  available: { label: 'พร้อมทำ', icon: Circle, className: 'bg-primary/10 text-primary' },
+  'in-progress': { label: 'กำลังทำ', icon: Timer, className: 'bg-warning/15 text-text' },
+  'completed-today': { label: 'สำเร็จแล้ว', icon: CheckCircle2, className: 'bg-success/10 text-success' },
+  'completed-once': { label: 'สำเร็จแล้ว', icon: CheckCircle2, className: 'bg-success/10 text-success' },
+};
+
+const STATUS_ORDER: Record<MissionProgressStatus, number> = { 'in-progress': 0, available: 1, 'completed-today': 2, 'completed-once': 3 };
+
+const QUICK_ACTIONS: { to: string; label: string; aria: string; icon: LucideIcon; tone: string }[] = [
+  { to: '/missions', label: 'ภารกิจ', aria: 'ดูภารกิจทั้งหมด', icon: Target, tone: 'bg-mint text-forest' },
+  { to: '/quiz', label: 'แบบทดสอบ', aria: 'ทำแบบทดสอบ', icon: Brain, tone: 'bg-tag-sky text-forest' },
+  { to: '/achievements', label: 'รางวัล', aria: 'ดูรางวัลและเหรียญตรา', icon: Medal, tone: 'bg-tag-yellow text-forest' },
+  { to: '/impact', label: 'ผลกระทบ', aria: 'ดู Green Impact', icon: Leaf, tone: 'bg-tag-lavender text-forest' },
+];
+
+function ViewAll({ to }: { to: string }) {
+  return (
+    <Link to={to} className="inline-flex min-h-11 items-center gap-0.5 text-caption font-semibold text-primary">
+      ดูทั้งหมด <ChevronRight size={15} aria-hidden="true" />
+    </Link>
+  );
+}
+
+function StatLink({ to, icon: Icon, label, value, hint, delay }: { to: string; icon: LucideIcon; label: string; value: string; hint?: string; delay: number }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}>
+      <Link to={to} className="flex h-full flex-col rounded-card border border-border bg-surface p-3 shadow-card transition-colors hover:border-primary/40 sm:p-4">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary" aria-hidden="true">
+          <Icon size={16} />
+        </span>
+        <span className="mt-1.5 text-[0.75rem] leading-tight whitespace-nowrap text-muted sm:text-caption">{label}</span>
+        <span className="mt-1 text-xl leading-tight font-bold">{value}</span>
+        {hint && <span className="mt-0.5 text-[0.75rem] leading-snug text-muted">{hint}</span>}
+      </Link>
+    </motion.div>
+  );
+}
+
+function DailyMissionRow({ mission, status }: { mission: Mission; status: MissionProgressStatus }) {
+  const Icon = CATEGORY_ICON[mission.category];
+  const meta = STATUS_META[status];
+  return (
+    <li className="flex items-center gap-3 rounded-card border border-border bg-surface p-3 shadow-card sm:p-4">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-mint text-forest" aria-hidden="true">
+        <Icon size={22} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-card font-semibold">{mission.title}</p>
+        <p className="truncate text-caption text-muted">
+          {CATEGORY_LABELS[mission.category]} · {DIFFICULTY_LABELS[mission.difficulty]}
+        </p>
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          <XPBadge amount={mission.xp} />
+          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-caption font-semibold ${meta.className}`}>
+            <meta.icon size={12} aria-hidden="true" />
+            {meta.label}
+          </span>
+        </div>
+      </div>
+      <Link
+        to={`/missions/${mission.id}`}
+        aria-label={`ดูภารกิจ ${mission.title}`}
+        className="inline-flex min-h-11 shrink-0 items-center rounded-full bg-primary px-4 text-caption font-semibold text-white hover:bg-forest"
+      >
+        ดูภารกิจ
+      </Link>
+    </li>
+  );
+}
+
+function ActivityRow({ event }: { event: ActivityEvent }) {
+  let Icon: LucideIcon = Sparkles;
+  let text = '';
+  let xp = 0;
+  let tag: string | null = null;
+  if (event.type === 'mission') {
+    const m = missions.find((x) => x.id === event.missionId);
+    Icon = m ? CATEGORY_ICON[m.category] : Target;
+    text = `ทำภารกิจ "${event.title}" สำเร็จ`;
+    xp = event.xp;
+    if (event.selfReported) tag = 'รายงานเอง';
+  } else if (event.type === 'quiz') {
+    Icon = Brain;
+    text = event.correct ? 'ตอบควิซถูก' : 'ตอบควิซ (ยังไม่ถูก)';
+    xp = event.xp;
+  } else if (event.type === 'badge') {
+    Icon = Medal;
+    text = `ปลดล็อกเหรียญ "${event.title}"`;
+  } else {
+    Icon = TrendingUp;
+    text = `เลื่อนเป็นเลเวล ${event.level}`;
+  }
+
+  return (
+    <li className="flex items-center gap-3 py-3">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mint/60 text-forest" aria-hidden="true">
+        <Icon size={18} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-body">{text}</p>
+        <p className="text-caption text-muted">
+          {xp > 0 && <span className="font-semibold text-primary">+{xp} XP · </span>}
+          {formatRelativeTime(event.at)}
+          {tag && ` · ${tag}`}
+        </p>
+      </div>
+    </li>
+  );
+}
+
 export function Dashboard() {
-  const { profile, progress, getTodayCompletionCount, getMissionStatus, isQuizCompleted } = useGame();
+  const { profile, progress, getMissionStatus } = useGame();
   if (!profile) return null;
 
-  const level = getLevelFromXp(progress.totalXp);
-  const streak = calculateStreak(progress.completions);
-  const todayCount = getTodayCompletionCount();
-  const stage = getCurrentStage(progress.totalXp);
-  const nextStage = getNextStage(progress.totalXp);
-
+  const stats = getPlayerStats(progress);
+  const world = getWorldState(stats.missionsCompleted);
   const preferred = interestCategories(profile.preferences.selectedGoalIds);
-  const dailyAvailable = missions
-    .filter((m) => m.active && m.repeatPolicy === 'daily' && getMissionStatus(m.id) === 'available')
-    .sort((a, b) => Number(preferred.has(b.category)) - Number(preferred.has(a.category)));
-  const quizLeft = quizzes.filter((q) => !isQuizCompleted(q.id)).length;
+  const feed = buildActivityFeed(progress).slice(0, 5);
 
-  const recentBadges = progress.unlockedBadges
-    .slice()
-    .sort((a, b) => new Date(b.unlockedAt).getTime() - new Date(a.unlockedAt).getTime())
-    .slice(0, 3)
-    .map((r) => allBadges.find((b) => b.id === r.badgeId))
-    .filter((b): b is NonNullable<typeof b> => Boolean(b));
+  const daily = missions
+    .filter((m) => m.active && m.repeatPolicy === 'daily')
+    .map((m) => ({ mission: m, status: getMissionStatus(m.id) }))
+    .sort(
+      (a, b) =>
+        STATUS_ORDER[a.status] - STATUS_ORDER[b.status] ||
+        Number(preferred.has(b.mission.category)) - Number(preferred.has(a.mission.category)),
+    )
+    .slice(0, 3);
 
   return (
     <>
-      <PageHeader
-        eyebrow="สวัสดี"
-        title={profile.displayName}
-        actions={
-          <>
-            <XPBadge amount={progress.totalXp} variant="solid" />
-            <Link to="/settings" aria-label="ตั้งค่าโปรไฟล์" className="lg:hidden">
-              <Avatar id={profile.avatarId} color={profile.preferences.profileColor} size="sm" />
-            </Link>
-            <Link to="/settings" aria-label="ตั้งค่า" className="hidden h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-text shadow-card hover:bg-background lg:inline-flex">
-              <Settings size={19} aria-hidden="true" />
-            </Link>
-          </>
-        }
-      />
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Level hero */}
-        <Card tone="forest" className="lg:col-span-2">
-          <div className="flex items-center gap-5">
-            <ProgressRing value={getLevelProgress(progress.totalXp)} size={96} stroke={9} onDark label="ความคืบหน้าเลเวล">
-              <span className="text-caption text-white/70">เลเวล</span>
-              <span className="text-[1.75rem] leading-none font-bold">{level}</span>
-            </ProgressRing>
-            <div className="min-w-0 flex-1">
-              <p className="text-caption text-white/70">ความคืบหน้าสู่เลเวล {level + 1}</p>
-              <p className="mt-0.5 text-section font-semibold">
-                {getXpInCurrentLevel(progress.totalXp)} / {getXpToNextLevel(progress.totalXp)} XP
-              </p>
-              <div className="mt-2">
-                <ProgressBar value={getLevelProgress(progress.totalXp)} label="XP ในเลเวลนี้" tone="lime" onDark />
-              </div>
-            </div>
-          </div>
-          <div className="mt-5 grid grid-cols-3 gap-2">
-            <StatCard onDark icon={Flame} label="Streak" value={`${streak} วัน`} delay={0.05} />
-            <StatCard onDark icon={Target} label="ทำวันนี้" value={todayCount} delay={0.1} />
-            <StatCard onDark icon={Medal} label="เหรียญ" value={progress.unlockedBadges.length} delay={0.15} />
-          </div>
-        </Card>
-
-        {/* World */}
-        <Link to="/world" className="group block overflow-hidden rounded-card border border-border bg-surface shadow-card transition-colors hover:border-primary/40">
-          <div className="h-36 lg:h-40">
-            <WorldPreview stage={stage.visualKey} />
-          </div>
-          <div className="p-4">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <p className="text-caption text-muted">โลกสีเขียวของฉัน</p>
-                <p className="text-card font-semibold">{stage.title}</p>
-              </div>
-              <ChevronRight size={18} className="text-muted transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-            </div>
-            <div className="mt-3">
-              <ProgressBar
-                value={getStageProgress(progress.totalXp)}
-                label="ความคืบหน้าโลกเสมือน"
-                size="sm"
-                showLabel
-                valueText={nextStage ? `อีก ${nextStage.requiredXp - progress.totalXp} XP` : 'สมบูรณ์'}
-              />
-            </div>
-          </div>
+      {/* 1. Header */}
+      <header className="safe-top flex items-center gap-3 pt-5 pb-4 lg:pt-10 lg:pb-6">
+        <Link to="/settings" aria-label="แก้ไขโปรไฟล์" className="shrink-0 rounded-full ring-2 ring-mint ring-offset-2 ring-offset-background">
+          <Avatar id={profile.avatarId} color={profile.preferences.profileColor} size="lg" />
         </Link>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-section leading-tight font-bold">สวัสดี {profile.displayName}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption">
+            <LevelBadge level={stats.level} />
+            <span className="text-muted">
+              {stats.xpInLevel}/{stats.xpForNextLevel} XP
+            </span>
+            {stats.streak > 0 && (
+              <span className="inline-flex items-center gap-0.5 font-semibold">
+                <Flame size={13} className="text-warning" aria-hidden="true" />
+                {stats.streak} วัน
+              </span>
+            )}
+          </div>
+          <div className="mt-1.5 max-w-xs">
+            <ProgressBar
+              value={stats.levelProgress}
+              label={`ความคืบหน้าสู่เลเวล ${stats.level + 1}`}
+              size="sm"
+              valueText={`${stats.xpInLevel} จาก ${stats.xpForNextLevel} XP`}
+            />
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <NotificationBell />
+          <Link
+            to="/settings"
+            aria-label="ตั้งค่า"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-text shadow-card hover:bg-background"
+          >
+            <Settings size={19} aria-hidden="true" />
+          </Link>
+        </div>
+      </header>
 
-        {/* Today's missions */}
-        <section className="lg:col-span-2" aria-labelledby="today-missions">
-          <SectionTitle
-            id="today-missions"
-            title="ภารกิจประจำวัน"
-            action={
-              <Link to="/missions" className="inline-flex min-h-11 items-center gap-1 text-caption font-semibold text-primary">
-                ดูทั้งหมด <ChevronRight size={15} aria-hidden="true" />
-              </Link>
-            }
-          />
-          {dailyAvailable.length > 0 ? (
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-              {dailyAvailable.slice(0, 4).map((m) => (
-                <MissionCard key={m.id} mission={m} status="available" to={`/missions/${m.id}`} compact />
-              ))}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-6">
+        {/* 2. Virtual world hero */}
+        <section aria-labelledby="world-title" className="overflow-hidden rounded-[1.75rem] border border-border bg-surface shadow-card lg:col-span-2">
+          <div className="relative h-60 sm:h-72 lg:h-80">
+            <GreenWorldScene key={world.current.stage} stage={world.current.stage} />
+            <motion.p
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute top-3 left-1/2 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 rounded-2xl bg-surface/95 px-4 py-2 text-center text-caption font-medium shadow-card"
+            >
+              {explainWorld(stats.missionsCompleted, stats.byCategory)}
+            </motion.p>
+            <span className="absolute bottom-3 left-3 rounded-2xl bg-surface/95 px-3 py-1.5 shadow-card">
+              <span className="block text-[0.75rem] leading-tight text-muted">ระดับ {world.current.stage}</span>
+              <span id="world-title" className="block text-caption leading-tight font-semibold">{world.current.title}</span>
+            </span>
+            <span className="absolute right-2 bottom-1">
+              <EcoMascot size={64} mood={world.current.stage >= 3 ? 'cheer' : 'happy'} title="" />
+            </span>
+          </div>
+          <div className="flex items-center gap-4 px-4 py-3">
+            <div className="min-w-0 flex-1">
+              <p className="mb-1.5 text-caption">
+                {world.next ? (
+                  <>
+                    อีก <span className="font-semibold">{world.missionsToNext} ภารกิจ</span> ถึง “{world.next.title}”
+                  </>
+                ) : (
+                  'โลกของคุณเติบโตเต็มที่แล้ว'
+                )}
+              </p>
+              <ProgressBar value={world.progress} label="ความคืบหน้าโลกสีเขียว" size="sm" />
             </div>
-          ) : (
-            <Card>
-              <EmptyState compact title="ทำภารกิจประจำวันครบแล้ว" description="เก่งมาก! กลับมาพรุ่งนี้เพื่อทำภารกิจประจำวันชุดใหม่" />
-            </Card>
-          )}
+            <Link to="/world" className="inline-flex min-h-11 shrink-0 items-center gap-0.5 text-caption font-semibold text-primary">
+              ดูโลกของฉัน <ChevronRight size={15} aria-hidden="true" />
+            </Link>
+          </div>
         </section>
 
-        <div className="space-y-4">
-          {/* Quiz CTA */}
-          <Card tone="lime">
-            <div className="flex items-start gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-forest text-lime" aria-hidden="true">
-                <Brain size={20} />
-              </span>
-              <div>
-                <h2 className="text-card font-semibold">ควิซสิ่งแวดล้อม</h2>
-                <p className="text-caption text-forest/80">
-                  {quizLeft > 0 ? `เหลืออีก ${quizLeft} ข้อที่ยังไม่ได้ทำ` : 'คุณทำควิซครบทุกข้อแล้ว'}
-                </p>
-              </div>
-            </div>
-            <Link to="/quiz" className={`${buttonClasses('primary', 'md', true)} mt-4`}>
-              {quizLeft > 0 ? 'ทำควิซ' : 'ดูผลควิซ'}
-            </Link>
-          </Card>
+        {/* 4. Quick stats */}
+        <section aria-label="สถิติโดยย่อ" className="grid grid-cols-3 content-start gap-2.5 sm:gap-3">
+          <StatLink to="/progress" icon={Target} label="ภารกิจสำเร็จ" value={`${stats.missionsCompleted}`} hint={`วันนี้ ${stats.todayMissions}`} delay={0} />
+          <StatLink to="/progress" icon={ListChecks} label="บันทึกแล้ว" value={`${stats.activityCount}`} hint="ภารกิจ + ควิซ" delay={0.05} />
+          <StatLink
+            to="/impact"
+            icon={Leaf}
+            label="ผลกระทบ"
+            value={stats.selfReportedCount > 0 ? `${stats.selfReportedCount} ครั้ง` : '–'}
+            hint={stats.selfReportedCount > 0 ? 'กิจกรรมจริงที่รายงาน' : 'เริ่มบันทึกกิจกรรมเพื่อดูผลลัพธ์'}
+            delay={0.1}
+          />
+        </section>
 
-          {/* Recent badges */}
-          <Card>
-            <SectionTitle
-              title="เหรียญตราล่าสุด"
-              action={
-                <Link to="/achievements" className="inline-flex min-h-11 items-center gap-1 text-caption font-semibold text-primary">
-                  ทั้งหมด <ChevronRight size={15} aria-hidden="true" />
+        {/* 5. Daily missions */}
+        <section aria-labelledby="daily-title" className="lg:col-span-2 lg:row-span-2">
+          <SectionTitle id="daily-title" title="ภารกิจวันนี้" action={<ViewAll to="/missions" />} />
+          <ul className="space-y-2.5">
+            {daily.map(({ mission, status }) => (
+              <DailyMissionRow key={mission.id} mission={mission} status={status} />
+            ))}
+          </ul>
+        </section>
+
+        {/* 6. Quick actions */}
+        <section aria-labelledby="quick-title">
+          <SectionTitle id="quick-title" title="ทางลัด" />
+          <ul className="grid grid-cols-4 gap-2">
+            {QUICK_ACTIONS.map(({ to, label, aria, icon: Icon, tone }) => (
+              <li key={to}>
+                <Link to={to} aria-label={aria} className="group flex flex-col items-center gap-1.5 rounded-2xl p-1 text-center">
+                  <span className={`flex h-14 w-14 items-center justify-center rounded-2xl shadow-card transition-transform group-hover:-translate-y-0.5 ${tone}`} aria-hidden="true">
+                    <Icon size={24} />
+                  </span>
+                  <span className="text-caption font-medium">{label}</span>
                 </Link>
-              }
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* 7. Recent activity */}
+        <section aria-labelledby="activity-title" className="rounded-card border border-border bg-surface p-4 shadow-card">
+          <SectionTitle id="activity-title" title="กิจกรรมล่าสุด" action={feed.length > 0 ? <ViewAll to="/progress" /> : undefined} className="mb-0" />
+          {feed.length === 0 ? (
+            <EmptyState
+              compact
+              title="ยังไม่มีกิจกรรม"
+              description="เริ่มภารกิจแรกของคุณ แล้วความคืบหน้าจะแสดงที่นี่"
+              action={<Link to="/missions" className={buttonClasses('primary')}>เริ่มภารกิจแรก</Link>}
             />
-            {recentBadges.length > 0 ? (
-              <ul className="space-y-2">
-                {recentBadges.map((b) => {
-                  const Icon = getBadgeIcon(b.icon);
-                  return (
-                    <li key={b.id} className="flex items-center gap-3">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-mint text-forest" aria-hidden="true">
-                        <Icon size={18} />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="truncate text-body font-semibold">{b.title}</p>
-                        <p className="truncate text-caption text-muted">{b.description}</p>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="text-body text-muted">ทำภารกิจแรกเพื่อปลดล็อกเหรียญตราเหรียญแรก</p>
-            )}
-          </Card>
-        </div>
+          ) : (
+            <ul className="divide-y divide-border">
+              {feed.map((e) => (
+                <ActivityRow key={e.id} event={e} />
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
     </>
   );

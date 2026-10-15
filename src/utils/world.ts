@@ -1,32 +1,33 @@
 import { worldStages } from '../data/worldStages';
-import type { WorldStage } from '../types';
+import type { MissionCategory, WorldStage } from '../types';
+import { CATEGORY_LABELS } from '../types';
 
-export function getCurrentStage(totalXp: number): WorldStage {
+export interface WorldState {
+  current: WorldStage;
+  next: WorldStage | null;
+  progress: number;
+  missionsToNext: number;
+}
+
+export function getWorldState(missionsCompleted: number): WorldState {
   let current = worldStages[0];
   for (const stage of worldStages) {
-    if (totalXp >= stage.requiredXp) {
-      current = stage;
-    } else {
-      break;
-    }
+    if (missionsCompleted >= stage.requiredMissions) current = stage;
   }
-  return current;
+  const next = worldStages.find((s) => s.requiredMissions > missionsCompleted) ?? null;
+  const range = next ? next.requiredMissions - current.requiredMissions : 0;
+  return {
+    current,
+    next,
+    progress: next && range > 0 ? (missionsCompleted - current.requiredMissions) / range : 1,
+    missionsToNext: next ? next.requiredMissions - missionsCompleted : 0,
+  };
 }
 
-export function getNextStage(totalXp: number): WorldStage | null {
-  for (const stage of worldStages) {
-    if (totalXp < stage.requiredXp) {
-      return stage;
-    }
-  }
-  return null;
-}
-
-export function getStageProgress(totalXp: number): number {
-  const current = getCurrentStage(totalXp);
-  const next = getNextStage(totalXp);
-  if (!next) return 1;
-  const range = next.requiredXp - current.requiredXp;
-  if (range <= 0) return 1;
-  return (totalXp - current.requiredXp) / range;
+// Plain-language reason the world looks the way it does, built from the player's own records.
+export function explainWorld(missionsCompleted: number, byCategory: Record<MissionCategory, number>): string {
+  if (missionsCompleted === 0) return 'ยังไม่มีภารกิจที่สำเร็จ ทำภารกิจแรกเพื่อปลูกต้นกล้าต้นแรกในโลกของคุณ';
+  const top = (Object.keys(byCategory) as MissionCategory[]).sort((a, b) => byCategory[b] - byCategory[a])[0];
+  const topText = byCategory[top] > 0 ? ` ส่วนใหญ่เป็นหมวด${CATEGORY_LABELS[top]} (${byCategory[top]} ครั้ง)` : '';
+  return `โลกของคุณเติบโตจากภารกิจที่ทำสำเร็จ ${missionsCompleted} ครั้ง${topText}`;
 }

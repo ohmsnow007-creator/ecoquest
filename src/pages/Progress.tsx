@@ -2,10 +2,8 @@ import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { Target, Sparkles, TrendingUp, Flame, ChevronRight, Leaf, History } from 'lucide-react';
 import { useGame } from '../store/GameContext';
-import { getLevelFromXp } from '../utils/xp';
-import { calculateStreak, getLongestStreak } from '../utils/streak';
-import { getRecentActivity } from '../utils/activity';
-import { missions } from '../data/missions';
+import { getPlayerStats } from '../utils/playerStats';
+import { getRecentActivity, buildActivityFeed, formatRelativeTime } from '../utils/activity';
 import { CATEGORY_LABELS } from '../types';
 import { CATEGORY_ICON, CATEGORY_ORDER } from '../data/icons';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -17,27 +15,22 @@ import { XPBadge } from '../components/ui/Badges';
 import { EmptyState } from '../components/ui/States';
 
 export function Progress() {
-  const { progress, getCompletionsByCategory } = useGame();
-  const level = getLevelFromXp(progress.totalXp);
-  const streak = calculateStreak(progress.completions);
-  const longest = getLongestStreak(progress.completions);
-  const byCategory = getCompletionsByCategory();
+  const { progress } = useGame();
+  const stats = getPlayerStats(progress);
+  const { level, streak, longestStreak: longest, byCategory } = stats;
   const maxCategory = Math.max(1, ...CATEGORY_ORDER.map((c) => byCategory[c]));
   const activity = getRecentActivity(progress);
   const weekTotal = activity.reduce((s, d) => s + d.total, 0);
 
-  const recent = progress.completions
-    .slice()
-    .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
-    .slice(0, 10);
+  const recent = buildActivityFeed(progress).slice(0, 20);
 
   return (
     <>
       <PageHeader title="สถิติ" subtitle="ภาพรวมกิจกรรมที่คุณบันทึกไว้ในแอป" />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard icon={Target} label="ภารกิจสำเร็จ" value={progress.completions.length} delay={0} />
-        <StatCard icon={Sparkles} label="XP สะสม" value={progress.totalXp.toLocaleString('th-TH')} delay={0.05} />
+        <StatCard icon={Target} label="ภารกิจสำเร็จ" value={stats.missionsCompleted} delay={0} />
+        <StatCard icon={Sparkles} label="XP สะสม" value={stats.xp.toLocaleString('th-TH')} delay={0.05} />
         <StatCard icon={TrendingUp} label="เลเวล" value={level} delay={0.1} />
         <StatCard icon={Flame} label="Streak ปัจจุบัน" value={`${streak} วัน`} hint={`สูงสุด ${longest} วัน`} delay={0.15} />
       </div>
@@ -97,23 +90,28 @@ export function Progress() {
       </div>
 
       <Card className="mt-4">
-        <SectionTitle title="ประวัติล่าสุด" icon={<History size={18} className="text-primary" aria-hidden="true" />} />
+        <SectionTitle id="history" title="ประวัติกิจกรรม" icon={<History size={18} className="text-primary" aria-hidden="true" />} />
         {recent.length === 0 ? (
-          <EmptyState compact title="ยังไม่มีประวัติภารกิจ" description="ภารกิจที่ทำสำเร็จจะแสดงที่นี่" />
+          <EmptyState compact title="ยังไม่มีประวัติกิจกรรม" description="ภารกิจ ควิซ และเหรียญตราที่ได้รับจะแสดงที่นี่" />
         ) : (
           <ul className="divide-y divide-border">
-            {recent.map((c) => {
-              const mission = missions.find((m) => m.id === c.missionId);
+            {recent.map((e) => {
+              const title =
+                e.type === 'mission' ? `ภารกิจ: ${e.title}`
+                : e.type === 'quiz' ? (e.correct ? 'ตอบควิซถูก' : 'ตอบควิซ (ยังไม่ถูก)')
+                : e.type === 'badge' ? `ปลดล็อกเหรียญ "${e.title}"`
+                : `เลื่อนเป็นเลเวล ${e.level}`;
+              const xp = e.type === 'mission' || e.type === 'quiz' ? e.xp : 0;
               return (
-                <li key={c.id} className="flex items-center justify-between gap-3 py-3">
+                <li key={e.id} className="flex items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-body font-medium">{mission?.title ?? c.missionId}</p>
+                    <p className="truncate text-body font-medium">{title}</p>
                     <p className="text-caption text-muted">
-                      {new Date(c.completedAt).toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                      {c.completionType === 'self-reported' && ' · รายงานด้วยตนเอง'}
+                      {formatRelativeTime(e.at)}
+                      {e.type === 'mission' && e.selfReported && ' · รายงานด้วยตนเอง'}
                     </p>
                   </div>
-                  <XPBadge amount={c.xpAwarded} plus />
+                  {xp > 0 && <XPBadge amount={xp} plus />}
                 </li>
               );
             })}

@@ -9,6 +9,7 @@ function progressWith(missionDates: string[], quizDates: Date[]): PlayerProgress
     totalXp: 0,
     unlockedBadges: [],
     schemaVersion: 1,
+    inProgress: [],
     completions: missionDates.map((d, i) => ({
       id: `c${i}`, missionId: 'm', completedAt: `${d}T10:00:00.000Z`, localDate: d, xpAwarded: 10, completionType: 'educational',
     })),

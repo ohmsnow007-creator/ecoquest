@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Clock, BookOpen, CheckCircle2, Info, Lightbulb } from 'lucide-react';
+import { Clock, BookOpen, CheckCircle2, Info, Lightbulb, Play, Timer } from 'lucide-react';
 import { missions } from '../data/missions';
 import { useGame } from '../store/GameContext';
 import { CATEGORY_LABELS, DIFFICULTY_LABELS } from '../types';
@@ -16,7 +16,7 @@ import { MISSION_TYPE_META } from '../components/ui/MissionCard';
 
 export function MissionDetail() {
   const { id } = useParams<{ id: string }>();
-  const { completeMission, canCompleteMission, getMissionStatus } = useGame();
+  const { completeMission, canCompleteMission, getMissionStatus, startMission } = useGame();
   const [note, setNote] = useState('');
   const [justCompleted, setJustCompleted] = useState(false);
 
@@ -110,8 +110,19 @@ export function MissionDetail() {
                 </p>
                 <Link to="/missions" className={`${buttonClasses('secondary', 'md', true)} mt-4`}>เลือกภารกิจอื่น</Link>
               </motion.div>
+            ) : canComplete && status === 'available' ? (
+              <>
+                <p className="text-body font-semibold">พร้อมเริ่มภารกิจนี้หรือยัง?</p>
+                <p className="mt-1 text-caption text-muted">กดเริ่มเพื่อบันทึกว่ากำลังทำ แล้วกลับมายืนยันเมื่อทำเสร็จ</p>
+                <PrimaryButton size="lg" fullWidth className="mt-3" icon={<Play size={18} />} onClick={() => startMission(mission.id)}>
+                  เริ่มภารกิจ
+                </PrimaryButton>
+              </>
             ) : canComplete ? (
               <>
+                <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-warning/15 px-3 py-1 text-caption font-semibold">
+                  <Timer size={14} className="text-warning" aria-hidden="true" /> กำลังทำภารกิจนี้
+                </p>
                 <label htmlFor="mission-note" className="mb-1.5 block text-caption font-semibold">บันทึกสั้น ๆ (ไม่บังคับ)</label>
                 <textarea
                   id="mission-note"
