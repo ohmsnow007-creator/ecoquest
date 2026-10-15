@@ -51,10 +51,10 @@ beforeEach(() => {
 describe('Profile creation', () => {
   it('updates the avatar preview immediately when another avatar is chosen', async () => {
     renderFlow();
-    expect(await screen.findByRole('img', { name: 'อวาตาร์ ใบเตย' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('radio', { name: 'ตะวัน' }));
-    expect(screen.getByRole('radio', { name: 'ตะวัน' })).toHaveAttribute('aria-checked', 'true');
-    expect(await screen.findByRole('img', { name: 'อวาตาร์ ตะวัน' }, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByRole('img', { name: 'อวาตาร์ มินท์' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: 'ซันนี่' }));
+    expect(screen.getByRole('radio', { name: 'ซันนี่' })).toHaveAttribute('aria-checked', 'true');
+    expect(await screen.findByRole('img', { name: 'อวาตาร์ ซันนี่' }, { timeout: 3000 })).toBeInTheDocument();
   });
 
   it(`limits interests to ${MAX_INTERESTS}`, async () => {
@@ -84,7 +84,7 @@ describe('Profile creation', () => {
       }),
     );
     renderFlow();
-    fireEvent.click(await screen.findByRole('radio', { name: 'พิรุณ' }));
+    fireEvent.click(await screen.findByRole('radio', { name: 'ปุยฝ้าย' }));
     await toInterests();
     fireEvent.click(screen.getAllByRole('button', { pressed: false })[0]);
     fireEvent.click(screen.getByRole('button', { name: 'ต่อไป' }));

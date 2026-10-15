@@ -1,4 +1,4 @@
-import type { CharacterLook, HairStyle } from '../../data/avatars';
+import type { Accessory, CharacterLook, HairStyle } from '../../data/avatars';
 
 const INK = '#2B1B17';
 const CHEEK = '#F7A6B8';
@@ -28,6 +28,26 @@ function HairBack({ style, hair, accent }: { style: HairStyle; hair: string; acc
         <>
           <circle cx={100} cy={30} r={20} fill={hair} />
           <rect x={88} y={44} width={24} height={6} rx={3} fill={accent} />
+        </>
+      );
+    case 'ponytail':
+      return (
+        <>
+          <path d="M138 58 C178 64 184 130 164 166 C158 134 152 104 128 80Z" fill={hair} />
+          <circle cx={144} cy={64} r={6} fill={accent} />
+        </>
+      );
+    case 'wavy':
+      return <path d="M46 100 C40 50 72 30 100 30 C128 30 160 50 154 100 C168 126 150 146 166 176 C140 192 60 192 34 176 C50 146 32 126 46 100Z" fill={hair} />;
+    case 'headscarf':
+      return <path d="M42 106 C38 48 70 24 100 24 C130 24 162 48 158 106 C162 142 152 164 138 172 L62 172 C48 164 38 142 42 106Z" fill={hair} />;
+    case 'puffs':
+      return (
+        <>
+          <circle cx={58} cy={46} r={22} fill={hair} />
+          <circle cx={142} cy={46} r={22} fill={hair} />
+          <rect x={70} y={56} width={10} height={6} rx={3} fill={accent} transform="rotate(30 75 59)" />
+          <rect x={120} y={56} width={10} height={6} rx={3} fill={accent} transform="rotate(-30 125 59)" />
         </>
       );
     default:
@@ -67,10 +87,50 @@ function HairFront({ style, hair, accent }: { style: HairStyle; hair: string; ac
           <circle cx={100} cy={34} r={4} fill={accent} stroke="#000" strokeOpacity={0.15} />
         </>
       );
+    case 'headscarf':
+      return <path d="M50 100 C50 56 76 38 100 38 C124 38 150 56 150 100 C142 74 124 62 100 62 C76 62 58 74 50 100Z" fill={hair} />;
+    case 'puffs':
+      return <path d={SHORT_CAP} fill={hair} />;
+    case 'undercut':
+      return <path d="M52 90 C50 52 78 34 106 34 C134 34 154 52 150 82 C138 66 118 60 98 64 C80 68 64 78 52 90Z" fill={hair} />;
     case 'spiky':
       return <path d="M50 98 C46 58 72 38 100 38 C128 38 154 58 150 98 L142 78 L132 88 L122 72 L110 84 L100 68 L90 84 L78 72 L68 88 L58 78 Z" fill={hair} />;
     default:
       return <path d={CAP} fill={hair} />;
+  }
+}
+
+function AccessoryLayer({ kind, accent }: { kind: Accessory; accent: string }) {
+  switch (kind) {
+    case 'glasses':
+      return (
+        <g fill="#FFFFFF" fillOpacity={0.18} stroke={INK} strokeWidth={2.6}>
+          <circle cx={82} cy={105} r={11} />
+          <circle cx={118} cy={105} r={11} />
+          <path d="M93 104 Q100 99 107 104" fill="none" />
+        </g>
+      );
+    case 'headphones':
+      return (
+        <>
+          <path d="M46 100 C42 38 158 38 154 100" stroke={accent} strokeWidth={7} strokeLinecap="round" fill="none" />
+          <rect x={38} y={90} width={16} height={28} rx={7} fill={accent} />
+          <rect x={146} y={90} width={16} height={28} rx={7} fill={accent} />
+        </>
+      );
+    case 'freckles':
+      return (
+        <g fill="#C27A55" opacity={0.6}>
+          <circle cx={64} cy={112} r={1.6} />
+          <circle cx={70} cy={109} r={1.6} />
+          <circle cx={74} cy={114} r={1.6} />
+          <circle cx={126} cy={114} r={1.6} />
+          <circle cx={130} cy={109} r={1.6} />
+          <circle cx={136} cy={112} r={1.6} />
+        </g>
+      );
+    default:
+      return null;
   }
 }
 
@@ -82,8 +142,8 @@ interface CharacterAvatarProps {
 }
 
 export function CharacterAvatar({ look, framing = 'full', className = '', title }: CharacterAvatarProps) {
-  const { skin, hair, hairStyle, shirt, pants, accent } = look;
-  const lashes = hairStyle === 'long' || hairStyle === 'pigtails' || hairStyle === 'bun' || hairStyle === 'bob';
+  const { skin, hair, hairStyle, shirt, pants, accent, accessory = 'none' } = look;
+  const lashes = ['long', 'pigtails', 'bun', 'bob', 'ponytail', 'wavy', 'headscarf', 'puffs'].includes(hairStyle);
   const viewBox = framing === 'bust' ? '26 8 148 156' : '0 0 200 250';
 
   return (
@@ -122,8 +182,12 @@ export function CharacterAvatar({ look, framing = 'full', className = '', title 
       <rect x={92} y={136} width={16} height={14} rx={4} fill={skin} />
       <path d="M88 146 Q100 156 112 146" stroke="#FFFFFF" strokeOpacity={0.7} strokeWidth={3} fill="none" strokeLinecap="round" />
 
-      <circle cx={52} cy={104} r={9} fill={skin} />
-      <circle cx={148} cy={104} r={9} fill={skin} />
+      {hairStyle !== 'headscarf' && (
+        <>
+          <circle cx={52} cy={104} r={9} fill={skin} />
+          <circle cx={148} cy={104} r={9} fill={skin} />
+        </>
+      )}
       <ellipse cx={100} cy={100} rx={50} ry={46} fill={skin} />
 
       <HairFront style={hairStyle} hair={hair} accent={accent} />
@@ -142,6 +206,7 @@ export function CharacterAvatar({ look, framing = 'full', className = '', title 
       <ellipse cx={70} cy={117} rx={8} ry={5} fill={CHEEK} opacity={0.85} />
       <ellipse cx={130} cy={117} rx={8} ry={5} fill={CHEEK} opacity={0.85} />
       <path d="M94 118 q6 7 12 0" stroke={MOUTH} strokeWidth={3} strokeLinecap="round" fill="none" />
+      <AccessoryLayer kind={accessory} accent={accent} />
     </svg>
   );
 }

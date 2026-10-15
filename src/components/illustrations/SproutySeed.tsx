@@ -1,8 +1,25 @@
 import { useId } from 'react';
+import { motion } from 'framer-motion';
+
+interface SproutySeedProps {
+  size?: number;
+  className?: string;
+  /** Where Sprouty is looking, each from -1 (left/up) to 1 (right/down). */
+  look?: { x: number; y: number };
+  blinking?: boolean;
+  /** Changes on every tap; Sprouty does a small happy hop. */
+  hop?: number;
+}
+
+const SPRING = { type: 'spring', stiffness: 160, damping: 14 } as const;
+const fill = { transformBox: 'fill-box', transformOrigin: 'center' } as const;
 
 /** Sprouty as a glossy seed with two leaves, sitting in soil (intro screen artwork). */
-export function SproutySeed({ size = 220, className = '' }: { size?: number; className?: string }) {
+export function SproutySeed({ size = 220, className = '', look = { x: 0, y: 0 }, blinking = false, hop = 0 }: SproutySeedProps) {
   const id = useId().replace(/:/g, '');
+  const lx = Math.max(-1, Math.min(1, look.x));
+  const ly = Math.max(-1, Math.min(1, look.y));
+
   return (
     <svg width={size} height={size} viewBox="0 0 240 240" className={className} role="img" aria-label="Sprouty เมล็ดพันธุ์ยิ้มแย้มที่มีใบไม้สองใบ">
       <defs>
@@ -29,26 +46,49 @@ export function SproutySeed({ size = 220, className = '' }: { size?: number; cla
       <ellipse cx="120" cy="214" rx="114" ry="25" fill={`url(#${id}-soil)`} />
       <ellipse cx="120" cy="206" rx="66" ry="10" fill="#2B1C12" opacity={0.35} />
 
-      {/* stem + leaves */}
-      <path d="M120 92 C121 78 122 70 124 60" stroke="#6FB64E" strokeWidth={6} strokeLinecap="round" fill="none" />
-      <path d="M123 66 C104 32 66 34 58 52 C74 74 106 78 123 66Z" fill={`url(#${id}-leafL)`} />
-      <path d="M123 66 C104 54 84 50 66 52" stroke="#3E7F2E" strokeWidth={2} fill="none" opacity={0.35} />
-      <path d="M125 60 C140 22 182 16 192 34 C178 60 146 70 125 60Z" fill={`url(#${id}-leafR)`} />
-      <path d="M125 60 C146 46 166 38 186 36" stroke="#3E7F2E" strokeWidth={2} fill="none" opacity={0.35} />
-      <ellipse cx="160" cy="34" rx="12" ry="5" fill="#FFFFFF" opacity={0.35} transform="rotate(-20 160 34)" />
+      {/* Whole seed tilts toward where Sprouty looks and hops on tap; it pivots at the soil. */}
+      <motion.g
+        style={{ transformOrigin: '120px 206px' }}
+        animate={{ rotate: lx * 9 }}
+        transition={SPRING}
+      >
+        <motion.g
+          key={hop}
+          style={{ transformOrigin: '120px 206px' }}
+          initial={hop ? { y: 0, scaleY: 1 } : false}
+          animate={hop ? { y: [0, -14, 0, -4, 0], scaleY: [1, 1.04, 0.94, 1.01, 1] } : undefined}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+        >
+          {/* stem + leaves (they sway a little the other way) */}
+          <motion.g style={{ transformOrigin: '122px 92px' }} animate={{ rotate: -lx * 6 }} transition={SPRING}>
+            <path d="M120 92 C121 78 122 70 124 60" stroke="#6FB64E" strokeWidth={6} strokeLinecap="round" fill="none" />
+            <path d="M123 66 C104 32 66 34 58 52 C74 74 106 78 123 66Z" fill={`url(#${id}-leafL)`} />
+            <path d="M123 66 C104 54 84 50 66 52" stroke="#3E7F2E" strokeWidth={2} fill="none" opacity={0.35} />
+            <path d="M125 60 C140 22 182 16 192 34 C178 60 146 70 125 60Z" fill={`url(#${id}-leafR)`} />
+            <path d="M125 60 C146 46 166 38 186 36" stroke="#3E7F2E" strokeWidth={2} fill="none" opacity={0.35} />
+            <ellipse cx="160" cy="34" rx="12" ry="5" fill="#FFFFFF" opacity={0.35} transform="rotate(-20 160 34)" />
+          </motion.g>
 
-      {/* seed body */}
-      <path d="M120 88 C164 88 186 128 184 160 C182 192 154 208 120 208 C86 208 58 192 56 160 C54 128 76 88 120 88Z" fill={`url(#${id}-body)`} />
-      <ellipse cx="92" cy="118" rx="20" ry="12" fill="#FFFFFF" opacity={0.55} transform="rotate(-30 92 118)" />
+          {/* seed body */}
+          <path d="M120 88 C164 88 186 128 184 160 C182 192 154 208 120 208 C86 208 58 192 56 160 C54 128 76 88 120 88Z" fill={`url(#${id}-body)`} />
+          <ellipse cx="92" cy="118" rx="20" ry="12" fill="#FFFFFF" opacity={0.55} transform="rotate(-30 92 118)" />
 
-      {/* face */}
-      <ellipse cx="98" cy="152" rx="7.5" ry="9" fill="#3A2A1E" />
-      <ellipse cx="142" cy="152" rx="7.5" ry="9" fill="#3A2A1E" />
-      <circle cx="101" cy="148" r="2.6" fill="#FFFFFF" />
-      <circle cx="145" cy="148" r="2.6" fill="#FFFFFF" />
-      <ellipse cx="84" cy="168" rx="10" ry="6" fill="#F6A6A0" opacity={0.6} />
-      <ellipse cx="156" cy="168" rx="10" ry="6" fill="#F6A6A0" opacity={0.6} />
-      <path d="M110 170 Q120 180 130 170" stroke="#3A2A1E" strokeWidth={3.5} strokeLinecap="round" fill="none" />
+          {/* face slides toward the look direction */}
+          <motion.g animate={{ x: lx * 9, y: ly * 6 }} transition={SPRING}>
+            <motion.g style={fill} animate={{ scaleY: blinking ? 0.1 : 1 }} transition={{ duration: 0.08 }}>
+              <ellipse cx="98" cy="152" rx="7.5" ry="9" fill="#3A2A1E" />
+              <ellipse cx="142" cy="152" rx="7.5" ry="9" fill="#3A2A1E" />
+              <motion.g animate={{ x: lx * 2.5, y: ly * 2 }} transition={SPRING}>
+                <circle cx="101" cy="148" r="2.6" fill="#FFFFFF" />
+                <circle cx="145" cy="148" r="2.6" fill="#FFFFFF" />
+              </motion.g>
+            </motion.g>
+            <ellipse cx="84" cy="168" rx="10" ry="6" fill="#F6A6A0" opacity={0.6} />
+            <ellipse cx="156" cy="168" rx="10" ry="6" fill="#F6A6A0" opacity={0.6} />
+            <path d="M110 170 Q120 180 130 170" stroke="#3A2A1E" strokeWidth={3.5} strokeLinecap="round" fill="none" />
+          </motion.g>
+        </motion.g>
+      </motion.g>
     </svg>
   );
 }

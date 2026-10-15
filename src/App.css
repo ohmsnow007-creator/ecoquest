@@ -58,8 +58,9 @@
 
 .intro-bubble {
   position: relative;
-  max-width: 15rem;
-  padding: 1rem 1.25rem;
+  max-width: min(14.5rem, 70vw);
+  min-height: 4.6rem;
+  padding: 0.8rem 1rem;
   border-radius: 1.5rem;
   background: rgb(255 255 255 / 0.92);
   box-shadow: 0 10px 30px rgb(80 60 10 / 0.18);
