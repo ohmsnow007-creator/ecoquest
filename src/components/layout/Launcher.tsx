@@ -1,12 +1,13 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { AnimatePresence, motion, useMotionValue, useTransform, animate, useReducedMotion, type PanInfo } from 'framer-motion';
 import { ChevronsRight, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { SproutySeed } from '../illustrations/SproutySeed';
 import { markSplashSeen } from '../../utils/session';
 import { useGame } from '../../store/GameContext';
 import { SPROUTY_TIPS, nextTipOrder, type SproutyTip } from '../../data/sproutyTips';
 
-const SESSION_KEY = 'ecoquest_launcher_open';
+export const SKIP_INTRO_TEST_KEY = 'ecoquest_skip_intro_in_tests';
 const KNOB = 48;
 const UNLOCK_AT = 0.85;
 
@@ -16,20 +17,13 @@ export function useCloseApp() {
   return useContext(LauncherContext);
 }
 
-function readOpen(): boolean {
+/** The intro shows on every page load. Only the test suite may skip it, to test the app behind it. */
+function startOpen(): boolean {
+  if (import.meta.env.MODE !== 'test') return false;
   try {
-    return sessionStorage.getItem(SESSION_KEY) === '1';
+    return sessionStorage.getItem(SKIP_INTRO_TEST_KEY) === '1';
   } catch {
     return false;
-  }
-}
-
-function writeOpen(value: boolean) {
-  try {
-    if (value) sessionStorage.setItem(SESSION_KEY, '1');
-    else sessionStorage.removeItem(SESSION_KEY);
-  } catch {
-    // Storage unavailable (private mode); the intro still works for this page view.
   }
 }
 
@@ -290,19 +284,21 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
   );
 }
 
-/** Shows the intro once per browser session on every screen size; sliding it unlocks the app. */
+/**
+ * Shows the intro every time the site is opened, on every screen size. Unlocking goes to Home for
+ * an existing player and to Welcome for a new one.
+ */
 export function Launcher({ children }: { children: ReactNode }) {
-  const [isOpen, setIsOpen] = useState(readOpen);
+  const { profile } = useGame();
+  const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(startOpen);
 
   const open = () => {
     markSplashSeen();
-    writeOpen(true);
+    navigate(profile ? '/home' : '/welcome', { replace: true });
     setIsOpen(true);
   };
-  const close = () => {
-    writeOpen(false);
-    setIsOpen(false);
-  };
+  const close = () => setIsOpen(false);
 
   if (!isOpen) return <IntroScreen onUnlock={open} />;
   return <LauncherContext.Provider value={close}>{children}</LauncherContext.Provider>;

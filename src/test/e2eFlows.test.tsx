@@ -7,6 +7,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, within, cleanup } from '@testing-library/react';
 import App from '../App';
+import { SKIP_INTRO_TEST_KEY } from '../components/layout/Launcher';
 import { missions } from '../data/missions';
 import { storageService, CORRUPT_BACKUP_SUFFIX } from '../services/storageService';
 import { evaluateMissionCompletion } from '../services/rewardService';
@@ -43,7 +44,7 @@ beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
   // Skip the slide-to-unlock intro; it has its own tests below.
-  sessionStorage.setItem('ecoquest_launcher_open', '1');
+  sessionStorage.setItem(SKIP_INTRO_TEST_KEY, '1');
   window.location.hash = '';
 });
 
@@ -172,23 +173,35 @@ describe('Flow F — Escape cancels a destructive dialog', () => {
 });
 
 describe('Intro — slide to unlock', () => {
-  it('shows on every screen size before the app, and unlocks with the keyboard', async () => {
+  it('a new player sees the intro first, even on a deep link, and goes to Welcome', async () => {
     sessionStorage.clear();
-    openApp('#/');
+    openApp('#/missions');
     expect(screen.getByRole('heading', { name: /ปลูกวันนี้/ })).toBeInTheDocument();
-    expect(screen.queryByText('สวัสดี Tester')).not.toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole('button', { name: /เลื่อนเพื่อเริ่มต้น/ }), { key: 'Enter' });
     await vi.waitFor(() => expect(window.location.hash).toBe('#/welcome'));
-    expect(sessionStorage.getItem('ecoquest_launcher_open')).toBe('1');
   });
 
-  it('greets a returning player and opens home after unlocking', async () => {
+  it('an existing player sees the intro first, then goes to Home', async () => {
     sessionStorage.clear();
     seedProfile();
-    openApp('#/');
+    openApp('#/settings');
+    expect(screen.getByRole('heading', { name: /ปลูกวันนี้/ })).toBeInTheDocument();
     expect(screen.getByText('Tester')).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole('button', { name: /เลื่อนเพื่อเข้าเกม/ }), { key: 'Enter' });
     expect(await screen.findByText('สวัสดี Tester', undefined, { timeout: 5000 })).toBeInTheDocument();
+    expect(window.location.hash).toBe('#/home');
+  });
+
+  it('shows again every time the site is opened', async () => {
+    sessionStorage.clear();
+    seedProfile();
+    openApp('#/');
+    fireEvent.keyDown(screen.getByRole('button', { name: /เลื่อนเพื่อเข้าเกม/ }), { key: 'Enter' });
+    await screen.findByText('สวัสดี Tester', undefined, { timeout: 5000 });
+
+    refresh('#/home');
+    expect(screen.getByRole('heading', { name: /ปลูกวันนี้/ })).toBeInTheDocument();
+    expect(screen.queryByText('สวัสดี Tester')).not.toBeInTheDocument();
   });
 });
 
