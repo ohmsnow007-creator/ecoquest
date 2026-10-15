@@ -50,6 +50,7 @@ export interface PlayerProfile {
   preferences: {
     reducedMotion: boolean;
     selectedGoalIds: string[];
+    profileColor?: string;
   };
 }
 

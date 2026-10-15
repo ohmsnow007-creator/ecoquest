@@ -20,6 +20,12 @@
   /* Playful accent for large onboarding headlines and decoration only (3.6:1 on white — large text only). */
   --color-sunset: #D9650A;
   --color-cream: #FFFBF2;
+  --color-sand: #F6EEE7;
+  /* Pastel tag colors for chips and profile backdrops (always with dark text). */
+  --color-tag-lavender: #E4E0FF;
+  --color-tag-sky: #CFE8FF;
+  --color-tag-peach: #FFD8B5;
+  --color-tag-yellow: #FBF19B;
 
   --color-white: #FFFFFF;
   --color-black: #000000;

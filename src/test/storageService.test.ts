@@ -10,15 +10,35 @@ describe('storageService.getProfile', () => {
     expect(storageService.getProfile()).toBeNull();
   });
 
-  it('returns a valid profile', () => {
-    const profile = { id: 'p1', displayName: 'Test', avatarId: 'avatar-leaf', createdAt: new Date().toISOString() };
-    localStorage.setItem('ecoquest_profile', JSON.stringify(profile));
-    expect(storageService.getProfile()).toEqual(profile);
+  it('returns a valid profile and fills missing preferences with defaults', () => {
+    const createdAt = new Date().toISOString();
+    localStorage.setItem('ecoquest_profile', JSON.stringify({ id: 'p1', displayName: 'Test', avatarId: 'avatar-sun', createdAt }));
+    const p = storageService.getProfile()!;
+    expect(p).toMatchObject({ id: 'p1', displayName: 'Test', avatarId: 'avatar-sun', createdAt });
+    expect(p.preferences).toEqual({ reducedMotion: false, selectedGoalIds: [], profileColor: 'mint' });
   });
 
-  it('returns null for invalid data', () => {
+  it('returns null for invalid JSON', () => {
     localStorage.setItem('ecoquest_profile', 'not json');
     expect(storageService.getProfile()).toBeNull();
+  });
+
+  it('returns null when the name is unusable', () => {
+    localStorage.setItem('ecoquest_profile', JSON.stringify({ id: 'p1', displayName: '   ', avatarId: 'avatar-leaf' }));
+    expect(storageService.getProfile()).toBeNull();
+  });
+
+  it('repairs unknown avatar, color and interests', () => {
+    localStorage.setItem(
+      'ecoquest_profile',
+      JSON.stringify({
+        id: 'p1', displayName: 'Test', avatarId: 'http://evil.example/x.png',
+        preferences: { reducedMotion: 'yes', profileColor: 'neon', selectedGoalIds: ['goal-waste', 'nope', 42, 'goal-waste'] },
+      }),
+    );
+    const p = storageService.getProfile()!;
+    expect(p.avatarId).toBe('avatar-leaf');
+    expect(p.preferences).toEqual({ reducedMotion: false, selectedGoalIds: ['goal-waste'], profileColor: 'mint' });
   });
 });
 
@@ -31,11 +51,37 @@ describe('storageService.getProgress', () => {
   });
 
   it('migrates missing quizCompletions', () => {
-    localStorage.setItem('ecoquest_progress', JSON.stringify({
-      totalXp: 100, completions: [], unlockedBadges: [],
-    }));
+    localStorage.setItem('ecoquest_progress', JSON.stringify({ totalXp: 0, completions: [], unlockedBadges: [] }));
+    expect(storageService.getProgress().quizCompletions).toEqual([]);
+  });
+
+  it('falls back to defaults for non-object data', () => {
+    localStorage.setItem('ecoquest_progress', JSON.stringify([1, 2, 3]));
+    expect(storageService.getProgress()).toEqual(storageService.getDefaultProgress());
+  });
+
+  it('drops malformed records and recomputes XP from real records', () => {
+    localStorage.setItem(
+      'ecoquest_progress',
+      JSON.stringify({
+        totalXp: 99999,
+        completions: [
+          { id: 'c1', missionId: 'waste-001', completedAt: '2026-10-15T10:00:00Z', localDate: '2026-10-15', xpAwarded: 20, completionType: 'self-reported' },
+          { id: 'c2', missionId: 'x', completedAt: 'x', localDate: 'yesterday', xpAwarded: 500, completionType: 'self-reported' },
+          'garbage',
+        ],
+        quizCompletions: [
+          { quizId: 'q1', completedAt: '2026-10-15T10:00:00Z', correct: true, xpAwarded: 15 },
+          { quizId: 'q2', completedAt: '2026-10-15T10:00:00Z', correct: 'maybe', xpAwarded: 15 },
+        ],
+        unlockedBadges: [{ badgeId: 'b1', unlockedAt: 't' }, { badgeId: 'b1', unlockedAt: 't' }, { nope: true }],
+      }),
+    );
     const p = storageService.getProgress();
-    expect(p.quizCompletions).toEqual([]);
+    expect(p.completions.map((c) => c.id)).toEqual(['c1']);
+    expect(p.quizCompletions.map((q) => q.quizId)).toEqual(['q1']);
+    expect(p.unlockedBadges).toHaveLength(1);
+    expect(p.totalXp).toBe(35);
   });
 });
 

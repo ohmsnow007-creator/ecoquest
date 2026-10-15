@@ -1,4 +1,6 @@
-import type { PlayerProfile, PlayerProgress } from '../types';
+import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, QuizCompletion, MissionType } from '../types';
+import { validateDisplayName } from '../utils/profile';
+import { DEFAULT_AVATAR_ID, DEFAULT_PROFILE_COLOR, INTERESTS, MAX_INTERESTS, isKnownAvatar, isKnownProfileColor } from '../data/avatars';
 
 const STORAGE_KEYS = {
   profile: 'ecoquest_profile',
@@ -6,79 +8,121 @@ const STORAGE_KEYS = {
 } as const;
 
 const CURRENT_SCHEMA_VERSION = 1;
+const MISSION_TYPES: MissionType[] = ['educational', 'simulation', 'self-reported'];
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+type Obj = Record<string, unknown>;
+const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
+const isStr = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
+const isXp = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0;
 
 function getDefaultProgress(): PlayerProgress {
+  return { totalXp: 0, completions: [], unlockedBadges: [], quizCompletions: [], schemaVersion: CURRENT_SCHEMA_VERSION };
+}
+
+// Returns a usable profile, repairing optional fields; null when the core identity is unusable.
+export function sanitizeProfile(data: unknown): PlayerProfile | null {
+  if (!isObj(data) || !isStr(data.id) || typeof data.displayName !== 'string') return null;
+  const name = validateDisplayName(data.displayName);
+  if (!name.ok) return null;
+
+  const prefs = isObj(data.preferences) ? data.preferences : {};
+  const knownInterests = new Set(INTERESTS.map((i) => i.id));
+  const goals = Array.isArray(prefs.selectedGoalIds)
+    ? [...new Set(prefs.selectedGoalIds.filter((g): g is string => typeof g === 'string' && knownInterests.has(g)))].slice(0, MAX_INTERESTS)
+    : [];
+  const now = new Date().toISOString();
+
   return {
-    totalXp: 0,
-    completions: [],
-    unlockedBadges: [],
-    quizCompletions: [],
-    schemaVersion: CURRENT_SCHEMA_VERSION,
+    id: data.id,
+    displayName: name.value,
+    avatarId: isKnownAvatar(data.avatarId) ? data.avatarId : DEFAULT_AVATAR_ID,
+    createdAt: isStr(data.createdAt) ? data.createdAt : now,
+    updatedAt: isStr(data.updatedAt) ? data.updatedAt : now,
+    preferences: {
+      reducedMotion: prefs.reducedMotion === true,
+      selectedGoalIds: goals,
+      profileColor: isKnownProfileColor(prefs.profileColor) ? prefs.profileColor : DEFAULT_PROFILE_COLOR,
+    },
   };
 }
 
-function isValidProfile(data: unknown): data is PlayerProfile {
-  if (!data || typeof data !== 'object') return false;
-  const d = data as Record<string, unknown>;
-  return typeof d.id === 'string' && typeof d.displayName === 'string' && typeof d.avatarId === 'string';
+function sanitizeCompletion(v: unknown): MissionCompletion | null {
+  if (!isObj(v) || !isStr(v.id) || !isStr(v.missionId) || !isStr(v.completedAt)) return null;
+  if (typeof v.localDate !== 'string' || !DATE_RE.test(v.localDate) || !isXp(v.xpAwarded)) return null;
+  if (!MISSION_TYPES.includes(v.completionType as MissionType)) return null;
+  return {
+    id: v.id,
+    missionId: v.missionId,
+    completedAt: v.completedAt,
+    localDate: v.localDate,
+    xpAwarded: v.xpAwarded,
+    completionType: v.completionType as MissionType,
+    ...(typeof v.note === 'string' ? { note: v.note } : {}),
+  };
 }
 
-function isValidProgress(data: unknown): data is PlayerProgress {
-  if (!data || typeof data !== 'object') return false;
-  const d = data as Record<string, unknown>;
-  return typeof d.totalXp === 'number' && Array.isArray(d.completions);
+function sanitizeBadge(v: unknown): BadgeRecord | null {
+  return isObj(v) && isStr(v.badgeId) && isStr(v.unlockedAt) ? { badgeId: v.badgeId, unlockedAt: v.unlockedAt } : null;
+}
+
+function sanitizeQuiz(v: unknown): QuizCompletion | null {
+  if (!isObj(v) || !isStr(v.quizId) || !isStr(v.completedAt) || typeof v.correct !== 'boolean' || !isXp(v.xpAwarded)) return null;
+  return { quizId: v.quizId, completedAt: v.completedAt, correct: v.correct, xpAwarded: v.xpAwarded };
+}
+
+function cleanList<T>(v: unknown, fn: (x: unknown) => T | null): T[] {
+  return Array.isArray(v) ? v.map(fn).filter((x): x is T => x !== null) : [];
+}
+
+// Keeps every well-formed record and drops the rest; totals are recomputed from the kept records.
+export function sanitizeProgress(data: unknown): PlayerProgress {
+  if (!isObj(data)) return getDefaultProgress();
+  const completions = cleanList(data.completions, sanitizeCompletion);
+  const quizCompletions = cleanList(data.quizCompletions, sanitizeQuiz);
+  const seenBadges = new Set<string>();
+  const unlockedBadges = cleanList(data.unlockedBadges, sanitizeBadge).filter((b) => !seenBadges.has(b.badgeId) && seenBadges.add(b.badgeId));
+  const totalXp =
+    completions.reduce((s, c) => s + c.xpAwarded, 0) + quizCompletions.reduce((s, q) => s + q.xpAwarded, 0);
+  return { totalXp, completions, unlockedBadges, quizCompletions, schemaVersion: CURRENT_SCHEMA_VERSION };
+}
+
+function readJson(key: string): unknown {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeJson(key: string, value: unknown, label: string): boolean {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (e) {
+    console.error(`Failed to save ${label}:`, e);
+    return false;
+  }
 }
 
 export const storageService = {
+  getDefaultProgress,
+
   getProfile(): PlayerProfile | null {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.profile);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (!isValidProfile(parsed)) return null;
-      return parsed;
-    } catch {
-      return null;
-    }
+    return sanitizeProfile(readJson(STORAGE_KEYS.profile));
   },
 
   saveProfile(profile: PlayerProfile): boolean {
-    try {
-      localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(profile));
-      return true;
-    } catch (e) {
-      console.error('Failed to save profile:', e);
-      return false;
-    }
+    return writeJson(STORAGE_KEYS.profile, profile, 'profile');
   },
 
   getProgress(): PlayerProgress {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.progress);
-      if (!raw) return getDefaultProgress();
-      const parsed = JSON.parse(raw);
-      if (!isValidProgress(parsed)) return getDefaultProgress();
-      if (!parsed.schemaVersion) {
-        parsed.schemaVersion = CURRENT_SCHEMA_VERSION;
-      }
-      if (!parsed.unlockedBadges) {
-        parsed.unlockedBadges = [];
-      }
-      if (!parsed.quizCompletions) {
-        parsed.quizCompletions = [];
-      }
-      return parsed;
-    } catch {
-      return getDefaultProgress();
-    }
+    return sanitizeProgress(readJson(STORAGE_KEYS.progress));
   },
 
-  saveProgress(progress: PlayerProgress): void {
-    try {
-      localStorage.setItem(STORAGE_KEYS.progress, JSON.stringify(progress));
-    } catch (e) {
-      console.error('Failed to save progress:', e);
-    }
+  saveProgress(progress: PlayerProgress): boolean {
+    return writeJson(STORAGE_KEYS.progress, progress, 'progress');
   },
 
   resetAll(): void {
@@ -91,8 +135,10 @@ export const storageService = {
   },
 
   exportData(): string {
-    const profile = this.getProfile();
-    const progress = this.getProgress();
-    return JSON.stringify({ profile, progress, exportedAt: new Date().toISOString() }, null, 2);
+    return JSON.stringify(
+      { profile: this.getProfile(), progress: this.getProgress(), exportedAt: new Date().toISOString() },
+      null,
+      2,
+    );
   },
 };

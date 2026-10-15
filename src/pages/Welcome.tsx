@@ -1,16 +1,12 @@
-import { useEffect, useId, useRef, useState, type ComponentType } from 'react';
+import { useEffect, useRef, useState, type ComponentType } from 'react';
 import { markSplashSeen, splashSeen } from '../utils/session';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion, type PanInfo } from 'framer-motion';
-import { ArrowLeft, ArrowRight, AlertCircle, ShieldCheck } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useGame } from '../store/GameContext';
-import { AVATARS } from '../data/icons';
-import { NAME_MAX_LENGTH, validateDisplayName } from '../utils/profile';
 import { WelcomeScene, GardenScene, SpaceScene } from '../components/illustrations/OnboardingScenes';
 import { Logo } from '../components/ui/Logo';
-import { ChunkyButton, IconButton } from '../components/ui/Button';
-import { AvatarPicker, Avatar } from '../components/ui/AvatarPicker';
-import { LevelBadge, XPBadge } from '../components/ui/Badges';
+import { ChunkyButton } from '../components/ui/Button';
 
 /* ---------------------------------- Splash --------------------------------- */
 
@@ -245,127 +241,9 @@ function Onboarding({ index, onIndex, onFinish, returningName }: OnboardingProps
   );
 }
 
-/* ------------------------------ Profile setup ------------------------------ */
-
-function ProfileSetup({ onBack, onCreated }: { onBack: () => void; onCreated: () => void }) {
-  const { createProfile } = useGame();
-  const [name, setName] = useState('');
-  const [avatar, setAvatar] = useState(AVATARS[0].id);
-  const [touched, setTouched] = useState(false);
-  const [saveError, setSaveError] = useState(false);
-  const nameId = useId();
-  const errorId = useId();
-  const countId = useId();
-
-  const result = validateDisplayName(name);
-  const showError = touched && !result.ok;
-  const previewName = result.ok ? result.value : 'ชื่อของคุณ';
-  const length = [...name.trim()].length;
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setTouched(true);
-    setSaveError(false);
-    if (!result.ok) {
-      document.getElementById(nameId)?.focus();
-      return;
-    }
-    if (createProfile(result.value, avatar)) onCreated();
-    else setSaveError(true);
-  };
-
-  return (
-    <div className="flex min-h-dvh flex-col bg-cream">
-      <header className="safe-top mx-auto flex w-full max-w-lg items-center justify-between px-4 pt-4">
-        <IconButton aria-label="ย้อนกลับไปหน้าแนะนำ" variant="surface" onClick={onBack}>
-          <ArrowLeft size={20} />
-        </IconButton>
-        <span className="font-display text-caption font-semibold text-muted">ขั้นตอนสุดท้าย</span>
-        <span className="w-11" aria-hidden="true" />
-      </header>
-
-      <motion.form
-        noValidate
-        onSubmit={submit}
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mx-auto w-full max-w-lg flex-1 px-6 pt-4 pb-10"
-      >
-        <h1 className="text-center font-display text-[2rem] leading-tight font-bold">
-          <span className="text-primary">สร้าง</span>
-          <span className="text-sunset">โปรไฟล์</span>
-        </h1>
-        <p className="mt-1 text-center text-caption text-muted">ไม่ต้องสมัครบัญชีออนไลน์ ใช้เพียงชื่อและอวาตาร์</p>
-
-        {/* Preview */}
-        <div className="mt-6 flex items-center gap-4 rounded-card border border-border bg-surface p-4 shadow-card" aria-live="polite">
-          <Avatar id={avatar} size="lg" />
-          <div className="min-w-0">
-            <p className="text-caption text-muted">ตัวอย่างโปรไฟล์</p>
-            <p className={`truncate font-display text-section font-semibold ${result.ok ? '' : 'text-muted'}`}>{previewName}</p>
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              <LevelBadge level={1} />
-              <XPBadge amount={0} />
-            </div>
-          </div>
-        </div>
-
-        <label htmlFor={nameId} className="mt-6 mb-1.5 block font-display text-body font-semibold text-primary">
-          ชื่อผู้เล่น
-        </label>
-        <input
-          id={nameId}
-          type="text"
-          inputMode="text"
-          autoComplete="nickname"
-          value={name}
-          maxLength={NAME_MAX_LENGTH + 10}
-          placeholder="เช่น นักรักษ์โลก"
-          onChange={(e) => setName(e.target.value)}
-          onBlur={() => name.length > 0 && setTouched(true)}
-          aria-invalid={showError}
-          aria-describedby={`${countId}${showError ? ` ${errorId}` : ''}`}
-          className={`min-h-12 w-full rounded-full border-2 bg-surface px-5 text-body placeholder:text-muted focus:outline-none ${
-            showError ? 'border-danger focus:border-danger' : 'border-border focus:border-primary'
-          }`}
-        />
-        <div className="mt-1 flex items-start justify-between gap-3 px-2 text-caption">
-          <span id={errorId} className="text-danger" role={showError ? 'alert' : undefined}>
-            {showError && !result.ok ? result.error : ''}
-          </span>
-          <span id={countId} className={length > NAME_MAX_LENGTH ? 'text-danger' : 'text-muted'}>
-            {length}/{NAME_MAX_LENGTH}
-          </span>
-        </div>
-
-        <p className="mt-5 mb-2 font-display text-body font-semibold text-primary">เลือกอวาตาร์</p>
-        <AvatarPicker value={avatar} onChange={setAvatar} />
-
-        {saveError && (
-          <div role="alert" className="mt-5 flex items-start gap-2 rounded-control border border-danger/40 bg-danger/5 p-3 text-caption">
-            <AlertCircle size={16} className="mt-0.5 shrink-0 text-danger" aria-hidden="true" />
-            <p>
-              <span className="font-semibold text-danger">บันทึกโปรไฟล์ไม่สำเร็จ</span> เบราว์เซอร์อาจปิดการเก็บข้อมูลไว้
-              (เช่น โหมดไม่ระบุตัวตน หรือพื้นที่เต็ม) กรุณาตรวจสอบการตั้งค่าแล้วลองอีกครั้ง
-            </p>
-          </div>
-        )}
-
-        <ChunkyButton type="submit" fullWidth className="mt-7">
-          เริ่มผจญภัย
-        </ChunkyButton>
-        <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-caption text-muted">
-          <ShieldCheck size={14} className="text-primary" aria-hidden="true" />
-          ข้อมูลเก็บไว้ในเครื่องนี้เท่านั้น ไม่มีการส่งออกไปภายนอก
-        </p>
-      </motion.form>
-    </div>
-  );
-}
-
 /* --------------------------------- Page ----------------------------------- */
 
-type Stage = 'splash' | 'intro' | 'profile';
+type Stage = 'splash' | 'intro';
 
 export function Welcome() {
   const { profile } = useGame();
@@ -380,24 +258,12 @@ export function Welcome() {
 
   if (stage === 'splash') return <SplashScreen onDone={finishSplash} />;
 
-  if (stage === 'profile' && !profile) {
-    return (
-      <ProfileSetup
-        onBack={() => {
-          setIndex(SLIDES.length - 1);
-          setStage('intro');
-        }}
-        onCreated={() => navigate('/home', { replace: true })}
-      />
-    );
-  }
-
   return (
     <Onboarding
       index={index}
       onIndex={setIndex}
       returningName={profile?.displayName}
-      onFinish={() => (profile ? navigate('/home') : setStage('profile'))}
+      onFinish={() => navigate(profile ? '/home' : '/welcome/profile')}
     />
   );
 }

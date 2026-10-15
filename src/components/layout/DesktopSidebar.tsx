@@ -36,7 +36,7 @@ export function DesktopSidebar() {
 
       <div className="mt-6 rounded-card bg-white/8 p-3">
         <div className="flex items-center gap-3">
-          <Avatar id={profile.avatarId} onDark />
+          <Avatar id={profile.avatarId} color={profile.preferences.profileColor} onDark />
           <div className="min-w-0">
             <p className="truncate text-body font-semibold">{profile.displayName}</p>
             <LevelBadge level={level} variant="onDark" />

@@ -8,6 +8,7 @@ import { badges as allBadges } from '../data/badges';
 import { missions } from '../data/missions';
 import { quizzes } from '../data/quizzes';
 import { getBadgeIcon } from '../data/icons';
+import { interestCategories } from '../data/avatars';
 import { WorldPreview } from '../components/world/WorldPreview';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card, SectionTitle } from '../components/ui/Card';
@@ -29,7 +30,10 @@ export function Dashboard() {
   const stage = getCurrentStage(progress.totalXp);
   const nextStage = getNextStage(progress.totalXp);
 
-  const dailyAvailable = missions.filter((m) => m.active && m.repeatPolicy === 'daily' && getMissionStatus(m.id) === 'available');
+  const preferred = interestCategories(profile.preferences.selectedGoalIds);
+  const dailyAvailable = missions
+    .filter((m) => m.active && m.repeatPolicy === 'daily' && getMissionStatus(m.id) === 'available')
+    .sort((a, b) => Number(preferred.has(b.category)) - Number(preferred.has(a.category)));
   const quizLeft = quizzes.filter((q) => !isQuizCompleted(q.id)).length;
 
   const recentBadges = progress.unlockedBadges
@@ -48,7 +52,7 @@ export function Dashboard() {
           <>
             <XPBadge amount={progress.totalXp} variant="solid" />
             <Link to="/settings" aria-label="ตั้งค่าโปรไฟล์" className="lg:hidden">
-              <Avatar id={profile.avatarId} size="sm" />
+              <Avatar id={profile.avatarId} color={profile.preferences.profileColor} size="sm" />
             </Link>
             <Link to="/settings" aria-label="ตั้งค่า" className="hidden h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-text shadow-card hover:bg-background lg:inline-flex">
               <Settings size={19} aria-hidden="true" />

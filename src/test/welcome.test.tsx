@@ -4,6 +4,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { MotionConfig } from 'framer-motion';
 import { GameProvider } from '../store/GameContext';
 import { Welcome } from '../pages/Welcome';
+import { ProfileCreation } from '../pages/ProfileCreation';
 import { validateDisplayName, NAME_MAX_LENGTH } from '../utils/profile';
 
 describe('validateDisplayName', () => {
@@ -29,6 +30,7 @@ function renderWelcome() {
         <GameProvider>
           <Routes>
             <Route path="/welcome" element={<Welcome />} />
+            <Route path="/welcome/profile" element={<ProfileCreation />} />
             <Route path="/home" element={<p>หน้าหลักจริง</p>} />
           </Routes>
         </GameProvider>
@@ -41,6 +43,9 @@ async function goToProfileSetup() {
   renderWelcome();
   fireEvent.click(await screen.findByRole('button', { name: /เริ่มต้นใช้งาน/ }));
   fireEvent.click(await screen.findByRole('button', { name: 'ข้าม' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'ต่อไป' }));
+  await screen.findByText(/เลือกได้สูงสุด/);
+  fireEvent.click(screen.getByRole('button', { name: 'ต่อไป' }));
   return screen.findByLabelText('ชื่อผู้เล่น');
 }
 
@@ -56,7 +61,7 @@ describe('Welcome onboarding', () => {
 
   it('blocks an empty name with a clear message', async () => {
     await goToProfileSetup();
-    fireEvent.click(screen.getByRole('button', { name: 'เริ่มผจญภัย' }));
+    fireEvent.click(screen.getByRole('button', { name: 'เริ่มภารกิจแรก' }));
     expect(await screen.findByText('กรุณากรอกชื่อผู้เล่น')).toBeInTheDocument();
     expect(localStorage.getItem('ecoquest_profile')).toBeNull();
   });
@@ -64,7 +69,7 @@ describe('Welcome onboarding', () => {
   it('saves a trimmed profile and goes to /home', async () => {
     const input = await goToProfileSetup();
     fireEvent.change(input, { target: { value: '  Ploy  ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'เริ่มผจญภัย' }));
+    fireEvent.click(screen.getByRole('button', { name: 'เริ่มภารกิจแรก' }));
     expect(await screen.findByText('หน้าหลักจริง')).toBeInTheDocument();
     const saved = JSON.parse(localStorage.getItem('ecoquest_profile')!);
     expect(saved.displayName).toBe('Ploy');
@@ -78,7 +83,7 @@ describe('Welcome onboarding', () => {
     });
     vi.spyOn(console, 'error').mockImplementation(() => {});
     fireEvent.change(input, { target: { value: 'Ploy' } });
-    fireEvent.click(screen.getByRole('button', { name: 'เริ่มผจญภัย' }));
+    fireEvent.click(screen.getByRole('button', { name: 'เริ่มภารกิจแรก' }));
     expect(await screen.findByText('บันทึกโปรไฟล์ไม่สำเร็จ')).toBeInTheDocument();
     expect(screen.queryByText('หน้าหลักจริง')).not.toBeInTheDocument();
   });

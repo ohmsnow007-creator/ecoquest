@@ -7,6 +7,7 @@ import { Launcher } from './components/layout/Launcher';
 import { AppShell } from './components/layout/AppShell';
 
 const Welcome = lazy(() => import('./pages/Welcome').then((m) => ({ default: m.Welcome })));
+const ProfileCreation = lazy(() => import('./pages/ProfileCreation').then((m) => ({ default: m.ProfileCreation })));
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
 const Missions = lazy(() => import('./pages/Missions').then((m) => ({ default: m.Missions })));
 const MissionDetail = lazy(() => import('./pages/MissionDetail').then((m) => ({ default: m.MissionDetail })));
@@ -30,6 +31,14 @@ function AppRoutes() {
         element={
           <Suspense fallback={<div className="min-h-dvh bg-primary" />}>
             <Welcome />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/welcome/profile"
+        element={
+          <Suspense fallback={<div className="min-h-dvh bg-sand" />}>
+            <ProfileCreation />
           </Suspense>
         }
       />

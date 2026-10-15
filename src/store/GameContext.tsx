@@ -5,6 +5,7 @@ import { missions } from '../data/missions';
 import { checkNewBadges } from '../utils/badges';
 import { getLocalDate } from '../utils/streak';
 import { getLevelFromXp } from '../utils/xp';
+import { createId } from '../utils/id';
 
 export interface Toast {
   id: string;
@@ -16,6 +17,22 @@ export type Celebration =
   | { id: string; type: 'level'; level: number }
   | { id: string; type: 'badge'; badgeId: string };
 
+export interface NewProfileInput {
+  name: string;
+  avatarId: string;
+  goalIds?: string[];
+  profileColor?: string;
+}
+
+export type CreateProfileResult = 'ok' | 'exists' | 'save-failed';
+
+export interface ProfileChanges {
+  name?: string;
+  avatarId?: string;
+  profileColor?: string;
+  goalIds?: string[];
+}
+
 interface GameState {
   profile: PlayerProfile | null;
   progress: PlayerProgress;
@@ -24,8 +41,8 @@ interface GameState {
 }
 
 interface GameActions {
-  createProfile: (name: string, avatarId: string, goalIds?: string[]) => boolean;
-  updateProfile: (name: string, avatarId: string) => void;
+  createProfile: (input: NewProfileInput) => CreateProfileResult;
+  updateProfile: (changes: ProfileChanges) => void;
   setReducedMotion: (value: boolean) => void;
   completeMission: (missionId: string, note?: string) => boolean;
   canCompleteMission: (missionId: string) => boolean;
@@ -91,23 +108,48 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (queued.length > 0) setCelebrations((c) => [...c, ...queued]);
   }, []);
 
-  const createProfile = useCallback((name: string, avatarId: string, goalIds: string[] = []): boolean => {
+  // Local demo mode allows exactly one profile, and a new profile always starts from empty progress.
+  const createProfile = useCallback((input: NewProfileInput): CreateProfileResult => {
+    if (profile || storageService.getProfile()) return 'exists';
     const now = new Date().toISOString();
     const next: PlayerProfile = {
-      id: crypto.randomUUID(),
-      displayName: name,
-      avatarId,
+      id: createId(),
+      displayName: input.name,
+      avatarId: input.avatarId,
       createdAt: now,
       updatedAt: now,
-      preferences: { reducedMotion: false, selectedGoalIds: goalIds },
+      preferences: {
+        reducedMotion: false,
+        selectedGoalIds: input.goalIds ?? [],
+        profileColor: input.profileColor,
+      },
     };
-    if (!storageService.saveProfile(next)) return false;
+    const fresh = storageService.getDefaultProgress();
+    if (!storageService.saveProfile(next) || !storageService.saveProgress(fresh)) {
+      storageService.resetAll();
+      return 'save-failed';
+    }
+    setProgress(fresh);
     setProfile(next);
-    return true;
-  }, []);
+    return 'ok';
+  }, [profile]);
 
-  const updateProfile = useCallback((name: string, avatarId: string) => {
-    setProfile((prev) => (prev ? { ...prev, displayName: name, avatarId, updatedAt: new Date().toISOString() } : prev));
+  const updateProfile = useCallback((changes: ProfileChanges) => {
+    setProfile((prev) =>
+      prev
+        ? {
+            ...prev,
+            displayName: changes.name ?? prev.displayName,
+            avatarId: changes.avatarId ?? prev.avatarId,
+            preferences: {
+              ...prev.preferences,
+              ...(changes.profileColor ? { profileColor: changes.profileColor } : {}),
+              ...(changes.goalIds ? { selectedGoalIds: changes.goalIds } : {}),
+            },
+            updatedAt: new Date().toISOString(),
+          }
+        : prev,
+    );
   }, []);
 
   const setReducedMotion = useCallback((value: boolean) => {
@@ -144,7 +186,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     const now = new Date();
     const completion: MissionCompletion = {
-      id: crypto.randomUUID(),
+      id: createId(),
       missionId,
       completedAt: now.toISOString(),
       localDate: getLocalDate(now),

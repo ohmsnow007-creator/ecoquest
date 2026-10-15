@@ -1,58 +1,78 @@
-import { AVATARS, getAvatar } from '../../data/icons';
+import { Check } from 'lucide-react';
+import { AVATAR_CHARACTERS, getCharacter, getProfileColor } from '../../data/avatars';
+import { CharacterAvatar } from '../avatar/CharacterAvatar';
 
 interface AvatarProps {
   id: string | undefined;
-  size?: 'sm' | 'md' | 'lg';
+  color?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   onDark?: boolean;
 }
 
 const AVATAR_SIZE = {
-  sm: { box: 'h-9 w-9', icon: 18 },
-  md: { box: 'h-12 w-12', icon: 22 },
-  lg: { box: 'h-16 w-16', icon: 30 },
+  sm: 'h-9 w-9',
+  md: 'h-12 w-12',
+  lg: 'h-16 w-16',
+  xl: 'h-40 w-40',
 };
 
-export function Avatar({ id, size = 'md', onDark = false }: AvatarProps) {
-  const { icon: Icon, label } = getAvatar(id);
-  const s = AVATAR_SIZE[size];
+export function Avatar({ id, color, size = 'md', onDark = false }: AvatarProps) {
+  const character = getCharacter(id);
+  const bg = getProfileColor(color).className;
   return (
     <span
       role="img"
-      aria-label={`อวาตาร์ ${label}`}
-      className={`inline-flex shrink-0 items-center justify-center rounded-full ${s.box} ${onDark ? 'bg-lime text-forest' : 'bg-mint text-forest'}`}
+      aria-label={`อวาตาร์ ${character.name}`}
+      className={`inline-flex shrink-0 items-end justify-center overflow-hidden rounded-full ${AVATAR_SIZE[size]} ${bg} ${onDark ? 'ring-2 ring-white/30' : ''}`}
     >
-      <Icon size={s.icon} aria-hidden="true" />
+      <CharacterAvatar look={character.look} framing="bust" className="h-full w-full" />
     </span>
   );
 }
 
-interface AvatarPickerProps {
+interface AvatarSelectorProps {
   value: string;
   onChange: (id: string) => void;
-  onDark?: boolean;
+  color?: string;
+  layout?: 'row' | 'grid';
 }
 
-export function AvatarPicker({ value, onChange, onDark = false }: AvatarPickerProps) {
+export function AvatarSelector({ value, onChange, color, layout = 'row' }: AvatarSelectorProps) {
+  const bg = getProfileColor(color).className;
+  const container =
+    layout === 'row'
+      ? 'scrollbar-hide -mx-6 flex gap-3 overflow-x-auto px-6 py-2'
+      : 'grid grid-cols-4 gap-3';
+
   return (
-    <div role="radiogroup" aria-label="เลือกอวาตาร์" className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-      {AVATARS.map(({ id, label, icon: Icon }) => {
+    <div role="radiogroup" aria-label="เลือกอวาตาร์" className={container}>
+      {AVATAR_CHARACTERS.map(({ id, name, look }) => {
         const active = id === value;
-        const base = onDark
-          ? active ? 'border-lime bg-white/15 text-white' : 'border-white/15 bg-white/5 text-white/80 hover:bg-white/10'
-          : active ? 'border-primary bg-primary/10 text-text' : 'border-border bg-surface text-muted hover:border-primary/40';
         return (
           <button
             key={id}
             type="button"
             role="radio"
             aria-checked={active}
+            aria-label={name}
             onClick={() => onChange(id)}
-            className={`flex min-h-11 flex-col items-center gap-1.5 rounded-control border-2 p-3 transition-colors ${base}`}
+            className="flex shrink-0 flex-col items-center gap-1"
           >
-            <span className={`flex h-10 w-10 items-center justify-center rounded-full ${onDark ? 'bg-lime text-forest' : 'bg-mint text-forest'}`} aria-hidden="true">
-              <Icon size={20} />
+            <span
+              className={`relative flex h-16 w-16 items-end justify-center overflow-visible rounded-full transition-transform ${bg} ${
+                active ? 'scale-105 ring-[3px] ring-text ring-offset-2 ring-offset-transparent' : 'opacity-80 hover:opacity-100'
+              }`}
+            >
+              <span className="h-full w-full overflow-hidden rounded-full">
+                <CharacterAvatar look={look} framing="bust" className="h-full w-full" />
+              </span>
+              {active && (
+                <span className="absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full bg-text text-white" aria-hidden="true">
+                  <Check size={14} strokeWidth={3} />
+                </span>
+              )}
             </span>
-            <span className="text-caption font-medium">{label}</span>
+            <span className={`text-caption ${active ? 'font-semibold text-text' : 'text-muted'}`}>{name}</span>
           </button>
         );
       })}
