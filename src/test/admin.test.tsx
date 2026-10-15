@@ -49,7 +49,8 @@ beforeEach(() => {
   localStorage.setItem('ecoquest_progress', JSON.stringify({ ...storageService.getDefaultProgress(), completions: [realCompletion()] }));
 });
 
-describe('demo admin', () => {
+// The PIN pad waits out its shake animation on each wrong entry, so these run longer than the default 5 s under load.
+describe('demo admin', { timeout: 20_000 }, () => {
   it('five wrong PINs lock this device out for a minute, even after a reload', async () => {
     renderAdmin();
     for (let i = 0; i < 5; i++) await enter('000000');

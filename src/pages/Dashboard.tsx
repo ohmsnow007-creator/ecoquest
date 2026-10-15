@@ -213,6 +213,7 @@ export function Dashboard() {
             todayCount={stats.todayMissions}
             streak={stats.streak}
             dailyComplete={dailyStatus.complete}
+            firstTime={progress.completions.length === 0}
             outfit={outfit}
           />
         </div>

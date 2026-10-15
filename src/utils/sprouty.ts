@@ -21,13 +21,16 @@ export interface GreetingInput {
   todayCount: number;
   streak: number;
   dailyComplete: boolean;
+  /** No mission recorded yet, ever: welcome them instead of telling them to rest. */
+  firstTime?: boolean;
 }
 
 /** What Sprouty says on Home, from the clock and the player's real records. */
-export function getSproutyGreeting({ hour, name, todayCount, streak, dailyComplete }: GreetingInput): { mood: SproutyMood; hello: string; line: string } {
+export function getSproutyGreeting({ hour, name, todayCount, streak, dailyComplete, firstTime = false }: GreetingInput): { mood: SproutyMood; hello: string; line: string } {
   const late = hour >= 22 || hour < 5;
   const hello = late ? `ดึกแล้วนะ ${name}` : hour < 12 ? `อรุณสวัสดิ์ ${name}!` : hour < 17 ? `สวัสดีตอนบ่าย ${name}!` : `สวัสดีตอนเย็น ${name}!`;
 
+  if (firstTime) return { mood: 'happy', hello, line: 'ยินดีต้อนรับ! เลือกภารกิจด้านล่างสักข้อ แล้วมาปลูกต้นกล้าต้นแรกด้วยกันนะ' };
   if (dailyComplete) return { mood: 'cheer', hello, line: late ? 'วันนี้ทำภารกิจประจำวันครบแล้ว พักผ่อนได้เต็มที่เลย!' : 'ทำภารกิจประจำวันครบแล้ว เก่งมาก!' };
   // The streak counts yesterday too, so it is still alive but ends tonight without a mission.
   if (streak > 0 && todayCount === 0) return { mood: 'worried', hello, line: `Streak ${streak} วันจะหายถ้าวันนี้ยังไม่ได้ทำภารกิจ มาทำสักข้อกันนะ` };

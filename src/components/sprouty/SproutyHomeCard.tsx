@@ -13,15 +13,16 @@ interface Props {
   todayCount: number;
   streak: number;
   dailyComplete: boolean;
+  firstTime?: boolean;
   now?: Date;
   outfit?: Outfit;
 }
 
 /** Sprouty on Home: greets by time of day, shows a mood from today's real records, and grows with the level. */
-export function SproutyHomeCard({ name, level, todayCount, streak, dailyComplete, now, outfit }: Props) {
+export function SproutyHomeCard({ name, level, todayCount, streak, dailyComplete, firstTime, now, outfit }: Props) {
   const reduce = useReducedMotion();
   const [hour] = useState(() => (now ?? new Date()).getHours());
-  const { mood, hello, line } = getSproutyGreeting({ hour, name, todayCount, streak, dailyComplete });
+  const { mood, hello, line } = getSproutyGreeting({ hour, name, todayCount, streak, dailyComplete, firstTime });
   const growth = getSproutyStage(level);
   const [hop, setHop] = useState(0);
   const [tip, setTip] = useState<number | null>(null);

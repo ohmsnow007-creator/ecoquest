@@ -224,7 +224,7 @@ function Onboarding({ index, onIndex, onFinish, returningName }: OnboardingProps
             </div>
             {index === 0 && (
               <div className="mt-4 space-y-1 text-center text-caption text-muted lg:text-left">
-                <p>ไม่ต้องใช้อุปกรณ์พิเศษ ใช้ได้ทันทีบนมือถือหรือคอมพิวเตอร์</p>
+                <p>ไม่ต้องใช้อุปกรณ์พิเศษ ใช้ได้ทันทีบนมือถือ และติดตั้งเป็นแอปได้</p>
                 {returningName && (
                   <p>
                     <button type="button" onClick={() => go(1)} className="min-h-11 font-semibold text-primary underline underline-offset-4">
