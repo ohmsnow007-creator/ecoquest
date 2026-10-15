@@ -14,7 +14,7 @@ interface ProgressBarProps {
 }
 
 const FILL: Record<Tone, string> = {
-  primary: 'bg-primary',
+  primary: 'bg-linear-to-r from-primary to-emerald',
   lime: 'bg-lime',
   warning: 'bg-warning',
 };
@@ -38,7 +38,7 @@ export function ProgressBar({ value, label, tone = 'primary', size = 'md', onDar
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuetext={valueText}
-        className={`${HEIGHT[size]} w-full overflow-hidden rounded-full ${onDark ? 'bg-white/15' : 'bg-border'}`}
+        className={`${HEIGHT[size]} w-full overflow-hidden rounded-full ${onDark ? 'bg-white/15' : 'bg-pale-mint'}`}
       >
         <motion.div
           className={`h-full rounded-full ${FILL[tone]}`}
@@ -75,7 +75,7 @@ export function ProgressRing({ value, size = 88, stroke = 8, onDark = false, lab
       aria-valuemax={100}
     >
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} className={onDark ? 'stroke-white/15' : 'stroke-border'} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} className={onDark ? 'stroke-white/15' : 'stroke-pale-mint'} />
         <motion.circle
           cx={size / 2}
           cy={size / 2}
@@ -84,7 +84,7 @@ export function ProgressRing({ value, size = 88, stroke = 8, onDark = false, lab
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circ}
-          className={onDark ? 'stroke-lime' : 'stroke-primary'}
+          className={onDark ? 'stroke-lime' : 'stroke-emerald'}
           initial={{ strokeDashoffset: circ }}
           animate={{ strokeDashoffset: circ - pct * circ }}
           transition={{ duration: 0.9, ease: 'easeOut' }}

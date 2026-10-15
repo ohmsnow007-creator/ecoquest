@@ -15,7 +15,7 @@ describe('storageService.getProfile', () => {
     localStorage.setItem('ecoquest_profile', JSON.stringify({ id: 'p1', displayName: 'Test', avatarId: 'avatar-sun', createdAt }));
     const p = storageService.getProfile()!;
     expect(p).toMatchObject({ id: 'p1', displayName: 'Test', avatarId: 'avatar-sun', createdAt });
-    expect(p.preferences).toEqual({ reducedMotion: false, selectedGoalIds: [], profileColor: 'mint' });
+    expect(p.preferences).toEqual({ reducedMotion: false, selectedGoalIds: [], profileColor: 'mint', soundEffects: false, inAppToasts: true, celebrations: true });
   });
 
   it('returns null for invalid JSON', () => {
@@ -38,7 +38,7 @@ describe('storageService.getProfile', () => {
     );
     const p = storageService.getProfile()!;
     expect(p.avatarId).toBe('avatar-leaf');
-    expect(p.preferences).toEqual({ reducedMotion: false, selectedGoalIds: ['goal-waste'], profileColor: 'mint' });
+    expect(p.preferences).toEqual({ reducedMotion: false, selectedGoalIds: ['goal-waste'], profileColor: 'mint', soundEffects: false, inAppToasts: true, celebrations: true });
   });
 });
 
@@ -47,12 +47,12 @@ describe('storageService.getProgress', () => {
     const p = storageService.getProgress();
     expect(p.totalXp).toBe(0);
     expect(p.completions).toEqual([]);
-    expect(p.quizCompletions).toEqual([]);
+    expect(p.quizAttempts).toEqual([]);
   });
 
-  it('migrates missing quizCompletions', () => {
+  it('defaults missing quiz attempts to an empty list', () => {
     localStorage.setItem('ecoquest_progress', JSON.stringify({ totalXp: 0, completions: [], unlockedBadges: [] }));
-    expect(storageService.getProgress().quizCompletions).toEqual([]);
+    expect(storageService.getProgress().quizAttempts).toEqual([]);
   });
 
   it('falls back to defaults for non-object data', () => {
@@ -79,7 +79,8 @@ describe('storageService.getProgress', () => {
     );
     const p = storageService.getProgress();
     expect(p.completions.map((c) => c.id)).toEqual(['c1']);
-    expect(p.quizCompletions.map((q) => q.quizId)).toEqual(['q1']);
+    expect(p.quizAttempts.map((q) => q.id)).toEqual(['legacy-q1']);
+    expect(p.quizAttempts[0]).toMatchObject({ legacy: true, correctCount: 1, total: 1, xpAwarded: 15 });
     expect(p.unlockedBadges).toHaveLength(1);
     expect(p.totalXp).toBe(35);
   });

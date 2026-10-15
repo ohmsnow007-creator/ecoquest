@@ -17,7 +17,11 @@ const Progress = lazy(() => import('./pages/Progress').then((m) => ({ default: m
 const Impact = lazy(() => import('./pages/Impact').then((m) => ({ default: m.Impact })));
 const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })));
 const Quiz = lazy(() => import('./pages/Quiz').then((m) => ({ default: m.Quiz })));
-const Ranking = lazy(() => import('./pages/Ranking').then((m) => ({ default: m.Ranking })));
+const QuizResult = lazy(() => import('./pages/QuizResult').then((m) => ({ default: m.QuizResult })));
+const Leaderboard = lazy(() => import('./pages/Leaderboard').then((m) => ({ default: m.Leaderboard })));
+const Install = lazy(() => import('./pages/Install').then((m) => ({ default: m.Install })));
+const NotFound = lazy(() => import('./pages/NotFound').then((m) => ({ default: m.NotFound })));
+const Profile = lazy(() => import('./pages/Profile').then((m) => ({ default: m.Profile })));
 
 function AppRoutes() {
   const { profile } = useGame();
@@ -52,10 +56,21 @@ function AppRoutes() {
         <Route path="/progress" element={guard(<Progress />)} />
         <Route path="/impact" element={guard(<Impact />)} />
         <Route path="/quiz" element={guard(<Quiz />)} />
-        <Route path="/ranking" element={guard(<Ranking />)} />
+        <Route path="/quiz/result" element={guard(<QuizResult />)} />
+        <Route path="/leaderboard" element={guard(<Leaderboard />)} />
+        <Route path="/ranking" element={<Navigate to="/leaderboard" replace />} />
+        <Route path="/profile" element={guard(<Profile />)} />
         <Route path="/settings" element={guard(<Settings />)} />
+        <Route path="/install" element={guard(<Install />)} />
       </Route>
-      <Route path="*" element={entry} />
+      <Route
+        path="*"
+        element={
+          <Suspense fallback={<div className="min-h-dvh bg-background" />}>
+            <NotFound />
+          </Suspense>
+        }
+      />
     </Routes>
   );
 }

@@ -1,40 +1,38 @@
+import { LEVELS, MAX_LEVEL, xpStepForLevel, type LevelConfig } from '../config/levels';
+
 export function xpForLevel(level: number): number {
-  return Math.floor(50 * Math.pow(level, 1.5));
+  return xpStepForLevel(level);
 }
 
 export function totalXpForLevel(level: number): number {
-  let total = 0;
-  for (let i = 1; i < level; i++) {
-    total += xpForLevel(i);
+  return LEVELS[Math.min(Math.max(level, 1), MAX_LEVEL) - 1].minXp;
+}
+
+export function getLevelConfig(totalXp: number): LevelConfig {
+  let current = LEVELS[0];
+  for (const l of LEVELS) {
+    if (totalXp >= l.minXp) current = l;
+    else break;
   }
-  return total;
+  return current;
 }
 
 export function getLevelFromXp(totalXp: number): number {
-  let level = 1;
-  let accumulated = 0;
-  while (true) {
-    const needed = xpForLevel(level);
-    if (accumulated + needed > totalXp) break;
-    accumulated += needed;
-    level++;
-  }
-  return level;
+  return getLevelConfig(totalXp).level;
 }
 
 export function getXpInCurrentLevel(totalXp: number): number {
-  const level = getLevelFromXp(totalXp);
-  return totalXp - totalXpForLevel(level);
+  return totalXp - getLevelConfig(totalXp).minXp;
 }
 
+/** XP needed to go from the start of the current level to the next one; 0 at the max level. */
 export function getXpToNextLevel(totalXp: number): number {
-  const level = getLevelFromXp(totalXp);
-  return xpForLevel(level);
+  const { level, minXp } = getLevelConfig(totalXp);
+  return level >= MAX_LEVEL ? 0 : LEVELS[level].minXp - minXp;
 }
 
 export function getLevelProgress(totalXp: number): number {
-  const current = getXpInCurrentLevel(totalXp);
   const needed = getXpToNextLevel(totalXp);
-  if (needed === 0) return 0;
-  return Math.min(current / needed, 1);
+  if (needed === 0) return 1;
+  return Math.min(getXpInCurrentLevel(totalXp) / needed, 1);
 }

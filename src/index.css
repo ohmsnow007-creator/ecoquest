@@ -4,28 +4,34 @@
 @theme {
   --color-*: initial;
 
-  --color-forest: #064E3B;
-  --color-primary: #059669;
-  --color-emerald: #10B981;
-  --color-mint: #A7F3D0;
-  --color-lime: #D9F99D;
-  --color-background: #F7FAF5;
+  /* EcoQuest palette — Forest / Evergreen for depth, Emerald for action, Mint + Lime as accents. */
+  --color-forest: #123C2E;
+  --color-evergreen: #082820;
+  /* Deep emerald: buttons, links and text accents (5.0:1 with white). */
+  --color-primary: #0E7F59;
+  /* Bright emerald: fills, progress, illustration accents (not for small text on white). */
+  --color-emerald: #18A878;
+  --color-mint: #A8F0CF;
+  --color-pale-mint: #E7F6EC;
+  --color-lime: #D9F76A;
+  --color-background: #F7F8F2;
   --color-surface: #FFFFFF;
-  --color-text: #12372A;
-  --color-muted: #64748B;
-  --color-border: #E2E8E0;
+  --color-text: #18352B;
+  /* Muted text, darkened slightly from #6D7E73 so captions reach 4.5:1 on Warm White. */
+  --color-muted: #5E7066;
+  --color-border: #DDE8DE;
   --color-warning: #F59E0B;
   --color-danger: #DC2626;
-  --color-success: #15803D;
-  /* Playful accent for large onboarding headlines and decoration only (3.6:1 on white — large text only). */
+  --color-success: #0E7F59;
+  /* Legacy accent kept for illustrations; UI text now uses the green palette. */
   --color-sunset: #D9650A;
-  --color-cream: #FFFBF2;
-  --color-sand: #F6EEE7;
+  --color-cream: #F7F8F2;
+  --color-sand: #E7F6EC;
   /* Pastel tag colors for chips and profile backdrops (always with dark text). */
-  --color-tag-lavender: #E4E0FF;
-  --color-tag-sky: #CFE8FF;
-  --color-tag-peach: #FFD8B5;
-  --color-tag-yellow: #FBF19B;
+  --color-tag-lavender: #E6E3FA;
+  --color-tag-sky: #D5ECF7;
+  --color-tag-peach: #FCE3CC;
+  --color-tag-yellow: #EEF8C4;
 
   --color-white: #FFFFFF;
   --color-black: #000000;
@@ -46,11 +52,13 @@
   --text-caption: 0.8125rem;
   --text-caption--line-height: 1.55;
 
-  --radius-card: 1.25rem;
-  --radius-control: 0.875rem;
+  --radius-card: 1.375rem;
+  --radius-control: 1rem;
+  --radius-hero: 1.75rem;
 
-  --shadow-card: 0 1px 2px rgb(6 78 59 / 0.04), 0 4px 16px rgb(6 78 59 / 0.06);
-  --shadow-raised: 0 8px 28px rgb(6 78 59 / 0.14);
+  --shadow-card: 0 1px 2px rgb(18 60 46 / 0.04), 0 6px 18px rgb(18 60 46 / 0.06);
+  --shadow-raised: 0 10px 30px rgb(8 40 32 / 0.16);
+  --shadow-nav: 0 -6px 24px rgb(8 40 32 / 0.08);
 }
 
 * {
@@ -103,10 +111,24 @@ h1, h2, h3, h4 {
   overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
 
+/* Signature surfaces from the EcoQuest board: deep forest hero and soft leaf pattern. */
+.bg-forest-hero {
+  background-color: var(--color-forest);
+  background-image:
+    radial-gradient(120% 90% at 100% 0%, rgb(24 168 120 / 0.35) 0%, transparent 55%),
+    radial-gradient(90% 80% at 0% 100%, rgb(217 247 106 / 0.12) 0%, transparent 60%),
+    linear-gradient(160deg, var(--color-forest) 0%, var(--color-evergreen) 100%);
+}
+.bg-meadow {
+  background-image:
+    radial-gradient(80% 60% at 50% 0%, var(--color-pale-mint) 0%, transparent 70%),
+    linear-gradient(180deg, var(--color-background) 0%, var(--color-background) 100%);
+}
+
 .text-chunky {
-  -webkit-text-stroke: 0.22em var(--color-forest);
+  -webkit-text-stroke: 0.22em var(--color-evergreen);
   paint-order: stroke fill;
-  text-shadow: 0 0.12em 0 var(--color-forest);
+  text-shadow: 0 0.12em 0 var(--color-evergreen);
 }
 
 @keyframes skeleton-pulse {

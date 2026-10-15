@@ -1,149 +1,276 @@
-import type { MissionCategory } from '../types';
+import type { QuizCategory, QuizDifficulty } from '../types';
+
+export type QuizOptionId = 'a' | 'b' | 'c' | 'd';
+
+export interface QuizOption {
+  id: QuizOptionId;
+  text: string;
+}
+
+export interface QuizSource {
+  name: string;
+  url?: string;
+}
 
 export interface QuizQuestion {
   id: string;
-  category: MissionCategory;
+  category: QuizCategory;
+  difficulty: QuizDifficulty;
   question: string;
-  choices: string[];
-  correctIndex: number;
+  options: QuizOption[];
+  correctAnswerId: QuizOptionId;
   explanation: string;
-  xp: number;
+  /** Required whenever the question relies on a published figure or fact. */
+  source?: QuizSource;
 }
 
+export const QUIZ_CATEGORY_LABELS: Record<QuizCategory, string> = {
+  waste: 'การจัดการขยะ',
+  energy: 'พลังงาน',
+  water: 'น้ำ',
+  carbon: 'คาร์บอนฟุตพรินต์',
+  lifestyle: 'พฤติกรรมยั่งยืน',
+};
+
+export const QUIZ_DIFFICULTY_LABELS: Record<QuizDifficulty, string> = { easy: 'ง่าย', medium: 'ปานกลาง', hard: 'ยาก' };
+
+export const QUIZ_SET_SIZE = 10;
+export const MINUTES_PER_QUESTION = 1;
+
+const TGO_FACTOR: QuizSource = {
+  name: 'องค์การบริหารจัดการก๊าซเรือนกระจก (TGO) – ค่า Emission Factor ไฟฟ้า 0.4750 kgCO₂e/kWh (ประกาศ พ.ย. 2568)',
+  url: 'https://www.nationthailand.com/news/policy/40059019',
+};
+
+const o = (a: string, b: string, c: string, d: string): QuizOption[] => [
+  { id: 'a', text: a },
+  { id: 'b', text: b },
+  { id: 'c', text: c },
+  { id: 'd', text: d },
+];
+
 export const quizzes: QuizQuestion[] = [
+  // การจัดการขยะ
   {
-    id: 'q-waste-01',
-    category: 'waste',
-    question: 'ขยะพลาสติกใช้เวลาย่อยสลายตามธรรมชาติประมาณกี่ปี?',
-    choices: ['10-20 ปี', '50-80 ปี', '100-450 ปี', '500-1000 ปี'],
-    correctIndex: 2,
-    explanation: 'พลาสติกส่วนใหญ่ใช้เวลา 100-450 ปีในการย่อยสลาย ขึ้นอยู่กับชนิดและสภาพแวดล้อม',
-    xp: 15,
+    id: 'q-waste-01', category: 'waste', difficulty: 'medium',
+    question: 'NOAA ประมาณว่าขวดพลาสติกเครื่องดื่มอาจใช้เวลาย่อยสลายในทะเลนานประมาณเท่าใด?',
+    options: o('ประมาณ 10 ปี', 'ประมาณ 50 ปี', 'ประมาณ 450 ปี', 'ประมาณ 5,000 ปี'), correctAnswerId: 'c',
+    explanation: 'เป็นค่าประมาณที่ขึ้นกับสภาพแวดล้อม และพลาสติกไม่ได้หายไปจริง แต่แตกตัวเป็นไมโครพลาสติก การลดการใช้ตั้งแต่ต้นทางจึงสำคัญ',
+    source: { name: 'NOAA Marine Debris Program – “How Long Until It’s Gone?”' },
   },
   {
-    id: 'q-waste-02',
-    category: 'waste',
-    question: 'สัญลักษณ์ ♻️ ที่มีตัวเลข 1 (PET) หมายถึงพลาสติกชนิดใด?',
-    choices: ['ถุงพลาสติก', 'ขวดน้ำดื่ม', 'กล่องโฟม', 'ท่อ PVC'],
-    correctIndex: 1,
-    explanation: 'PET (Polyethylene Terephthalate) เลข 1 ใช้ทำขวดน้ำดื่ม ขวดน้ำอัดลม สามารถรีไซเคิลได้ง่าย',
-    xp: 15,
+    id: 'q-waste-02', category: 'waste', difficulty: 'easy',
+    question: 'สัญลักษณ์รีไซเคิลหมายเลข 1 (PET) มักพบบนบรรจุภัณฑ์ใด?',
+    options: o('ถุงพลาสติกหูหิ้ว', 'ขวดน้ำดื่มใส', 'กล่องโฟม', 'ท่อน้ำ PVC'), correctAnswerId: 'b',
+    explanation: 'PET (Polyethylene Terephthalate) ใช้ทำขวดน้ำดื่มและขวดน้ำอัดลมใส ส่วนโฟมคือหมายเลข 6 และ PVC คือหมายเลข 3',
+    source: { name: 'ASTM D7611 – Resin Identification Coding System' },
   },
   {
-    id: 'q-waste-03',
-    category: 'waste',
-    question: 'ประเทศไทยสร้างขยะพลาสติกเฉลี่ยประมาณกี่ล้านตันต่อปี?',
-    choices: ['0.5 ล้านตัน', '2 ล้านตัน', '5 ล้านตัน', '10 ล้านตัน'],
-    correctIndex: 1,
-    explanation: 'ประเทศไทยสร้างขยะพลาสติกประมาณ 2 ล้านตันต่อปี โดยรีไซเคิลได้เพียงบางส่วน',
-    xp: 15,
+    id: 'q-waste-04', category: 'waste', difficulty: 'easy',
+    question: 'ก่อนทิ้งกล่องนมหรือขวดเครื่องดื่มลงถังรีไซเคิล ควรทำอย่างไร?',
+    options: o('ทิ้งทั้งที่ยังมีน้ำเหลือ', 'เทให้หมด ล้างเล็กน้อย แล้วทำให้แห้ง', 'ใส่ถุงรวมกับเศษอาหาร', 'เผาก่อนทิ้ง'), correctAnswerId: 'b',
+    explanation: 'บรรจุภัณฑ์ที่สะอาดและแห้งคัดแยกง่ายกว่า และไม่ทำให้วัสดุรีไซเคิลอื่นปนเปื้อน',
   },
   {
-    id: 'q-energy-01',
-    category: 'energy',
-    question: 'พลังงานหมุนเวียนชนิดใดผลิตไฟฟ้าได้มากที่สุดในโลก?',
-    choices: ['พลังงานแสงอาทิตย์', 'พลังงานลม', 'พลังงานน้ำ', 'พลังงานชีวมวล'],
-    correctIndex: 2,
-    explanation: 'พลังงานน้ำ (Hydropower) ยังคงเป็นแหล่งพลังงานหมุนเวียนที่ผลิตไฟฟ้าได้มากที่สุดในโลก',
-    xp: 15,
+    id: 'q-waste-05', category: 'waste', difficulty: 'easy',
+    question: 'ตามหลัก 3R ข้อใดช่วยลดขยะได้ดีที่สุด เพราะไม่เกิดขยะตั้งแต่แรก?',
+    options: o('Reduce – ลดการใช้', 'Reuse – ใช้ซ้ำ', 'Recycle – นำกลับมาผลิตใหม่', 'ทิ้งรวมทุกอย่าง'), correctAnswerId: 'a',
+    explanation: 'การลดตั้งแต่ต้นทางมาก่อนการใช้ซ้ำและการรีไซเคิล เพราะไม่ต้องใช้ทรัพยากรและพลังงานในการจัดการขยะเลย',
   },
   {
-    id: 'q-energy-02',
-    category: 'energy',
-    question: 'การปิดไฟ 1 ดวง (หลอด LED 10W) เป็นเวลา 8 ชั่วโมง ประหยัดพลังงานได้ประมาณเท่าไหร่?',
-    choices: ['0.08 หน่วย', '0.8 หน่วย', '8 หน่วย', '80 หน่วย'],
-    correctIndex: 0,
-    explanation: '10W × 8 ชม. = 80Wh = 0.08 kWh (หน่วย) ดูน้อยแต่ถ้าทำทุกวันทั้งปีจะประหยัดได้มาก',
-    xp: 15,
+    id: 'q-waste-06', category: 'waste', difficulty: 'medium',
+    question: 'เศษผักและเปลือกผลไม้เหมาะกับการจัดการแบบใดมากที่สุด?',
+    options: o('ทิ้งรวมกับขวดพลาสติก', 'ทำปุ๋ยหมัก', 'เผาในบ้าน', 'ใส่ถุงพลาสติกหลายชั้น'), correctAnswerId: 'b',
+    explanation: 'ขยะอินทรีย์ย่อยสลายได้และเปลี่ยนเป็นปุ๋ยหมักได้ ช่วยลดปริมาณขยะที่ต้องนำไปฝังกลบ',
   },
   {
-    id: 'q-energy-03',
-    category: 'energy',
-    question: 'เครื่องใช้ไฟฟ้าชนิดใดกินไฟมากที่สุดในบ้านทั่วไป?',
-    choices: ['ตู้เย็น', 'เครื่องปรับอากาศ', 'เครื่องทำน้ำอุ่น', 'โทรทัศน์'],
-    correctIndex: 1,
-    explanation: 'เครื่องปรับอากาศกินไฟมากที่สุดในบ้าน โดยเฉพาะถ้าใช้เป็นเวลานาน',
-    xp: 15,
+    id: 'q-waste-07', category: 'waste', difficulty: 'medium',
+    question: 'ถ่านไฟฉายและหลอดไฟที่ใช้แล้วควรทิ้งอย่างไร?',
+    options: o('ทิ้งรวมกับขยะทั่วไป', 'ทิ้งลงท่อระบายน้ำ', 'แยกทิ้งในถังหรือจุดรับขยะอันตราย', 'ฝังดินในสวน'), correctAnswerId: 'c',
+    explanation: 'ถ่านและหลอดไฟบางชนิดมีสารที่เป็นอันตรายต่อดินและน้ำ จึงควรแยกทิ้งให้ถูกนำไปจัดการเฉพาะทาง',
   },
   {
-    id: 'q-water-01',
-    category: 'water',
-    question: 'น้ำจืดที่มนุษย์ใช้ได้คิดเป็นกี่เปอร์เซ็นต์ของน้ำทั้งหมดบนโลก?',
-    choices: ['ประมาณ 1%', 'ประมาณ 10%', 'ประมาณ 25%', 'ประมาณ 50%'],
-    correctIndex: 0,
-    explanation: 'น้ำจืดที่ใช้ได้จริงมีเพียง ~1% ของน้ำทั้งหมดบนโลก ที่เหลือเป็นน้ำเค็มและน้ำแข็งขั้วโลก',
-    xp: 15,
+    id: 'q-waste-08', category: 'waste', difficulty: 'hard',
+    question: 'ทำไมพลาสติกที่ปนเปื้อนเศษอาหารมากมักรีไซเคิลได้ยาก?',
+    options: o('เพราะพลาสติกจะละลายทันที', 'เพราะต้องทำความสะอาดเพิ่มและคุณภาพวัสดุลดลง', 'เพราะเศษอาหารทำให้พลาสติกกลายเป็นแก้ว', 'เพราะผิดกฎหมายทุกกรณี'), correctAnswerId: 'b',
+    explanation: 'การปนเปื้อนทำให้ต้องล้างและคัดแยกเพิ่ม และอาจทำให้วัสดุทั้งชุดคุณภาพต่ำจนนำไปผลิตใหม่ไม่ได้',
+  },
+
+  // พลังงาน
+  {
+    id: 'q-energy-01', category: 'energy', difficulty: 'medium',
+    question: 'ในปี 2566 (2023) พลังงานหมุนเวียนชนิดใดผลิตไฟฟ้าได้มากที่สุดในโลก?',
+    options: o('พลังงานแสงอาทิตย์', 'พลังงานลม', 'พลังงานน้ำ', 'พลังงานชีวมวล'), correctAnswerId: 'c',
+    explanation: 'พลังงานน้ำยังเป็นแหล่งไฟฟ้าหมุนเวียนที่ใหญ่ที่สุดในปีนั้น แม้แสงอาทิตย์และลมจะเติบโตเร็วมาก',
+    source: { name: 'International Energy Agency (IEA) – Renewables 2023' },
   },
   {
-    id: 'q-water-02',
-    category: 'water',
-    question: 'การอาบน้ำฝักบัว 1 นาที ใช้น้ำประมาณกี่ลิตร?',
-    choices: ['2-3 ลิตร', '5-8 ลิตร', '9-12 ลิตร', '15-20 ลิตร'],
-    correctIndex: 2,
-    explanation: 'ฝักบัวทั่วไปใช้น้ำประมาณ 9-12 ลิตรต่อนาที การอาบน้ำสั้นลง 2 นาทีช่วยประหยัดน้ำได้มาก',
-    xp: 15,
+    id: 'q-energy-02', category: 'energy', difficulty: 'easy',
+    question: 'หลอด LED 10 วัตต์ เปิด 8 ชั่วโมง ใช้ไฟฟ้ากี่หน่วย (kWh)?',
+    options: o('0.08 หน่วย', '0.8 หน่วย', '8 หน่วย', '80 หน่วย'), correctAnswerId: 'a',
+    explanation: '10 W × 8 ชม. = 80 Wh = 0.08 kWh ดูน้อย แต่ถ้าเปิดทิ้งทุกวันก็สะสมเป็นจำนวนมากได้',
   },
   {
-    id: 'q-transport-01',
-    category: 'transport',
-    question: 'การเดินทางแบบใดปล่อย CO₂ ต่อคนต่อกิโลเมตรน้อยที่สุด?',
-    choices: ['รถยนต์ส่วนตัว', 'รถไฟฟ้า BTS/MRT', 'เครื่องบินในประเทศ', 'รถแท็กซี่'],
-    correctIndex: 1,
-    explanation: 'รถไฟฟ้าปล่อย CO₂ ต่อคนต่อ km น้อยที่สุดเพราะขนส่งคนจำนวนมากพร้อมกัน',
-    xp: 15,
+    id: 'q-energy-03', category: 'energy', difficulty: 'easy',
+    question: 'ถ้าเปิดต่อเนื่องนานเท่ากัน อุปกรณ์ใดใช้ไฟฟ้ามากที่สุด?',
+    options: o('เครื่องปรับอากาศ 1,000 วัตต์', 'พัดลม 50 วัตต์', 'หลอด LED 10 วัตต์', 'ที่ชาร์จมือถือ 10 วัตต์'), correctAnswerId: 'a',
+    explanation: 'พลังงานไฟฟ้า = กำลังไฟ (วัตต์) × เวลา อุปกรณ์ที่มีกำลังไฟสูงจึงใช้ไฟมากกว่าเมื่อเปิดนานเท่ากัน',
   },
   {
-    id: 'q-transport-02',
-    category: 'transport',
-    question: 'ภาคการขนส่งปล่อยก๊าซเรือนกระจกคิดเป็นกี่เปอร์เซ็นต์ของการปล่อยทั้งหมดทั่วโลก?',
-    choices: ['ประมาณ 5%', 'ประมาณ 16%', 'ประมาณ 30%', 'ประมาณ 50%'],
-    correctIndex: 1,
-    explanation: 'ภาคการขนส่งปล่อยก๊าซเรือนกระจกประมาณ 16% ของการปล่อยทั้งหมดทั่วโลก',
-    xp: 15,
+    id: 'q-energy-04', category: 'energy', difficulty: 'medium',
+    question: 'การตั้งอุณหภูมิเครื่องปรับอากาศให้สูงขึ้นเล็กน้อยช่วยประหยัดไฟได้เพราะอะไร?',
+    options: o('เครื่องปรับอากาศทำงานหนักน้อยลง', 'ทำให้ไฟฟ้าราคาถูกลง', 'ทำให้หลอดไฟดับเอง', 'ไม่มีผลใด ๆ'), correctAnswerId: 'a',
+    explanation: 'เมื่อความต่างของอุณหภูมิในห้องกับค่าที่ตั้งน้อยลง คอมเพรสเซอร์ไม่ต้องทำงานหนักเท่าเดิม จึงใช้ไฟน้อยลง',
   },
   {
-    id: 'q-consumption-01',
-    category: 'consumption',
-    question: 'การผลิตเสื้อยืดฝ้าย 1 ตัว ใช้น้ำประมาณกี่ลิตร?',
-    choices: ['100 ลิตร', '700 ลิตร', '2,700 ลิตร', '10,000 ลิตร'],
-    correctIndex: 2,
-    explanation: 'เสื้อยืดฝ้าย 1 ตัวใช้น้ำประมาณ 2,700 ลิตร ตั้งแต่ปลูกฝ้ายจนถึงผลิตสำเร็จ',
-    xp: 15,
+    id: 'q-energy-05', category: 'energy', difficulty: 'easy',
+    question: '“1 หน่วย” ในบิลค่าไฟฟ้า เท่ากับเท่าใด?',
+    options: o('1 วัตต์', '1 กิโลวัตต์-ชั่วโมง (kWh)', '1 แอมแปร์', '1 โวลต์'), correctAnswerId: 'b',
+    explanation: 'ไฟฟ้า 1 หน่วยคือ 1 kWh เช่น อุปกรณ์ 1,000 วัตต์ เปิด 1 ชั่วโมง',
   },
   {
-    id: 'q-consumption-02',
-    category: 'consumption',
-    question: 'อาหารที่ถูกทิ้งทั่วโลกคิดเป็นสัดส่วนเท่าไรของอาหารที่ผลิตได้?',
-    choices: ['ประมาณ 10%', 'ประมาณ 20%', 'ประมาณ 33%', 'ประมาณ 50%'],
-    correctIndex: 2,
-    explanation: 'ประมาณ 1 ใน 3 ของอาหารที่ผลิตทั่วโลกถูกทิ้งเป็นขยะ คิดเป็นประมาณ 1.3 พันล้านตันต่อปี',
-    xp: 15,
+    id: 'q-energy-06', category: 'energy', difficulty: 'medium',
+    question: 'ฉลากประหยัดไฟฟ้าเบอร์ 5 บนเครื่องใช้ไฟฟ้าบอกอะไร?',
+    options: o('เป็นรุ่นที่ 5 ของสินค้า', 'มีประสิทธิภาพการใช้พลังงานสูงตามเกณฑ์', 'ใช้ไฟ 5 หน่วยต่อวัน', 'มีอายุการใช้งาน 5 ปี'), correctAnswerId: 'b',
+    explanation: 'ฉลากเบอร์ 5 แสดงว่าเครื่องใช้ไฟฟ้าผ่านเกณฑ์ประสิทธิภาพพลังงาน ช่วยให้เลือกซื้อรุ่นที่ใช้ไฟน้อยกว่าได้',
+    source: { name: 'การไฟฟ้าฝ่ายผลิตแห่งประเทศไทย (กฟผ.) – โครงการฉลากประหยัดไฟฟ้าเบอร์ 5' },
   },
   {
-    id: 'q-nature-01',
-    category: 'nature',
-    question: 'ต้นไม้ใหญ่ 1 ต้นดูดซับ CO₂ ได้ประมาณกี่กิโลกรัมต่อปี?',
-    choices: ['5-10 กก.', '20-25 กก.', '50-100 กก.', '200-300 กก.'],
-    correctIndex: 1,
-    explanation: 'ต้นไม้ใหญ่ 1 ต้นดูดซับ CO₂ ได้ประมาณ 20-25 กก./ปี โดยเฉลี่ย (ขึ้นกับชนิดและขนาด)',
-    xp: 15,
+    id: 'q-energy-07', category: 'energy', difficulty: 'hard',
+    question: 'พัดลม 50 วัตต์ เปิด 10 ชั่วโมงต่อวัน ใช้ไฟฟ้าวันละกี่หน่วย?',
+    options: o('0.05 หน่วย', '0.5 หน่วย', '5 หน่วย', '50 หน่วย'), correctAnswerId: 'b',
+    explanation: '50 W × 10 ชม. = 500 Wh = 0.5 kWh หรือ 0.5 หน่วยต่อวัน',
+  },
+
+  // น้ำ
+  {
+    id: 'q-water-01', category: 'water', difficulty: 'medium',
+    question: 'น้ำจืดคิดเป็นประมาณกี่เปอร์เซ็นต์ของน้ำทั้งหมดบนโลก?',
+    options: o('ประมาณ 3%', 'ประมาณ 15%', 'ประมาณ 30%', 'ประมาณ 50%'), correctAnswerId: 'a',
+    explanation: 'น้ำส่วนใหญ่บนโลกเป็นน้ำเค็มในมหาสมุทร และน้ำจืดส่วนใหญ่อยู่ในรูปน้ำแข็งและน้ำใต้ดิน น้ำจืดที่ใช้ได้ง่ายจึงมีน้อยมาก',
+    source: { name: 'U.S. Geological Survey (USGS) – Where is Earth’s Water?' },
   },
   {
-    id: 'q-nature-02',
-    category: 'nature',
-    question: 'ป่าฝนเขตร้อนครอบคลุมพื้นผิวโลกประมาณกี่เปอร์เซ็นต์ แต่มีสิ่งมีชีวิตเท่าไร?',
-    choices: ['6% พื้นที่, 50% สิ่งมีชีวิต', '15% พื้นที่, 30% สิ่งมีชีวิต', '25% พื้นที่, 40% สิ่งมีชีวิต', '30% พื้นที่, 60% สิ่งมีชีวิต'],
-    correctIndex: 0,
-    explanation: 'ป่าฝนเขตร้อนครอบคลุมเพียง ~6% ของพื้นผิวโลก แต่เป็นที่อยู่ของสิ่งมีชีวิตมากกว่า 50% ของทั้งหมด',
-    xp: 15,
+    id: 'q-water-03', category: 'water', difficulty: 'easy',
+    question: 'น้ำ 1 ลูกบาศก์เมตร (1 หน่วยในบิลค่าน้ำ) เท่ากับกี่ลิตร?',
+    options: o('10 ลิตร', '100 ลิตร', '1,000 ลิตร', '10,000 ลิตร'), correctAnswerId: 'c',
+    explanation: '1 ลูกบาศก์เมตร = 1,000 ลิตร ช่วยให้อ่านบิลค่าน้ำและประเมินการใช้น้ำของบ้านได้',
   },
   {
-    id: 'q-nature-03',
-    category: 'nature',
-    question: 'ผึ้งมีความสำคัญต่อระบบนิเวศอย่างไร?',
-    choices: ['ผลิตน้ำผึ้ง', 'ผสมเกสรพืชอาหาร 75%', 'กำจัดแมลงศัตรูพืช', 'สร้างดินอุดมสมบูรณ์'],
-    correctIndex: 1,
-    explanation: 'ผึ้งช่วยผสมเกสรพืชอาหารประมาณ 75% ของชนิดทั้งหมด หากผึ้งหายไป ผลผลิตอาหารจะลดลงมาก',
-    xp: 15,
+    id: 'q-water-04', category: 'water', difficulty: 'easy',
+    question: 'การปิดก๊อกน้ำขณะแปรงฟันช่วยอะไรได้มากที่สุด?',
+    options: o('ทำให้ฟันขาวขึ้น', 'ลดน้ำที่ไหลทิ้งโดยไม่ได้ใช้', 'ทำให้น้ำเย็นลง', 'เพิ่มแรงดันน้ำ'), correctAnswerId: 'b',
+    explanation: 'น้ำที่ไหลระหว่างแปรงฟันส่วนใหญ่ไม่ได้ถูกใช้ การปิดก๊อกจึงลดน้ำทิ้งได้ทันที',
+  },
+  {
+    id: 'q-water-05', category: 'water', difficulty: 'medium',
+    question: 'ก๊อกน้ำรั่วจนเสียน้ำ 2 ลิตรต่อชั่วโมง ใน 1 วันจะเสียน้ำกี่ลิตร?',
+    options: o('24 ลิตร', '48 ลิตร', '120 ลิตร', '200 ลิตร'), correctAnswerId: 'b',
+    explanation: '2 ลิตร × 24 ชั่วโมง = 48 ลิตรต่อวัน การซ่อมจุดรั่วเล็ก ๆ จึงช่วยประหยัดน้ำได้มาก',
+  },
+  {
+    id: 'q-water-06', category: 'water', difficulty: 'medium',
+    question: 'น้ำที่ใช้ล้างผักผลไม้ (ไม่มีสบู่) นำไปใช้ต่อแบบใดเหมาะสม?',
+    options: o('ใช้ดื่ม', 'ใช้รดน้ำต้นไม้', 'ใช้ปรุงอาหาร', 'ใช้ล้างแผล'), correctAnswerId: 'b',
+    explanation: 'น้ำที่ใช้แล้วแต่ไม่มีสารเคมีสามารถนำไปรดน้ำต้นไม้ได้ เป็นการใช้น้ำซ้ำอย่างปลอดภัย',
+  },
+  {
+    id: 'q-water-07', category: 'water', difficulty: 'hard',
+    question: 'ฝักบัวไหล 8 ลิตรต่อนาที ถ้าลดเวลาอาบน้ำจาก 10 นาทีเหลือ 5 นาที จะประหยัดน้ำได้กี่ลิตรต่อครั้ง?',
+    options: o('8 ลิตร', '20 ลิตร', '40 ลิตร', '80 ลิตร'), correctAnswerId: 'c',
+    explanation: 'ลดลง 5 นาที × 8 ลิตร/นาที = 40 ลิตรต่อครั้ง (อัตราไหลจริงขึ้นกับฝักบัวแต่ละบ้าน)',
+  },
+
+  // คาร์บอนฟุตพรินต์
+  {
+    id: 'q-transport-01', category: 'carbon', difficulty: 'easy',
+    question: 'การเดินทางระยะใกล้แบบใดไม่มีการเผาไหม้เชื้อเพลิงจากตัวยานพาหนะ?',
+    options: o('ขับรถยนต์คนเดียว', 'นั่งแท็กซี่', 'เดินหรือปั่นจักรยาน', 'ขี่มอเตอร์ไซค์น้ำมัน'), correctAnswerId: 'c',
+    explanation: 'การเดินและปั่นจักรยานใช้แรงคน ไม่มีไอเสียจากการเผาเชื้อเพลิงระหว่างเดินทาง',
+  },
+  {
+    id: 'q-transport-02', category: 'carbon', difficulty: 'hard',
+    question: 'จากข้อมูลปี 2016 ภาคการขนส่งปล่อยก๊าซเรือนกระจกประมาณกี่เปอร์เซ็นต์ของทั้งโลก?',
+    options: o('ประมาณ 5%', 'ประมาณ 16%', 'ประมาณ 30%', 'ประมาณ 50%'), correctAnswerId: 'b',
+    explanation: 'ภาคพลังงานโดยรวมปล่อยมากที่สุด และการขนส่งเป็นส่วนสำคัญราว 16% ของการปล่อยทั้งหมดในปีนั้น',
+    source: { name: 'Our World in Data – Emissions by sector (ข้อมูล Climate Watch / WRI ปี 2016)' },
+  },
+  {
+    id: 'q-carbon-01', category: 'carbon', difficulty: 'easy',
+    question: 'หน่วย “CO₂e” หมายถึงอะไร?',
+    options: o('ปริมาณออกซิเจนในอากาศ', 'ก๊าซเรือนกระจกหลายชนิดที่คิดเทียบเป็นคาร์บอนไดออกไซด์', 'ปริมาณฝุ่น PM2.5', 'อุณหภูมิเฉลี่ยของโลก'), correctAnswerId: 'b',
+    explanation: 'ก๊าซเรือนกระจกแต่ละชนิดมีผลต่อโลกร้อนต่างกัน จึงแปลงให้อยู่ในหน่วยเดียวกันคือคาร์บอนไดออกไซด์เทียบเท่า',
+  },
+  {
+    id: 'q-carbon-02', category: 'carbon', difficulty: 'medium',
+    question: '“คาร์บอนฟุตพรินต์ของผลิตภัณฑ์” คืออะไร?',
+    options: o('น้ำหนักของผลิตภัณฑ์', 'ปริมาณก๊าซเรือนกระจกที่ปล่อยตลอดวัฏจักรชีวิตของผลิตภัณฑ์', 'จำนวนต้นไม้ที่ใช้ผลิต', 'ราคาของผลิตภัณฑ์'), correctAnswerId: 'b',
+    explanation: 'คิดตั้งแต่การได้มาซึ่งวัตถุดิบ การผลิต การขนส่ง การใช้งาน จนถึงการจัดการซาก',
+    source: { name: 'องค์การบริหารจัดการก๊าซเรือนกระจก (TGO) – คาร์บอนฟุตพริ้นท์ของผลิตภัณฑ์' },
+  },
+  {
+    id: 'q-carbon-03', category: 'carbon', difficulty: 'hard',
+    question: 'ใช้ค่า Emission Factor ไฟฟ้าของ TGO = 0.4750 kgCO₂e/kWh ถ้าประหยัดไฟได้ 10 หน่วย จะหลีกเลี่ยงการปล่อยได้ประมาณเท่าไร?',
+    options: o('0.475 kgCO₂e', '4.75 kgCO₂e', '47.5 kgCO₂e', '475 kgCO₂e'), correctAnswerId: 'b',
+    explanation: '10 kWh × 0.4750 kgCO₂e/kWh = 4.75 kgCO₂e เป็นค่าประมาณจากค่าเฉลี่ยของระบบไฟฟ้า ไม่ใช่การวัดจริง',
+    source: TGO_FACTOR,
+  },
+  {
+    id: 'q-carbon-04', category: 'carbon', difficulty: 'medium',
+    question: 'หน่วยงานใดของไทยดูแลการรับรองฉลากคาร์บอนฟุตพริ้นท์ของผลิตภัณฑ์?',
+    options: o('การประปานครหลวง', 'องค์การบริหารจัดการก๊าซเรือนกระจก (TGO)', 'กรมอุตุนิยมวิทยา', 'การท่าเรือแห่งประเทศไทย'), correctAnswerId: 'b',
+    explanation: 'TGO ดูแลโครงการฉลากคาร์บอนฟุตพริ้นท์และเผยแพร่ค่า Emission Factor สำหรับการคำนวณในประเทศไทย',
+    source: { name: 'องค์การบริหารจัดการก๊าซเรือนกระจก (TGO) – โครงการฉลากคาร์บอน' },
+  },
+  {
+    id: 'q-carbon-05', category: 'carbon', difficulty: 'medium',
+    question: 'ทำไมรถไฟฟ้าและรถโดยสารสาธารณะมักปล่อยก๊าซต่อคนน้อยกว่ารถยนต์ส่วนตัว?',
+    options: o('เพราะวิ่งช้ากว่าเสมอ', 'เพราะขนผู้โดยสารจำนวนมากในเที่ยวเดียว', 'เพราะไม่ใช้พลังงานเลย', 'เพราะสร้างจากโลหะ'), correctAnswerId: 'b',
+    explanation: 'พลังงานที่ใช้ต่อเที่ยวถูกแบ่งให้ผู้โดยสารหลายคน การปล่อยต่อคนต่อกิโลเมตรจึงมักต่ำกว่าการขับรถคนเดียว',
+  },
+
+  // พฤติกรรมยั่งยืน
+  {
+    id: 'q-consumption-01', category: 'lifestyle', difficulty: 'hard',
+    question: 'WWF ประมาณว่าการผลิตเสื้อยืดผ้าฝ้าย 1 ตัว ต้องใช้น้ำประมาณเท่าใด?',
+    options: o('ประมาณ 100 ลิตร', 'ประมาณ 700 ลิตร', 'ประมาณ 2,700 ลิตร', 'ประมาณ 10,000 ลิตร'), correctAnswerId: 'c',
+    explanation: 'น้ำส่วนใหญ่ใช้ในการปลูกฝ้าย การใช้เสื้อผ้าให้นานขึ้นหรือซื้อมือสองช่วยลดความต้องการทรัพยากรนี้',
+    source: { name: 'WWF – The Impact of a Cotton T-Shirt (2013)' },
+  },
+  {
+    id: 'q-consumption-02', category: 'lifestyle', difficulty: 'medium',
+    question: 'FAO ประเมินว่าอาหารที่ผลิตเพื่อการบริโภคทั่วโลกสูญเสียหรือถูกทิ้งประมาณเท่าใด?',
+    options: o('ประมาณ 1 ใน 10', 'ประมาณ 1 ใน 5', 'ประมาณ 1 ใน 3', 'ประมาณครึ่งหนึ่ง'), correctAnswerId: 'c',
+    explanation: 'การตักอาหารแต่พอดีและวางแผนการซื้อช่วยลดอาหารเหลือทิ้งได้',
+    source: { name: 'FAO – Global Food Losses and Food Waste (2011)' },
+  },
+  {
+    id: 'q-nature-03', category: 'lifestyle', difficulty: 'medium',
+    question: 'สัตว์ผสมเกสร เช่น ผึ้ง สำคัญต่ออาหารของมนุษย์อย่างไร?',
+    options: o('ช่วยให้พืชอาหารหลักหลายชนิดติดผลได้ดีขึ้น', 'ช่วยผลิตปุ๋ยเคมี', 'ช่วยกำจัดวัชพืชทั้งหมด', 'ไม่มีผลต่ออาหาร'), correctAnswerId: 'a',
+    explanation: 'IPBES รายงานว่าพืชอาหารหลักของโลกราว 3 ใน 4 ชนิดได้ประโยชน์จากสัตว์ผสมเกสร การปลูกดอกไม้และลดยาฆ่าแมลงจึงช่วยได้',
+    source: { name: 'IPBES – Assessment Report on Pollinators, Pollination and Food Production (2016)' },
+  },
+  {
+    id: 'q-life-01', category: 'lifestyle', difficulty: 'easy',
+    question: 'ข้อใดเป็นการลดพลาสติกแบบใช้ครั้งเดียวทิ้ง?',
+    options: o('พกกระบอกน้ำส่วนตัว', 'ซื้อน้ำขวดเล็กหลายขวด', 'ขอหลอดเพิ่ม', 'ห่อของด้วยถุงพลาสติกหลายชั้น'), correctAnswerId: 'a',
+    explanation: 'กระบอกน้ำใช้ซ้ำได้หลายครั้ง แทนขวดและแก้วที่ใช้เพียงครั้งเดียวแล้วกลายเป็นขยะ',
+  },
+  {
+    id: 'q-life-02', category: 'lifestyle', difficulty: 'easy',
+    question: 'การซ่อมของใช้แทนการซื้อใหม่ช่วยสิ่งแวดล้อมอย่างไร?',
+    options: o('เพิ่มขยะ', 'ลดการใช้ทรัพยากรผลิตของใหม่และลดขยะ', 'ทำให้ของพังเร็วขึ้น', 'ไม่มีผลใด ๆ'), correctAnswerId: 'b',
+    explanation: 'ของที่ใช้ได้นานขึ้นแปลว่าต้องผลิตของใหม่น้อยลง และมีของถูกทิ้งเป็นขยะน้อยลง',
+  },
+  {
+    id: 'q-life-03', category: 'lifestyle', difficulty: 'medium',
+    question: 'การเลือกซื้อผักผลไม้ตามฤดูกาลจากแหล่งใกล้บ้านมักช่วยในเรื่องใด?',
+    options: o('เพิ่มระยะทางขนส่ง', 'ลดระยะทางขนส่งและการเก็บรักษานาน', 'ทำให้ต้องใช้บรรจุภัณฑ์มากขึ้น', 'ทำให้อาหารเสียเร็วขึ้นเสมอ'), correctAnswerId: 'b',
+    explanation: 'สินค้าท้องถิ่นตามฤดูกาลมักเดินทางสั้นกว่าและไม่ต้องเก็บรักษานาน แต่ผลจริงขึ้นกับวิธีผลิตและขนส่งของแต่ละสินค้า',
   },
 ];
+
+export function getQuestion(id: string): QuizQuestion | undefined {
+  return quizzes.find((q) => q.id === id);
+}

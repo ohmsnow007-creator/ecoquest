@@ -8,8 +8,8 @@ interface CardProps extends HTMLAttributes<HTMLElement> {
 
 const TONE = {
   surface: 'bg-surface border border-border text-text',
-  forest: 'bg-forest text-white',
-  mint: 'bg-mint/50 border border-mint text-text',
+  forest: 'bg-forest-hero text-white',
+  mint: 'bg-pale-mint border border-mint/70 text-text',
   lime: 'bg-lime text-forest',
 };
 
@@ -32,7 +32,7 @@ interface SectionTitleProps {
 export function SectionTitle({ title, icon, action, id, className = '' }: SectionTitleProps) {
   return (
     <div className={`mb-3 flex items-center justify-between gap-3 ${className}`}>
-      <h2 id={id} className="flex items-center gap-2 text-section font-semibold">
+      <h2 id={id} className="flex items-center gap-2 text-section font-bold text-forest">
         {icon}
         {title}
       </h2>

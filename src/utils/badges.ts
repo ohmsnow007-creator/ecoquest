@@ -1,86 +1,76 @@
 import type { Badge, PlayerProgress } from '../types';
+import { CATEGORY_LABELS } from '../types';
 import { badges } from '../data/badges';
 import { missions } from '../data/missions';
-import { getLevelFromXp } from './xp';
 import { calculateStreak, getLongestStreak } from './streak';
+import { getWorldState } from './world';
 
-function checkBadgeRule(badge: Badge, progress: PlayerProgress): boolean {
+function currentValue(badge: Badge, progress: PlayerProgress): number {
   switch (badge.ruleType) {
     case 'total-completions':
-      return progress.completions.length >= badge.threshold;
-
+      return progress.completions.length;
     case 'category-completions': {
-      if (!badge.ruleCategory) return false;
-      const missionIds = missions
-        .filter((m) => m.category === badge.ruleCategory)
-        .map((m) => m.id);
-      const count = progress.completions.filter((c) =>
-        missionIds.includes(c.missionId)
-      ).length;
-      return count >= badge.threshold;
+      const ids = new Set(missions.filter((m) => m.category === badge.ruleCategory).map((m) => m.id));
+      return progress.completions.filter((c) => ids.has(c.missionId)).length;
     }
-
-    case 'total-xp':
-      return progress.totalXp >= badge.threshold;
-
-    case 'streak': {
-      const current = calculateStreak(progress.completions);
-      const longest = getLongestStreak(progress.completions);
-      return Math.max(current, longest) >= badge.threshold;
-    }
-
-    case 'level':
-      return getLevelFromXp(progress.totalXp) >= badge.threshold;
-
-    default:
-      return false;
+    case 'streak':
+      return Math.max(calculateStreak(progress.completions), getLongestStreak(progress.completions));
+    case 'quiz-correct':
+      return new Set(progress.quizAttempts.flatMap((a) => a.results.filter((r) => r.correct).map((r) => r.questionId))).size;
+    case 'world-stage':
+      return getWorldState(progress.completions.length).current.stage;
   }
+}
+
+export function describeUnlockCondition(badge: Badge): string {
+  switch (badge.ruleType) {
+    case 'total-completions':
+      return badge.threshold === 1 ? 'ทำภารกิจสำเร็จครั้งแรก' : `ทำภารกิจสำเร็จครบ ${badge.threshold} ครั้ง`;
+    case 'category-completions':
+      return `ทำภารกิจหมวด${CATEGORY_LABELS[badge.ruleCategory!]}ครบ ${badge.threshold} ครั้ง`;
+    case 'streak':
+      return `ทำภารกิจต่อเนื่อง ${badge.threshold} วัน`;
+    case 'quiz-correct':
+      return `ตอบควิซถูก ${badge.threshold} ข้อ (ไม่นับข้อซ้ำ)`;
+    case 'world-stage':
+      return `โลกเสมือนเติบโตถึงระดับ ${badge.threshold}`;
+  }
+}
+
+export interface BadgeStatus {
+  badge: Badge;
+  unlocked: boolean;
+  unlockedAt?: string;
+  current: number;
+  target: number;
+  progress: number;
+  unlockCondition: string;
+}
+
+// Unlock state comes only from stored records; progress is recomputed from history each time.
+export function getBadgeStatus(badge: Badge, progress: PlayerProgress): BadgeStatus {
+  const record = progress.unlockedBadges.find((r) => r.badgeId === badge.id);
+  const current = Math.min(currentValue(badge, progress), badge.threshold);
+  return {
+    badge,
+    unlocked: Boolean(record),
+    unlockedAt: record?.unlockedAt,
+    current: record ? badge.threshold : current,
+    target: badge.threshold,
+    progress: record ? 1 : current / badge.threshold,
+    unlockCondition: describeUnlockCondition(badge),
+  };
+}
+
+export function getAllBadgeStatuses(progress: PlayerProgress): BadgeStatus[] {
+  return badges.map((b) => getBadgeStatus(b, progress));
 }
 
 export function checkNewBadges(progress: PlayerProgress): Badge[] {
-  const unlockedIds = new Set(progress.unlockedBadges.map((b) => b.badgeId));
-  const newBadges: Badge[] = [];
-
-  for (const badge of badges) {
-    if (unlockedIds.has(badge.id)) continue;
-    if (checkBadgeRule(badge, progress)) {
-      newBadges.push(badge);
-    }
-  }
-
-  return newBadges;
+  const unlocked = new Set(progress.unlockedBadges.map((b) => b.badgeId));
+  return badges.filter((b) => !unlocked.has(b.id) && currentValue(b, progress) >= b.threshold);
 }
 
 export function getBadgeProgress(badge: Badge, progress: PlayerProgress): number {
-  let current = 0;
-
-  switch (badge.ruleType) {
-    case 'total-completions':
-      current = progress.completions.length;
-      break;
-    case 'category-completions': {
-      if (!badge.ruleCategory) break;
-      const missionIds = missions
-        .filter((m) => m.category === badge.ruleCategory)
-        .map((m) => m.id);
-      current = progress.completions.filter((c) =>
-        missionIds.includes(c.missionId)
-      ).length;
-      break;
-    }
-    case 'total-xp':
-      current = progress.totalXp;
-      break;
-    case 'streak':
-      current = Math.max(
-        calculateStreak(progress.completions),
-        getLongestStreak(progress.completions)
-      );
-      break;
-    case 'level':
-      current = getLevelFromXp(progress.totalXp);
-      break;
-  }
-
-  return Math.min(current / badge.threshold, 1);
+  return getBadgeStatus(badge, progress).progress;
 }

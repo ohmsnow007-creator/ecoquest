@@ -24,7 +24,7 @@ function PillButton({ children, className = '', type = 'button', ...rest }: Butt
   return (
     <button
       type={type}
-      className={`flex min-h-14 w-full items-center justify-center rounded-full bg-text px-6 text-base font-semibold text-white transition-colors hover:bg-forest active:scale-[0.99] ${className}`}
+      className={`flex min-h-14 w-full items-center justify-center rounded-full bg-primary px-6 text-base font-semibold text-white shadow-[0_8px_20px_rgb(14_127_89/0.28)] transition-colors hover:bg-forest active:scale-[0.99] disabled:opacity-50 ${className}`}
       {...rest}
     >
       {children}
@@ -37,7 +37,7 @@ function StepIndicator({ step }: { step: Step }) {
     <div className="px-6" aria-label={`ขั้นตอนที่ ${step + 1} จาก ${STEP_COUNT}`} role="img">
       <div className="flex gap-1.5" aria-hidden="true">
         {Array.from({ length: STEP_COUNT }, (_, i) => (
-          <span key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i <= step ? 'bg-text' : 'bg-text/15'}`} />
+          <span key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i <= step ? 'bg-primary' : 'bg-forest/12'}`} />
         ))}
       </div>
     </div>
@@ -55,12 +55,12 @@ function StepHeader({ step, onBack, onSkip, title }: HeaderProps) {
   return (
     <div className="safe-top">
       <div className="flex min-h-16 items-center justify-between gap-2 px-3 pt-2">
-        <button type="button" onClick={onBack} aria-label="ย้อนกลับ" className="flex h-11 w-11 items-center justify-center rounded-full text-text hover:bg-text/5">
+        <button type="button" onClick={onBack} aria-label="ย้อนกลับ" className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-forest shadow-card hover:bg-pale-mint">
           <ChevronLeft size={26} />
         </button>
-        {title ? <h1 className="text-section font-semibold">{title}</h1> : <span />}
+        {title ? <h1 className="text-section font-bold text-forest">{title}</h1> : <span />}
         {onSkip ? (
-          <button type="button" onClick={onSkip} className="min-h-11 px-3 text-body font-medium text-text hover:underline">
+          <button type="button" onClick={onSkip} className="min-h-11 rounded-full px-3 text-body font-semibold text-primary hover:bg-pale-mint">
             ข้าม
           </button>
         ) : (
@@ -131,16 +131,16 @@ export function ProfileCreation() {
   return (
     <AnimatePresence mode="wait" initial={false}>
       {step === 0 && (
-        <Screen key="avatar" tone="bg-sand">
+        <Screen key="avatar" tone="bg-meadow">
           <StepHeader step={0} onBack={() => navigate('/welcome')} onSkip={() => setStep(1)} />
           <Body>
-            <h1 className="text-[1.875rem] leading-tight font-bold">เลือกอวาตาร์ของคุณ</h1>
+            <h1 className="text-[1.875rem] leading-tight font-bold text-forest">เลือกอวาตาร์ของคุณ</h1>
             <p className="mt-1 text-body text-muted">ตัวละครนี้จะเดินทางไปกับคุณในทุกภารกิจ</p>
 
             <div className="relative mt-4 flex flex-1 items-end justify-center" style={{ minHeight: 300 }}>
               <svg className="absolute inset-x-[-24px] bottom-0 h-48 w-[calc(100%+48px)]" viewBox="0 0 400 190" preserveAspectRatio="none" aria-hidden="true">
                 {[190, 140, 92].map((rx, i) => (
-                  <ellipse key={rx} cx={200} cy={150} rx={rx} ry={rx * 0.27} fill="none" stroke="#FFFFFF" strokeWidth={i === 2 ? 6 : 2} opacity={i === 2 ? 0.95 : 0.7} />
+                  <ellipse key={rx} cx={200} cy={150} rx={rx} ry={rx * 0.27} fill="none" stroke="#A8F0CF" strokeWidth={i === 2 ? 6 : 2} opacity={i === 2 ? 0.95 : 0.7} />
                 ))}
               </svg>
               <AnimatePresence mode="wait">
@@ -168,7 +168,7 @@ export function ProfileCreation() {
         <Screen key="interests" tone="bg-surface">
           <StepHeader step={1} onBack={() => setStep(0)} onSkip={() => setStep(2)} />
           <Body>
-            <h1 className="text-[1.875rem] leading-tight font-bold">
+            <h1 className="text-[1.875rem] leading-tight font-bold text-forest">
               เลือกเรื่องรักษ์โลก
               <br />
               ที่คุณสนใจ
@@ -189,7 +189,7 @@ export function ProfileCreation() {
                     aria-disabled={blocked}
                     onClick={() => !blocked && toggleGoal(interest.id)}
                     className={`inline-flex min-h-12 items-center gap-2 rounded-full px-5 text-body font-medium text-text transition-colors ${
-                      active ? interest.tone : 'bg-background hover:bg-border/60'
+                      active ? `${interest.tone} ring-2 ring-primary` : 'bg-background ring-1 ring-border hover:bg-pale-mint'
                     } ${blocked ? 'cursor-not-allowed opacity-40' : ''}`}
                   >
                     {interest.label}
@@ -211,18 +211,18 @@ export function ProfileCreation() {
       )}
 
       {step === 2 && (
-        <Screen key="details" tone="bg-mint/35">
+        <Screen key="details" tone="bg-pale-mint">
           <StepHeader step={2} onBack={() => setStep(1)} title="ข้อมูลโปรไฟล์" />
           <Body>
             <form noValidate onSubmit={submit} className="flex flex-1 flex-col">
               <div className="flex flex-col items-center">
-                <div className="relative rounded-full bg-surface p-2.5 shadow-card">
+                <div className="relative rounded-full bg-surface p-2.5 shadow-card ring-4 ring-mint/70">
                   <Avatar id={avatarId} color={color} size="xl" />
                   <button
                     type="button"
                     onClick={() => setStep(0)}
                     aria-label="เปลี่ยนอวาตาร์"
-                    className="absolute right-1 bottom-2 flex h-11 w-11 items-center justify-center rounded-full border-2 border-surface bg-text text-white hover:bg-forest"
+                    className="absolute right-1 bottom-2 flex h-11 w-11 items-center justify-center rounded-full border-2 border-surface bg-primary text-white hover:bg-forest"
                   >
                     <Pencil size={17} />
                   </button>
@@ -250,7 +250,7 @@ export function ProfileCreation() {
                 onBlur={() => name.length > 0 && setTouched(true)}
                 aria-invalid={showNameError}
                 aria-describedby={`${countId}${showNameError ? ` ${nameErrorId}` : ''}`}
-                className={`min-h-14 w-full rounded-2xl bg-surface px-4 text-base placeholder:text-muted focus:outline-none focus:ring-2 ${
+                className={`min-h-14 w-full rounded-2xl border border-border bg-surface px-4 text-base placeholder:text-muted focus:outline-none focus:ring-2 ${
                   showNameError ? 'ring-2 ring-danger focus:ring-danger' : 'focus:ring-primary'
                 }`}
               />
@@ -269,7 +269,7 @@ export function ProfileCreation() {
                   id={colorId}
                   value={color}
                   onChange={(e) => setColor(e.target.value)}
-                  className="min-h-14 w-full appearance-none rounded-2xl bg-surface pr-12 pl-4 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="min-h-14 w-full appearance-none rounded-2xl border border-border bg-surface pr-12 pl-4 text-base focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   {PROFILE_COLORS.map((c) => (
                     <option key={c.id} value={c.id}>{c.label}</option>

@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local check outputs
+.claude/*-output.txt
+.claude/checks-done.txt
+.claude/ui-check.cmd

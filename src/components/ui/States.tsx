@@ -14,7 +14,7 @@ export function EmptyState({ title, description, action, compact = false }: Empt
   return (
     <div className={`flex flex-col items-center text-center ${compact ? 'py-6' : 'py-10'}`}>
       <EcoMascot size={compact ? 88 : 120} mood="calm" title="Sprouty กำลังรอคุณ" />
-      <h3 className="mt-3 text-card font-semibold">{title}</h3>
+      <h3 className="mt-3 text-card font-semibold text-forest">{title}</h3>
       {description && <p className="mt-1 max-w-xs text-body text-muted">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
@@ -27,7 +27,7 @@ interface LoadingSkeletonProps {
 }
 
 function Bone({ className }: { className: string }) {
-  return <div className={`skeleton rounded-control bg-border ${className}`} />;
+  return <div className={`skeleton rounded-control bg-pale-mint ${className}`} />;
 }
 
 export function LoadingSkeleton({ variant = 'page', label = 'กำลังโหลด' }: LoadingSkeletonProps) {
@@ -71,7 +71,7 @@ export function ErrorState({
       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-danger/10 text-danger" aria-hidden="true">
         <AlertTriangle size={26} />
       </span>
-      <h3 className="mt-3 text-card font-semibold">{title}</h3>
+      <h3 className="mt-3 text-card font-semibold text-forest">{title}</h3>
       <p className="mt-1 max-w-sm text-body text-muted">{description}</p>
       <div className="mt-4 flex gap-2">
         {onRetry && (
@@ -101,7 +101,24 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBound
   }
 
   render() {
-    if (this.state.error) {
+    const { error } = this.state;
+    if (error) {
+      // A page's code chunk failed to download (offline before it was cached, or replaced by an update).
+      // React.lazy keeps the failed import, so only a reload can fetch it again.
+      const chunkFailed = /dynamically imported module|Importing a module script failed|Loading chunk/i.test(error.message);
+      if (chunkFailed) {
+        return (
+          <ErrorState
+            title="โหลดหน้านี้ไม่สำเร็จ"
+            description={
+              typeof navigator !== 'undefined' && !navigator.onLine
+                ? 'คุณออฟไลน์อยู่และหน้านี้ยังไม่ได้ถูกเก็บไว้ในเครื่อง ลองอีกครั้งเมื่อเชื่อมต่ออินเทอร์เน็ต ข้อมูลของคุณยังอยู่ครบ'
+                : 'ไฟล์ของหน้านี้โหลดไม่สำเร็จ ลองโหลดหน้าใหม่ ข้อมูลของคุณยังอยู่ครบ'
+            }
+            onRetry={() => window.location.reload()}
+          />
+        );
+      }
       return <ErrorState onRetry={() => this.setState({ error: null })} />;
     }
     return this.props.children;

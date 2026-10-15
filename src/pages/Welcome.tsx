@@ -41,10 +41,10 @@ function SplashScreen({ onDone }: { onDone: () => void }) {
   const pct = Math.round((done / SPLASH_STEPS.length) * 100);
 
   return (
-    <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-primary px-8 text-white">
+    <div className="bg-forest-hero relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-8 text-white">
       <svg className="absolute inset-x-0 bottom-0 h-40 w-full" viewBox="0 0 400 160" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0 90 C80 40 160 50 220 90 C280 60 340 50 400 80 L400 160 L0 160Z" className="fill-emerald" opacity={0.5} />
-        <path d="M0 130 C100 100 200 110 260 128 C320 112 360 110 400 120 L400 160 L0 160Z" className="fill-forest" opacity={0.45} />
+        <path d="M0 90 C80 40 160 50 220 90 C280 60 340 50 400 80 L400 160 L0 160Z" className="fill-emerald" opacity={0.35} />
+        <path d="M0 130 C100 100 200 110 260 128 C320 112 360 110 400 120 L400 160 L0 160Z" className="fill-evergreen" opacity={0.7} />
       </svg>
 
       <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', damping: 14 }}>
@@ -62,10 +62,10 @@ function SplashScreen({ onDone }: { onDone: () => void }) {
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuetext={SPLASH_STEPS[Math.min(done, SPLASH_STEPS.length) - 1]}
-          className="mt-3 h-6 rounded-full bg-white p-1 shadow-[0_6px_16px_rgb(0_0_0/0.18)]"
+          className="mt-3 h-6 rounded-full bg-white/12 p-1 ring-1 ring-white/20"
         >
           <motion.div
-            className="h-full rounded-full bg-sunset"
+            className="h-full rounded-full bg-linear-to-r from-emerald to-lime"
             initial={{ width: '12%' }}
             animate={{ width: `${Math.max(12, pct)}%` }}
             transition={{ duration: 0.45, ease: 'easeOut' }}
@@ -118,7 +118,7 @@ function Dots({ index, onSelect }: { index: number; onSelect: (i: number) => voi
           aria-current={i === index ? 'step' : undefined}
           className="flex h-11 w-7 items-center justify-center"
         >
-          <span className={`block h-2.5 rounded-full transition-all ${i === index ? 'w-2.5 bg-primary' : 'w-2.5 bg-border'}`} />
+          <span className={`block h-2.5 rounded-full transition-all ${i === index ? 'w-6 bg-primary' : 'w-2.5 bg-border'}`} />
         </button>
       ))}
     </div>
@@ -162,14 +162,14 @@ function Onboarding({ index, onIndex, onFinish, returningName }: OnboardingProps
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-cream">
+    <div className="bg-meadow flex min-h-dvh flex-col">
       <header className="safe-top mx-auto flex w-full max-w-5xl items-center justify-between px-5 pt-4">
         <Logo />
         {(!returningName || index > 0) && (
           <button
             type="button"
             onClick={onFinish}
-            className="min-h-11 px-2 font-display text-body font-semibold text-sunset underline underline-offset-4"
+            className="min-h-11 rounded-full px-4 font-display text-body font-semibold text-primary hover:bg-pale-mint"
           >
             {returningName ? 'กลับเข้าเกม' : 'ข้าม'}
           </button>
@@ -189,7 +189,7 @@ function Onboarding({ index, onIndex, onFinish, returningName }: OnboardingProps
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.25}
             onDragEnd={onDragEnd}
-            className="mx-auto mt-4 w-full max-w-sm touch-pan-y lg:max-w-none"
+            className="mx-auto mt-4 w-full max-w-sm touch-pan-y overflow-hidden rounded-hero bg-pale-mint shadow-card ring-1 ring-mint/70 lg:max-w-none"
           >
             <Art />
           </motion.div>
@@ -205,10 +205,10 @@ function Onboarding({ index, onIndex, onFinish, returningName }: OnboardingProps
               transition={{ duration: 0.22 }}
             >
               <p className="font-display text-section font-semibold text-primary lg:text-[1.375rem]">{slide.lead}</p>
-              <h1 className="font-display text-[2.125rem] leading-tight font-bold text-sunset lg:text-[2.75rem]">{slide.title}</h1>
+              <h1 className="font-display text-[2.125rem] leading-tight font-bold text-forest lg:text-[2.75rem]">{slide.title}</h1>
               <p className="mt-2 text-body font-medium text-text">{slide.body}</p>
               {index === 0 && returningName && (
-                <p className="mt-3 rounded-control bg-mint/50 px-3 py-2 text-caption">
+                <p className="mt-3 rounded-control bg-pale-mint px-3 py-2 text-caption ring-1 ring-mint">
                   ยินดีต้อนรับกลับ <span className="font-semibold">{returningName}</span> ความคืบหน้าของคุณยังอยู่ครบ
                 </p>
               )}

@@ -1,120 +1,108 @@
 # EcoQuest — ภารกิจพิชิตโลกสีเขียว
 
-เว็บแอปเกมมิฟิเคชัน (Gamification) เพื่อส่งเสริมพฤติกรรมรักษ์สิ่งแวดล้อม พัฒนาด้วย React + TypeScript
+เว็บแอปเกมมิฟิเคชันส่งเสริมพฤติกรรมรักษ์สิ่งแวดล้อม (React + TypeScript) ผลงานโปรเจกต์มหาวิทยาลัย
+ทำงานแบบผู้เล่นคนเดียวบนอุปกรณ์เดียว ไม่มีเซิร์ฟเวอร์
 
-ผลงานโปรเจกต์มหาวิทยาลัย
+## ฟีเจอร์
 
-## Features
+| หน้า | Route | สรุป |
+|---|---|---|
+| Welcome / สร้างโปรไฟล์ | `/welcome`, `/welcome/profile` | Splash, Onboarding, สร้างโปรไฟล์ 3 ขั้น (อวาตาร์ 8 ตัว) |
+| My Green World | `/home` | Dashboard: Level/XP, ภารกิจแนะนำ, โลกสีเขียว, กิจกรรมล่าสุด |
+| Eco Missions | `/missions`, `/missions/:id` | ภารกิจ 24 รายการ 6 หมวด ค้นหา/กรอง, เริ่ม → ยืนยันว่าทำสำเร็จ |
+| โลกของฉัน | `/world` | โลกเติบโตตามจำนวนภารกิจที่ทำจริง |
+| Achievements | `/achievements` | เหรียญ 19 รายการ พร้อมเงื่อนไขและวันที่ปลดล็อก |
+| Green Impact | `/impact` | บันทึกกิจกรรม (self-reported) คำนวณ CO2e เฉพาะที่มีค่าอ้างอิง |
+| Eco Quiz | `/quiz`, `/quiz/result` | คำถาม 33 ข้อพร้อมเฉลยและแหล่งอ้างอิง |
+| Leaderboard | `/leaderboard` | อันดับรายสัปดาห์/ทั้งหมด (ผู้เล่นอื่นเป็นข้อมูลตัวอย่าง) |
+| Profile | `/profile` | สถิติ ประวัติ แก้ไขชื่อ/อวาตาร์ |
+| Settings | `/settings` | ความชอบ เสียง/การเคลื่อนไหว ส่งออก/รีเซ็ตข้อมูล แหล่งอ้างอิง |
+| ติดตั้ง & ออฟไลน์ | `/install` | ปุ่มติดตั้ง (เมื่อเบราว์เซอร์รองรับ) หรือขั้นตอนตามเบราว์เซอร์ และสถานะออฟไลน์ |
+| สถิติ | `/progress` | กราฟและประวัติทั้งหมด |
 
-- **ภารกิจรักษ์โลก** — 18 กิจกรรมใน 6 หมวด: ขยะ, พลังงาน, น้ำ, เดินทาง, บริโภค, ธรรมชาติ
-- **ควิซสิ่งแวดล้อม** — 15 คำถามพร้อมคำอธิบาย รับ XP เมื่อตอบถูก
-- **ระบบ XP & Level** — สูตร `50 × level^1.5` พร้อม Streak นับวันต่อเนื่อง
-- **ระบบยศ** — 5 ระดับ: นักสำรวจ → นักอนุรักษ์ → ผู้พิทักษ์โลก → แชมเปี้ยนสีเขียว → ตำนานรักษ์โลก
-- **โลกเสมือน** — SVG แสดงสถานะโลก 6 ระดับ เปลี่ยนตาม XP ที่สะสม
-- **เหรียญตรา** — 17 เหรียญตรา ปลดล็อกเมื่อทำตามเงื่อนไข
-- **สถิติ & กราฟ** — Recharts แสดงกิจกรรมแยกหมวดหมู่
-- **PWA** — ติดตั้งบนมือถือได้ ใช้งานออฟไลน์
-- **Launcher (PC)** — แสดง Phone Frame บนเดสก์ท็อป ข้ามบนมือถือ
-- **Framer Motion** — แอนิเมชันเปลี่ยนหน้าและอินเตอร์แอคชัน
+Route ที่ไม่มีอยู่จะแสดงหน้า "ไม่พบหน้านี้" Route ที่ต้องมีโปรไฟล์จะพาไป `/welcome` เมื่อยังไม่มีโปรไฟล์
 
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Framework | React 19 + TypeScript 6 |
-| Build | Vite 8 + `@tailwindcss/vite` |
-| Styling | Tailwind CSS v4 |
-| Icons | Lucide React |
-| Charts | Recharts |
-| Animation | Framer Motion |
-| Routing | React Router DOM v7 (HashRouter) |
-| PWA | vite-plugin-pwa |
-| Testing | Vitest + @testing-library/react + jsdom |
-| Storage | localStorage (ข้อมูลอยู่ในเครื่องผู้ใช้เท่านั้น) |
-
-## Getting Started
+## เริ่มใช้งาน
 
 ```bash
 npm install
-npm run dev
+npm run dev        # http://localhost:5173/ecoquest/
+npm test           # Vitest
+npm run lint       # oxlint
+npm run build      # tsc -b แล้ว vite build
+npm run preview    # เปิด build จริง (ใช้ทดสอบ Service Worker/ออฟไลน์)
 ```
 
-เปิดเบราว์เซอร์ที่ `http://localhost:5173`
+เข้าจากมือถือในวง Wi-Fi เดียวกัน: เปิด `http://<IP-ของ-PC>:5173/ecoquest/`
+หมายเหตุ: ผ่าน HTTP บน IP ในวง LAN เบราว์เซอร์จะไม่เปิด Service Worker (ต้องเป็น HTTPS หรือ localhost) แอปยังใช้ได้ แต่ไม่มีแคชออฟไลน์และติดตั้งแบบ PWA ไม่ได้
 
-### เข้าถึงจากมือถือ (WiFi เดียวกัน)
+## Tech Stack
 
-```bash
-npm run dev -- --host
-```
-
-เปิด `http://<IP-ของ-PC>:5173` บนมือถือ
-
-### ทดสอบ
-
-```bash
-npm test
-```
-
-### Build
-
-```bash
-npm run build
-```
-
-## โครงสร้างโปรเจกต์
-
-```
-src/
-├── components/
-│   ├── layout/       # AppShell, Launcher, MobileNav
-│   └── world/        # WorldPreview (SVG)
-├── data/
-│   ├── badges.ts     # เหรียญตรา 17 รายการ
-│   ├── missions.ts   # ภารกิจ 18 รายการ
-│   └── quizzes.ts    # คำถามควิซ 15 ข้อ
-├── pages/            # Dashboard, Missions, Quiz, Ranking, Progress, Impact, Settings, ...
-├── services/
-│   └── storageService.ts  # จัดการ localStorage
-├── store/
-│   └── GameContext.tsx     # React Context (state management)
-├── test/             # Vitest tests (45 test cases)
-├── types/            # TypeScript interfaces
-└── utils/            # xp, streak, world helpers
-```
-
-## Design System
-
-- **Color tokens** — กำหนดใน `src/index.css` (`@theme`) เช่น `forest`, `primary`, `emerald`, `mint`, `lime`, `background`, `surface`, `text`, `muted`, `border`, `warning`, `danger`, `success` พาเลตต์เริ่มต้นของ Tailwind ถูกล้างออก จึงใช้ได้เฉพาะสีตามบทบาทเท่านั้น
-- **Typography** — IBM Plex Sans Thai (fallback: Noto Sans Thai, Leelawadee UI, Tahoma) ขนาด `text-page`, `text-section`, `text-card`, `text-body`, `text-caption`
-- **Shared components** — `src/components/ui/` (ปุ่ม, การ์ด, ProgressBar/Ring, XPBadge, LevelBadge, StatCard, MissionCard, AchievementBadge, EmptyState, LoadingSkeleton, ErrorState, Modal/ConfirmationDialog, SegmentedControl, FilterChips, ResponsiveChart, AvatarPicker, PageHeader, EcoMascot) และ `src/components/layout/` (AppShell, BottomNavigation, DesktopSidebar, Launcher)
-- **Responsive** — มือถือใช้ Bottom Navigation, เดสก์ท็อป (≥1024px) ใช้ Sidebar และ Dashboard หลายคอลัมน์ ความกว้างเนื้อหาสูงสุด 1200px
-- **Motion** — Framer Motion สำหรับ page fade, card entrance, XP toast, Level Up, Badge Unlock และ progress รองรับ `prefers-reduced-motion` และสวิตช์ "ลดการเคลื่อนไหว" ในหน้าตั้งค่า
-- **Mascot** — Sprouty เป็น SVG ของโปรเจกต์เอง ไม่พึ่งพาภาพจากลิงก์ภายนอก
+React 19 · TypeScript 6 · Vite 8 · Tailwind CSS v4 · React Router 7 (HashRouter) · Framer Motion · Recharts · Lucide · vite-plugin-pwa (Workbox) · Vitest + Testing Library
 
 ## สถาปัตยกรรม
 
-- **State Management** — React Context API (`GameProvider`) จัดการ profile, progress, toast
-- **Persistence** — localStorage ผ่าน `storageService` (centralized, ไม่เข้าถึงตรงจาก components)
-- **Routing** — React Router DOM v7 (HashRouter สำหรับ GitHub Pages), protected routes redirect ถ้ายังไม่มี profile
-- **Mobile-first** — ออกแบบสำหรับ 375px เป็นหลัก, bottom navigation 5 แท็บ
-- **Desktop Launcher** — ตรวจจับ `(max-width: 768px)` ข้ามโหมด Phone Frame บนมือถือ
+```
+src/
+├── App.tsx, main.tsx        # Router, providers, ลงทะเบียน Service Worker
+├── config/                  # ค่ากลาง: levels.ts (30 เลเวล), quizResults.ts, app.ts
+├── data/                    # นิยามคงที่: missions, badges, quizzes, emissionFactors, demoLeaderboard ...
+├── services/
+│   ├── storageService.ts    # จุดเดียวที่แตะ localStorage: อ่าน/ตรวจสอบ/ย้าย schema/บันทึก/ส่งออก/รีเซ็ต
+│   ├── rewardService.ts     # ประเมินรางวัลภารกิจและควิซ (pure) → state ถัดไปทั้งก้อน
+│   ├── impactCalculator.ts  # คำนวณ CO2e จาก factor ที่มีแหล่งอ้างอิงเท่านั้น
+│   ├── leaderboardService.ts# interface สำหรับต่อ backend ในอนาคต + เวอร์ชัน local/demo
+│   ├── pwaService.ts        # สถานะติดตั้ง/Service Worker/ออนไลน์
+│   └── soundService.ts
+├── store/GameContext.tsx    # state กลางของทั้งแอป; ทุกหน้าอ่าน/เขียนผ่านที่นี่
+├── utils/                   # xp, badges, activity, playerStats, streak, world, ...
+├── components/{layout,ui,feedback,illustrations,impact}/
+├── pages/                   # 1 ไฟล์ต่อ 1 หน้า (lazy-loaded)
+└── test/                    # unit + integration + end-to-end flows
+```
 
-## ข้อจำกัดและความซื่อสัตย์
+โครงสร้างไฟล์ไม่ได้ย้ายตามรายการแนะนำในสเปกทุกชื่อ แต่แยกหน้าที่ตามหลักเดียวกัน (นิยามข้อมูล / service / state / UI)
 
-- ตัวเลขเป็น **คะแนนกิจกรรม** ไม่ใช่ค่า CO₂ ที่คำนวณได้แม่นยำ
-- ภารกิจชีวิตจริงเป็น **self-reported** — ระบบไม่ได้ตรวจจับการกระทำจริง
-- ผลกระทบจริงขึ้นอยู่กับบริบทและพฤติกรรมของแต่ละคน
-- โลกเสมือนเป็นภาพจำลองเชิงสัญลักษณ์
-- ข้อมูลทั้งหมดถูกเก็บใน localStorage ของเครื่องผู้ใช้เท่านั้น ไม่มีการส่งออกภายนอก
-- ไม่มี API keys หรือ secrets ฝังใน client code
+### ระบบหลัก (สเปกส่วนที่ 4)
+
+| ระบบ | ที่อยู่ | หมายเหตุ |
+|---|---|---|
+| Player Store | `PlayerProfile` + `PlayerProgress` | เก็บ id, ชื่อ, อวาตาร์, createdAt/updatedAt, preferences, totalXp — **ไม่เก็บ Level** (คำนวณจาก XP) |
+| Mission Store | `data/missions.ts` แยกจาก `progress.inProgress` / `progress.completions` | completion แต่ละรายการมี event id ของตัวเอง |
+| Reward Service | `rewardService.evaluate*` → `GameContext.applyReward` | ตรวจ event → กันรับซ้ำ → สร้าง record → XP → Level → Achievement → บันทึก **ก่อน** อัปเดตหน้าจอ ถ้าบันทึกไม่สำเร็จจะไม่มีอะไรเปลี่ยน (ไม่มีครึ่งสำเร็จ) |
+| XP & Level | `config/levels.ts` + `utils/xp.ts` | ตารางเดียว ทดสอบ XP=0, ก่อนเกณฑ์, ตรงเกณฑ์, ข้ามหลายเลเวล, XP มหาศาล |
+| Achievement | `utils/badges.ts` | ตรวจหลัง event, บันทึกครั้งเดียวพร้อมวันที่, เปิดหน้าซ้ำไม่แจ้งเตือนซ้ำ |
+| Activity History | `utils/activity.ts` | สร้างจาก record ที่บันทึกจริง ทุกรายการมี id เรียงใหม่→เก่า ไม่เก็บข้อมูลอ่อนไหว |
+| Storage | `storageService` | ไม่มี component ใดเขียน localStorage โดยตรง |
+| Migration | `schemaVersion` + `sanitize*` | ตรวจทุก field ก่อนใช้, ข้าม record เสีย, ย้ายข้อมูลควิซรุ่นเก่า, JSON เสียจะถูกสำรองไว้ที่ `<key>_corrupt_backup` แทนการเขียนทับ |
+| State Sync | `GameContext` + `utils/playerStats.ts` | ทุกหน้าใช้ตัวเลขจากแหล่งเดียวกัน |
+
+ชื่อเมธอดที่สเปกยกตัวอย่าง (getPlayer, completeMission, saveQuizAttempt …) ตรงกับ: `storageService.getProfile/getProgress/saveProfile/saveProgress/exportData/resetAll` และ `useGame().updateProfile/completeMission/submitQuizAttempt/addImpactRecord/resetProgress`
+
+## PWA และออฟไลน์
+
+- Manifest: ชื่อเต็ม/สั้น, theme/background color, `display: standalone`, ไอคอน PNG 64/192/512 + maskable + apple-touch-icon (สร้างใหม่ได้ด้วย `npm run generate-pwa-assets`)
+- Service Worker (Workbox): precache app shell และ static assets, fallback ไป `index.html`, ลบแคชเวอร์ชันเก่าอัตโนมัติ, ฟอนต์ Google แคชแยกชื่อ `ecoquest-font-*-v1`
+- **ไม่แคชข้อมูลผู้เล่น** — ข้อมูลอยู่ใน localStorage เท่านั้น Service Worker แคชเฉพาะไฟล์ของแอป
+- เมื่อมีเวอร์ชันใหม่ แอปแสดงแถบ "มีเวอร์ชันใหม่" ให้ผู้ใช้กดอัปเดตเอง (ไม่โหลดใหม่กลางภารกิจ)
+- ปุ่มติดตั้งแสดงเฉพาะเมื่อเบราว์เซอร์ส่ง `beforeinstallprompt` จริง และขึ้นว่า "ติดตั้งแล้ว" เฉพาะเมื่อได้ `appinstalled` หรือเปิดในโหมดแอป
+- Service Worker ไม่ทำงานใน `npm run dev` ให้ทดสอบด้วย `npm run build && npm run preview`
+
+## ข้อจำกัด (Local Demo Limitations)
+
+- **ผู้ใช้คนเดียว ต่ออุปกรณ์ ต่อเบราว์เซอร์** — ข้อมูลอยู่ใน localStorage
+- **ข้อมูลหายได้** เมื่อเคลียร์ข้อมูลเบราว์เซอร์, ใช้โหมดไม่ระบุตัวตน หรือเบราว์เซอร์ลบพื้นที่เก็บข้อมูลเอง ใช้ "ส่งออกข้อมูล (JSON)" ในหน้าตั้งค่าเพื่อสำรอง (ยังไม่มีการนำเข้า)
+- **ไม่มีการซิงก์ข้ามอุปกรณ์** และไม่มีบัญชีออนไลน์
+- **Leaderboard เป็นข้อมูลตัวอย่าง** — ผู้เล่นอื่นเป็นค่าคงที่ที่ติดป้าย "ข้อมูลตัวอย่าง" มีเพียงแถวของคุณที่มาจากการเล่นจริง
+- **การยืนยันภารกิจไม่ใช่หลักฐาน** — ภารกิจชีวิตจริงเป็น self-reported ระบบไม่ได้ตรวจจับการกระทำจริง
+- **CO2e** คำนวณเฉพาะกิจกรรมที่มีค่าอ้างอิงที่ตรวจสอบได้ (ปัจจุบัน: ไฟฟ้า, TGO 0.4750 kgCO2e/kWh มีผล 1 ม.ค. 2569) กิจกรรมอื่นแสดงเป็นปริมาณเท่านั้น และไม่มีการแปลง XP เป็น CO2e
+- คำอธิบายผลกระทบของภารกิจบางข้อยังมีตัวเลขที่ไม่ได้ระบุแหล่งอ้างอิง (อยู่ในรายการแก้ไขต่อ)
+- Streak และ "รายสัปดาห์" ใช้วันที่ของเครื่อง หากตั้งเวลาเครื่องผิด ผลจะคลาดเคลื่อน
+- ไม่มี API keys หรือ secrets ใน client code และไม่มีการส่งข้อมูลผู้ใช้ออกภายนอก (ยกเว้นการโหลดฟอนต์จาก Google Fonts)
 
 ## Deploy (GitHub Pages)
 
-โปรเจกต์ตั้งค่า GitHub Actions ไว้แล้วใน `.github/workflows/deploy.yml`
-
-1. Push ไปที่ branch `main`
-2. GitHub Actions จะ build และ deploy อัตโนมัติ
-3. เปิดที่ `https://<username>.github.io/ecoquest/`
+`.github/workflows/deploy.yml` จะ build และ deploy เมื่อ push ไปที่ `main` แล้วเปิดที่ `https://<username>.github.io/ecoquest/`
 
 ## License
 

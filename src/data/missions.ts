@@ -1,24 +1,44 @@
-import type { Mission } from '../types';
+import type { ImpactType, Mission, MissionCategory, MissionDifficulty } from '../types';
 
-export const missions: Mission[] = [
+/*
+ * XP is set by difficulty only, so rewards stay consistent across missions:
+ * - easy:   a habit done in about 10 minutes or less, no planning needed
+ * - medium: takes 15–30 minutes, needs a little planning, or a short learning task
+ * - hard:   takes longer than 30 minutes or spans several days
+ */
+export const XP_BY_DIFFICULTY: Record<MissionDifficulty, number> = {
+  easy: 20,
+  medium: 35,
+  hard: 50,
+};
+
+const IMPACT_BY_CATEGORY: Record<MissionCategory, ImpactType> = {
+  waste: 'waste-reduction',
+  energy: 'energy-saving',
+  water: 'water-saving',
+  transport: 'emission-reduction',
+  consumption: 'resource-saving',
+  nature: 'biodiversity',
+};
+
+const MISSION_DATA: Omit<Mission, 'xpReward' | 'impactType'>[] = [
   // === ขยะและรีไซเคิล ===
   {
     id: 'waste-001',
-    title: 'แยกขยะวันนี้',
+    title: 'แยกขยะรีไซเคิลให้ถูกประเภท',
     description: 'แยกขยะรีไซเคิลออกจากขยะทั่วไปอย่างน้อย 1 ครั้งในวันนี้',
     category: 'waste',
     difficulty: 'easy',
-    xp: 20,
-    durationMinutes: 10,
+    estimatedMinutes: 10,
     type: 'self-reported',
     repeatPolicy: 'daily',
     active: true,
-    instructions: [
+    steps: [
       'สังเกตขยะที่จะทิ้งว่าสามารถรีไซเคิลได้หรือไม่',
       'แยกขวดพลาสติก กระดาษ โลหะ ออกจากขยะทั่วไป',
       'ทิ้งในถังที่เหมาะสม',
     ],
-    learningPoint: 'การแยกขยะช่วยลดปริมาณขยะที่ไปสู่หลุมฝังกลบ และช่วยให้วัสดุรีไซเคิลกลับมาใช้ใหม่ได้',
+    environmentalExplanation: 'การแยกขยะช่วยลดปริมาณขยะที่ไปสู่หลุมฝังกลบ และช่วยให้วัสดุรีไซเคิลกลับมาใช้ใหม่ได้',
   },
   {
     id: 'waste-002',
@@ -26,35 +46,33 @@ export const missions: Mission[] = [
     description: 'ปฏิเสธถุงพลาสติกเมื่อซื้อของ ใช้ถุงผ้าหรือถือกลับเอง',
     category: 'waste',
     difficulty: 'easy',
-    xp: 15,
-    durationMinutes: 5,
+    estimatedMinutes: 5,
     type: 'self-reported',
     repeatPolicy: 'daily',
     active: true,
-    instructions: [
+    steps: [
       'พกถุงผ้าติดตัวเมื่อออกจากบ้าน',
       'บอกพนักงานว่าไม่ต้องใส่ถุง',
       'ถ้าซื้อของชิ้นเดียว ถือกลับเองได้',
     ],
-    learningPoint: 'ถุงพลาสติกใช้เวลาย่อยสลาย 100-500 ปี การลดการใช้ถุงพลาสติกแม้เพียงวันละ 1 ใบก็สร้างความแตกต่างได้',
+    environmentalExplanation: 'ถุงพลาสติกใช้เวลาย่อยสลาย 100-500 ปี การลดการใช้ถุงพลาสติกแม้เพียงวันละ 1 ใบก็สร้างความแตกต่างได้',
   },
   {
     id: 'waste-003',
-    title: 'เรียนรู้สัญลักษณ์รีไซเคิล',
+    title: 'เรียนรู้สัญลักษณ์บนบรรจุภัณฑ์',
     description: 'ทำความรู้จักสัญลักษณ์รีไซเคิลบนบรรจุภัณฑ์ต่าง ๆ',
     category: 'waste',
     difficulty: 'easy',
-    xp: 25,
-    durationMinutes: 10,
+    estimatedMinutes: 10,
     type: 'educational',
     repeatPolicy: 'once',
     active: true,
-    instructions: [
+    steps: [
       'หยิบบรรจุภัณฑ์ 3 ชิ้นรอบตัวขึ้นมาดู',
       'มองหาสัญลักษณ์รีไซเคิล (สามเหลี่ยมลูกศร)',
       'ตัวเลขในสัญลักษณ์บอกประเภทพลาสติก: 1(PET), 2(HDPE) รีไซเคิลง่ายที่สุด',
     ],
-    learningPoint: 'สัญลักษณ์รีไซเคิลมี 7 ประเภท หมายเลข 1 และ 2 รีไซเคิลได้ง่ายที่สุด ส่วนหมายเลข 3 และ 7 รีไซเคิลยาก',
+    environmentalExplanation: 'สัญลักษณ์รีไซเคิลมี 7 ประเภท หมายเลข 1 และ 2 รีไซเคิลได้ง่ายที่สุด ส่วนหมายเลข 3 และ 7 รีไซเคิลยาก',
   },
   {
     id: 'waste-004',
@@ -62,17 +80,16 @@ export const missions: Mission[] = [
     description: 'เก็บเศษอาหารเพื่อทำปุ๋ยหมักหรือส่งจุดรับทำปุ๋ย',
     category: 'waste',
     difficulty: 'hard',
-    xp: 50,
-    durationMinutes: 30,
+    estimatedMinutes: 30,
     type: 'self-reported',
     repeatPolicy: 'once',
     active: true,
-    instructions: [
+    steps: [
       'เก็บเศษผักผลไม้ เปลือกไข่ กากกาแฟ ในภาชนะมีฝาปิด',
       'หาจุดทำปุ๋ยหมักในชุมชน หรือทำกล่องปุ๋ยเล็ก ๆ ที่บ้าน',
       'หลีกเลี่ยงเนื้อสัตว์ น้ำมัน และผลิตภัณฑ์นม',
     ],
-    learningPoint: 'เศษอาหารคิดเป็น 30-40% ของขยะทั้งหมด การทำปุ๋ยหมักช่วยลดขยะและสร้างสารอาหารกลับคืนสู่ดิน',
+    environmentalExplanation: 'เศษอาหารคิดเป็น 30-40% ของขยะทั้งหมด การทำปุ๋ยหมักช่วยลดขยะและสร้างสารอาหารกลับคืนสู่ดิน',
   },
 
   // === พลังงาน ===
@@ -82,17 +99,16 @@ export const missions: Mission[] = [
     description: 'สร้างนิสัยปิดไฟทุกครั้งเมื่อออกจากห้อง',
     category: 'energy',
     difficulty: 'easy',
-    xp: 15,
-    durationMinutes: 1,
+    estimatedMinutes: 1,
     type: 'self-reported',
     repeatPolicy: 'daily',
     active: true,
-    instructions: [
+    steps: [
       'สังเกตตัวเองวันนี้ว่าปิดไฟเมื่อออกจากห้องหรือไม่',
       'ตั้งใจปิดไฟทุกห้องที่ออกมา',
       'รายงานเมื่อทำได้ตลอดทั้งวัน',
     ],
-    learningPoint: 'การปิดไฟเพียง 1 ชั่วโมงต่อวัน สามารถประหยัดค่าไฟได้ประมาณ 300-500 บาทต่อปี',
+    environmentalExplanation: 'การปิดไฟเพียง 1 ชั่วโมงต่อวัน สามารถประหยัดค่าไฟได้ประมาณ 300-500 บาทต่อปี',
   },
   {
     id: 'energy-002',
@@ -100,17 +116,16 @@ export const missions: Mission[] = [
     description: 'ถอดปลั๊กเครื่องใช้ไฟฟ้าที่ไม่ใช้งานอย่างน้อย 3 ชิ้น',
     category: 'energy',
     difficulty: 'easy',
-    xp: 20,
-    durationMinutes: 5,
+    estimatedMinutes: 5,
     type: 'self-reported',
     repeatPolicy: 'daily',
     active: true,
-    instructions: [
+    steps: [
       'สำรวจเครื่องใช้ไฟฟ้าในห้อง',
       'ถอดปลั๊กที่ชาร์จเต็มแล้ว ทีวีที่ไม่ดู ไมโครเวฟที่ไม่ใช้',
       'Standby power กินไฟ 5-10% ของค่าไฟทั้งหมด',
     ],
-    learningPoint: 'เครื่องใช้ไฟฟ้าในโหมด standby ยังกินไฟอยู่ เรียกว่า "phantom load" คิดเป็น 5-10% ของค่าไฟบ้าน',
+    environmentalExplanation: 'เครื่องใช้ไฟฟ้าในโหมด standby ยังกินไฟอยู่ เรียกว่า "phantom load" คิดเป็น 5-10% ของค่าไฟบ้าน',
   },
   {
     id: 'energy-003',
@@ -118,17 +133,16 @@ export const missions: Mission[] = [
     description: 'ศึกษาพลังงานหมุนเวียน 3 ประเภทและข้อดีข้อเสีย',
     category: 'energy',
     difficulty: 'medium',
-    xp: 35,
-    durationMinutes: 15,
+    estimatedMinutes: 15,
     type: 'educational',
     repeatPolicy: 'once',
     active: true,
-    instructions: [
+    steps: [
       'ศึกษาพลังงานแสงอาทิตย์ ลม และน้ำ',
       'เปรียบเทียบข้อดีและข้อจำกัดของแต่ละประเภท',
       'คิดว่าพลังงานชนิดใดเหมาะกับพื้นที่ที่คุณอาศัย',
     ],
-    learningPoint: 'ประเทศไทยมีศักยภาพสูงด้านพลังงานแสงอาทิตย์ เนื่องจากได้รับแสงแดดเฉลี่ย 5-6 ชั่วโมงต่อวัน',
+    environmentalExplanation: 'ประเทศไทยมีศักยภาพสูงด้านพลังงานแสงอาทิตย์ เนื่องจากได้รับแสงแดดเฉลี่ย 5-6 ชั่วโมงต่อวัน',
   },
 
   // === น้ำ ===
@@ -138,17 +152,16 @@ export const missions: Mission[] = [
     description: 'ปิดก๊อกน้ำขณะแปรงฟันทั้งเช้าและเย็น',
     category: 'water',
     difficulty: 'easy',
-    xp: 15,
-    durationMinutes: 5,
+    estimatedMinutes: 5,
     type: 'self-reported',
     repeatPolicy: 'daily',
     active: true,
-    instructions: [
+    steps: [
       'เปิดน้ำเฉพาะตอนบ้วนปากและล้างแปรง',
       'ปิดก๊อกขณะแปรงฟัน',
       'ทำทั้งเช้าและเย็น',
     ],
-    learningPoint: 'การเปิดน้ำทิ้งขณะแปรงฟันสูญเสียน้ำประมาณ 6-8 ลิตรต่อครั้ง หรือกว่า 4,000 ลิตรต่อปี',
+    environmentalExplanation: 'การเปิดน้ำทิ้งขณะแปรงฟันสูญเสียน้ำประมาณ 6-8 ลิตรต่อครั้ง หรือกว่า 4,000 ลิตรต่อปี',
   },
   {
     id: 'water-002',
@@ -156,17 +169,16 @@ export const missions: Mission[] = [
     description: 'ลดเวลาอาบน้ำให้ไม่เกิน 5 นาที',
     category: 'water',
     difficulty: 'medium',
-    xp: 25,
-    durationMinutes: 5,
+    estimatedMinutes: 5,
     type: 'self-reported',
     repeatPolicy: 'daily',
     active: true,
-    instructions: [
+    steps: [
       'ตั้งเวลาก่อนเข้าอาบน้ำ',
       'เตรียมสบู่ แชมพู ให้พร้อม',
       'พยายามอาบให้เสร็จภายใน 5 นาที',
     ],
-    learningPoint: 'ฝักบัวใช้น้ำประมาณ 8-10 ลิตรต่อนาที การลดเวลาอาบน้ำ 3 นาที ประหยัดน้ำได้ 24-30 ลิตรต่อครั้ง',
+    environmentalExplanation: 'ฝักบัวใช้น้ำประมาณ 8-10 ลิตรต่อนาที การลดเวลาอาบน้ำ 3 นาที ประหยัดน้ำได้ 24-30 ลิตรต่อครั้ง',
   },
   {
     id: 'water-003',
@@ -174,17 +186,16 @@ export const missions: Mission[] = [
     description: 'เรียนรู้เกี่ยวกับวัฏจักรน้ำ และปัญหาการขาดแคลนน้ำทั่วโลก',
     category: 'water',
     difficulty: 'medium',
-    xp: 30,
-    durationMinutes: 15,
+    estimatedMinutes: 15,
     type: 'educational',
     repeatPolicy: 'once',
     active: true,
-    instructions: [
+    steps: [
       'ศึกษาวัฏจักรน้ำ: การระเหย ควบแน่น ตกตะกอน ไหลซึม',
       'น้ำจืดที่มนุษย์ใช้ได้มีเพียง 0.5% ของน้ำทั้งหมดบนโลก',
       'คิดว่าพฤติกรรมการใช้น้ำของคุณส่งผลอย่างไร',
     ],
-    learningPoint: 'น้ำจืดที่เข้าถึงได้คิดเป็นเพียง 0.5% ของน้ำทั้งหมดบนโลก ประชากรกว่า 2 พันล้านคนอาศัยในพื้นที่ขาดแคลนน้ำ',
+    environmentalExplanation: 'น้ำจืดที่เข้าถึงได้คิดเป็นเพียง 0.5% ของน้ำทั้งหมดบนโลก ประชากรกว่า 2 พันล้านคนอาศัยในพื้นที่ขาดแคลนน้ำ',
   },
 
   // === การเดินทาง ===
@@ -194,55 +205,52 @@ export const missions: Mission[] = [
     description: 'เดินหรือปั่นจักรยานแทนการใช้รถยนต์อย่างน้อย 1 เที่ยว',
     category: 'transport',
     difficulty: 'medium',
-    xp: 30,
-    durationMinutes: 30,
+    estimatedMinutes: 30,
     type: 'self-reported',
     repeatPolicy: 'daily',
     active: true,
-    instructions: [
+    steps: [
       'เลือกการเดินทางระยะใกล้ที่ปกติใช้รถ',
       'เปลี่ยนมาเดินหรือปั่นจักรยานแทน',
       'สังเกตสิ่งรอบข้างที่ไม่เคยเห็นขณะนั่งรถ',
     ],
-    learningPoint: 'การเดินทางด้วยรถยนต์ปล่อย CO2 ประมาณ 170 กรัมต่อกิโลเมตร การเดินและปั่นจักรยานปล่อย 0 กรัม',
+    environmentalExplanation: 'การเดินทางด้วยรถยนต์ปล่อย CO2 ประมาณ 170 กรัมต่อกิโลเมตร การเดินและปั่นจักรยานปล่อย 0 กรัม',
   },
   {
     id: 'transport-002',
     title: 'ใช้ขนส่งสาธารณะ',
     description: 'เดินทางด้วยรถไฟฟ้า รถเมล์ หรือขนส่งสาธารณะแทนรถส่วนตัว',
     category: 'transport',
-    difficulty: 'easy',
-    xp: 25,
-    durationMinutes: 30,
+    difficulty: 'medium',
+    estimatedMinutes: 30,
     type: 'self-reported',
     repeatPolicy: 'daily',
     active: true,
-    instructions: [
+    steps: [
       'วางแผนเส้นทางด้วยขนส่งสาธารณะ',
       'ใช้รถไฟฟ้า รถเมล์ หรือเรือ',
       'เปรียบเทียบเวลาและค่าใช้จ่ายกับการใช้รถส่วนตัว',
     ],
-    learningPoint: 'ขนส่งสาธารณะปล่อย CO2 ต่อคนต่อกิโลเมตรน้อยกว่ารถส่วนตัวถึง 4-5 เท่า',
+    environmentalExplanation: 'ขนส่งสาธารณะปล่อย CO2 ต่อคนต่อกิโลเมตรน้อยกว่ารถส่วนตัวถึง 4-5 เท่า',
   },
 
   // === การบริโภคอย่างรับผิดชอบ ===
   {
     id: 'consumption-001',
-    title: 'พกแก้วส่วนตัว',
-    description: 'พกแก้วน้ำส่วนตัวแทนการใช้แก้วพลาสติกใช้แล้วทิ้ง',
+    title: 'ใช้ขวดน้ำหรือแก้วส่วนตัว',
+    description: 'พกขวดน้ำหรือแก้วส่วนตัวแทนการใช้ขวดและแก้วพลาสติกใช้แล้วทิ้ง',
     category: 'consumption',
     difficulty: 'easy',
-    xp: 20,
-    durationMinutes: 5,
+    estimatedMinutes: 5,
     type: 'self-reported',
     repeatPolicy: 'daily',
     active: true,
-    instructions: [
+    steps: [
       'เตรียมแก้วน้ำ/กระบอกน้ำส่วนตัว',
       'ใช้แก้วส่วนตัวเมื่อซื้อเครื่องดื่ม',
       'ร้านกาแฟหลายร้านลดราคาเมื่อพกแก้วมาเอง',
     ],
-    learningPoint: 'คนไทยใช้แก้วพลาสติกเฉลี่ย 8 ใบต่อสัปดาห์ การพกแก้วส่วนตัวลดขยะพลาสติกได้กว่า 400 ใบต่อปี',
+    environmentalExplanation: 'คนไทยใช้แก้วพลาสติกเฉลี่ย 8 ใบต่อสัปดาห์ การพกแก้วส่วนตัวลดขยะพลาสติกได้กว่า 400 ใบต่อปี',
   },
   {
     id: 'consumption-002',
@@ -250,17 +258,16 @@ export const missions: Mission[] = [
     description: 'ไม่เหลืออาหารทิ้งในมื้อนี้',
     category: 'consumption',
     difficulty: 'easy',
-    xp: 15,
-    durationMinutes: 30,
+    estimatedMinutes: 30,
     type: 'self-reported',
     repeatPolicy: 'daily',
     active: true,
-    instructions: [
+    steps: [
       'ตักอาหารแต่พอดี',
       'ถ้าสั่งอาหาร เลือกขนาดที่กินหมด',
       'เหลือเท่าไหร่ก็ห่อกลับ',
     ],
-    learningPoint: 'อาหารที่ถูกทิ้งทั่วโลกมีมูลค่ากว่า 1 ล้านล้านดอลลาร์ต่อปี และปล่อยก๊าซเรือนกระจก 8-10% ของทั้งหมด',
+    environmentalExplanation: 'อาหารที่ถูกทิ้งทั่วโลกมีมูลค่ากว่า 1 ล้านล้านดอลลาร์ต่อปี และปล่อยก๊าซเรือนกระจก 8-10% ของทั้งหมด',
   },
   {
     id: 'consumption-003',
@@ -268,17 +275,16 @@ export const missions: Mission[] = [
     description: 'ศึกษาผลกระทบของอุตสาหกรรมแฟชั่นเร็วต่อสิ่งแวดล้อม',
     category: 'consumption',
     difficulty: 'medium',
-    xp: 30,
-    durationMinutes: 15,
+    estimatedMinutes: 15,
     type: 'educational',
     repeatPolicy: 'once',
     active: true,
-    instructions: [
+    steps: [
       'อุตสาหกรรมแฟชั่นปล่อยก๊าซเรือนกระจก 10% ของทั้งโลก',
       'เสื้อผ้า 1 ตัวใช้น้ำในการผลิตมากถึง 2,700 ลิตร',
       'คิดว่าคุณสามารถลดการซื้อเสื้อผ้าใหม่ได้อย่างไร',
     ],
-    learningPoint: 'อุตสาหกรรมแฟชั่นเป็นอุตสาหกรรมที่สร้างมลพิษมากเป็นอันดับ 2 ของโลก การซื้อเสื้อผ้ามือสองหรือใช้ให้นานขึ้นช่วยลดผลกระทบได้',
+    environmentalExplanation: 'อุตสาหกรรมแฟชั่นเป็นอุตสาหกรรมที่สร้างมลพิษมากเป็นอันดับ 2 ของโลก การซื้อเสื้อผ้ามือสองหรือใช้ให้นานขึ้นช่วยลดผลกระทบได้',
   },
 
   // === ธรรมชาติและความหลากหลายทางชีวภาพ ===
@@ -288,17 +294,16 @@ export const missions: Mission[] = [
     description: 'สังเกตต้นไม้ นก หรือสิ่งมีชีวิตรอบตัวอย่างน้อย 5 นาที',
     category: 'nature',
     difficulty: 'easy',
-    xp: 20,
-    durationMinutes: 10,
+    estimatedMinutes: 10,
     type: 'self-reported',
     repeatPolicy: 'daily',
     active: true,
-    instructions: [
+    steps: [
       'หาพื้นที่สีเขียวใกล้ตัว สวน ต้นไม้ริมทาง',
       'สังเกตสิ่งมีชีวิตรอบตัว ต้นไม้ นก แมลง',
       'จดบันทึกสิ่งที่เห็นหรือรู้สึก',
     ],
-    learningPoint: 'การใช้เวลาในธรรมชาติช่วยลดความเครียดและเพิ่มความตระหนักเรื่องสิ่งแวดล้อม งานวิจัยพบว่า 20 นาทีในสวนลดระดับคอร์ติซอลได้',
+    environmentalExplanation: 'การใช้เวลาในธรรมชาติช่วยลดความเครียดและเพิ่มความตระหนักเรื่องสิ่งแวดล้อม งานวิจัยพบว่า 20 นาทีในสวนลดระดับคอร์ติซอลได้',
   },
   {
     id: 'nature-002',
@@ -306,17 +311,16 @@ export const missions: Mission[] = [
     description: 'ปลูกต้นไม้ใหม่ 1 ต้น หรือดูแลรดน้ำต้นไม้ที่มีอยู่',
     category: 'nature',
     difficulty: 'medium',
-    xp: 35,
-    durationMinutes: 20,
+    estimatedMinutes: 20,
     type: 'self-reported',
     repeatPolicy: 'daily',
     active: true,
-    instructions: [
+    steps: [
       'เลือกต้นไม้ที่เหมาะกับพื้นที่',
       'ถ้าปลูกใหม่ เตรียมดินและกระถาง',
       'ถ้ารดน้ำ ให้รดในช่วงเช้าหรือเย็น',
     ],
-    learningPoint: 'ต้นไม้ 1 ต้นดูดซับ CO2 ได้ประมาณ 22 กิโลกรัมต่อปี และผลิตออกซิเจนเพียงพอสำหรับ 2 คน',
+    environmentalExplanation: 'ต้นไม้ 1 ต้นดูดซับ CO2 ได้ประมาณ 22 กิโลกรัมต่อปี และผลิตออกซิเจนเพียงพอสำหรับ 2 คน',
   },
   {
     id: 'nature-003',
@@ -324,16 +328,128 @@ export const missions: Mission[] = [
     description: 'ทำความเข้าใจว่าทำไมความหลากหลายทางชีวภาพจึงสำคัญ',
     category: 'nature',
     difficulty: 'medium',
-    xp: 30,
-    durationMinutes: 15,
+    estimatedMinutes: 15,
     type: 'educational',
     repeatPolicy: 'once',
     active: true,
-    instructions: [
+    steps: [
       'ศึกษาว่าระบบนิเวศต้องการความหลากหลายเพื่อความสมดุล',
       'สัตว์แต่ละชนิดมีบทบาทในห่วงโซ่อาหาร',
       'เมื่อสิ่งมีชีวิตสูญพันธุ์ ระบบนิเวศทั้งหมดได้รับผลกระทบ',
     ],
-    learningPoint: 'สิ่งมีชีวิตกว่า 1 ล้านสปีชีส์กำลังเสี่ยงสูญพันธุ์ ความหลากหลายทางชีวภาพเป็นรากฐานของอาหาร ยา และอากาศที่เราหายใจ',
+    environmentalExplanation: 'สิ่งมีชีวิตกว่า 1 ล้านสปีชีส์กำลังเสี่ยงสูญพันธุ์ ความหลากหลายทางชีวภาพเป็นรากฐานของอาหาร ยา และอากาศที่เราหายใจ',
+  },
+
+  // === เพิ่มเติม (ทำได้ในชีวิตประจำวัน ไม่ต้องใช้อุปกรณ์พิเศษ) ===
+  {
+    id: 'energy-004',
+    title: 'ตรวจสอบอุปกรณ์ไฟฟ้าที่ไม่ได้ใช้งาน',
+    description: 'เดินสำรวจบ้านหรือห้องเรียน หาอุปกรณ์ที่เปิดทิ้งหรือเสียบปลั๊กค้างไว้',
+    category: 'energy',
+    difficulty: 'medium',
+    estimatedMinutes: 15,
+    type: 'self-reported',
+    repeatPolicy: 'once',
+    active: true,
+    steps: [
+      'เดินสำรวจทีละห้อง จดอุปกรณ์ที่เปิดหรือเสียบปลั๊กไว้โดยไม่ได้ใช้',
+      'ปิดหรือถอดปลั๊กอุปกรณ์ที่ไม่จำเป็นต้องเปิดค้าง',
+      'เลือก 1 อุปกรณ์ที่จะตั้งใจปิดทุกครั้งหลังใช้งาน',
+    ],
+    environmentalExplanation: 'อุปกรณ์หลายชนิดยังใช้ไฟเล็กน้อยแม้อยู่ในโหมดสแตนด์บาย การปิดที่ต้นทางเมื่อไม่ใช้ช่วยลดการใช้ไฟที่มองไม่เห็นนี้ได้',
+  },
+  {
+    id: 'water-004',
+    title: 'วางแผนประหยัดน้ำในบ้าน',
+    description: 'สำรวจจุดใช้น้ำในบ้าน และเลือกวิธีลดการใช้น้ำ 3 อย่าง',
+    category: 'water',
+    difficulty: 'medium',
+    estimatedMinutes: 20,
+    type: 'self-reported',
+    repeatPolicy: 'once',
+    active: true,
+    steps: [
+      'จดจุดที่ใช้น้ำในบ้าน เช่น ห้องน้ำ อ่างล้างจาน การซักผ้า',
+      'ตรวจดูว่ามีก๊อกน้ำหรือสายชำระที่น้ำหยดหรือรั่วไหม',
+      'เลือก 3 วิธีประหยัดน้ำที่ทำได้จริง และแชร์แผนกับคนในบ้าน',
+    ],
+    environmentalExplanation: 'น้ำที่รั่วซึมทีละหยดรวมกันเป็นปริมาณมากได้ การสำรวจและวางแผนช่วยให้เห็นจุดที่ใช้น้ำเกินจำเป็น',
+  },
+  {
+    id: 'transport-003',
+    title: 'เลือกเดินในระยะใกล้',
+    description: 'เดินไปยังจุดหมายที่อยู่ใกล้แทนการนั่งรถหรือขับรถ',
+    category: 'transport',
+    difficulty: 'easy',
+    estimatedMinutes: 10,
+    type: 'self-reported',
+    repeatPolicy: 'daily',
+    active: true,
+    steps: [
+      'เลือกจุดหมายที่อยู่ในระยะเดินได้ เช่น ร้านค้าใกล้บ้าน',
+      'เดินแทนการเรียกรถหรือขับรถ',
+      'ระวังความปลอดภัยและเลือกเส้นทางที่มีทางเท้า',
+    ],
+    environmentalExplanation: 'การเดินระยะใกล้ไม่ใช้เชื้อเพลิงและไม่ปล่อยไอเสีย แถมยังได้ออกกำลังกายไปพร้อมกัน',
+  },
+  {
+    id: 'transport-004',
+    title: 'วางแผนการเดินทางคาร์บอนต่ำ',
+    description: 'ทบทวนการเดินทางประจำ และหาเที่ยวที่เปลี่ยนเป็นการเดิน ปั่น หรือขนส่งสาธารณะได้',
+    category: 'transport',
+    difficulty: 'medium',
+    estimatedMinutes: 15,
+    type: 'educational',
+    repeatPolicy: 'once',
+    active: true,
+    steps: [
+      'จดการเดินทางที่ทำเป็นประจำในหนึ่งสัปดาห์',
+      'ทำเครื่องหมายเที่ยวที่ระยะใกล้ หรือมีขนส่งสาธารณะรองรับ',
+      'รวมธุระหลายอย่างไว้ในเที่ยวเดียวเพื่อลดจำนวนเที่ยว',
+    ],
+    environmentalExplanation: 'การรวมธุระในเที่ยวเดียวและเลือกวิธีเดินทางที่เหมาะกับระยะทาง ช่วยลดการใช้พลังงานในการเดินทางโดยรวม',
+  },
+  {
+    id: 'consumption-004',
+    title: 'ลดพลาสติกแบบใช้ครั้งเดียว',
+    description: 'ทั้งวันนี้ ปฏิเสธหลอด ช้อนส้อมพลาสติก และกล่องโฟมเมื่อไม่จำเป็น',
+    category: 'consumption',
+    difficulty: 'medium',
+    estimatedMinutes: 20,
+    type: 'self-reported',
+    repeatPolicy: 'daily',
+    active: true,
+    steps: [
+      'บอกร้านว่าไม่รับหลอดและช้อนส้อมพลาสติก',
+      'ใช้ภาชนะหรือช้อนที่มีอยู่แล้วแทน',
+      'ก่อนนอน ทบทวนว่าวันนี้หลีกเลี่ยงพลาสติกใช้ครั้งเดียวได้กี่ชิ้น',
+    ],
+    environmentalExplanation: 'พลาสติกแบบใช้ครั้งเดียวถูกใช้งานเพียงไม่กี่นาที แต่คงอยู่ในสิ่งแวดล้อมได้นานมาก การปฏิเสธตั้งแต่ต้นทางคือวิธีที่ง่ายที่สุด',
+  },
+  {
+    id: 'nature-004',
+    title: 'เก็บขยะในพื้นที่สาธารณะ',
+    description: 'เก็บขยะในสวน ทางเดิน หรือรอบที่พักอย่างน้อย 10 ชิ้น',
+    category: 'nature',
+    difficulty: 'medium',
+    estimatedMinutes: 20,
+    type: 'self-reported',
+    repeatPolicy: 'daily',
+    active: true,
+    steps: [
+      'เตรียมถุงที่มีอยู่แล้ว และใช้ถุงมือหรือที่คีบถ้ามี',
+      'เก็บขยะในพื้นที่ใกล้ตัวอย่างน้อย 10 ชิ้น ระวังของมีคม',
+      'แยกขยะที่รีไซเคิลได้ก่อนนำไปทิ้ง',
+    ],
+    environmentalExplanation: 'ขยะที่ตกค้างในพื้นที่สาธารณะอาจถูกพัดลงท่อระบายน้ำและแหล่งน้ำ การเก็บขยะช่วยปกป้องสัตว์และพืชในพื้นที่',
   },
 ];
+
+// Learning missions build awareness; their impact is not counted as a physical change.
+export const missions: Mission[] = MISSION_DATA.map((m) => ({
+  ...m,
+  xpReward: XP_BY_DIFFICULTY[m.difficulty],
+  impactType: m.type === 'educational' ? 'awareness' : IMPACT_BY_CATEGORY[m.category],
+  // Energy missions can be backed by a measured kWh entry, which has a verified factor.
+  ...(m.type !== 'educational' && m.category === 'energy' ? { impactFactorId: 'th-grid-electricity-scope2-2026' } : {}),
+}));

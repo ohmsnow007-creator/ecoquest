@@ -33,7 +33,7 @@ export function VirtualWorld() {
             </ProgressRing>
             <div className="min-w-0">
               <p className="text-caption text-muted">ระดับ {current.stage} จาก {worldStages.length - 1}</p>
-              <h2 className="text-section font-semibold">{current.title}</h2>
+              <h2 className="text-section font-bold text-forest">{current.title}</h2>
               <p className="text-caption text-muted">
                 {next ? `อีก ${world.missionsToNext} ภารกิจถึง "${next.title}"` : 'โลกเสมือนของคุณเติบโตเต็มที่แล้ว'}
               </p>
@@ -60,7 +60,7 @@ export function VirtualWorld() {
               const unlocked = stats.missionsCompleted >= s.requiredMissions;
               const isCurrent = s.id === current.id;
               return (
-                <li key={s.id} className={`rounded-control border p-3 ${isCurrent ? 'border-primary bg-primary/10' : 'border-border'}`}>
+                <li key={s.id} className={`rounded-control border p-3 ${isCurrent ? 'border-primary bg-pale-mint' : 'border-border bg-surface'}`}>
                   <div className="flex items-center justify-between gap-2">
                     <span className={`flex items-center gap-2 text-body font-semibold ${unlocked ? '' : 'text-muted'}`}>
                       {unlocked ? <CheckCircle2 size={17} className="text-success" aria-hidden="true" /> : <Lock size={16} className="text-muted" aria-hidden="true" />}

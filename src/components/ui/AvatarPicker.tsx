@@ -60,19 +60,19 @@ export function AvatarSelector({ value, onChange, color, layout = 'row' }: Avata
           >
             <span
               className={`relative flex h-16 w-16 items-end justify-center overflow-visible rounded-full transition-transform ${bg} ${
-                active ? 'scale-105 ring-[3px] ring-text ring-offset-2 ring-offset-transparent' : 'opacity-80 hover:opacity-100'
+                active ? 'scale-105 ring-[3px] ring-primary ring-offset-2 ring-offset-transparent' : 'opacity-80 hover:opacity-100'
               }`}
             >
               <span className="h-full w-full overflow-hidden rounded-full">
                 <CharacterAvatar look={look} framing="bust" className="h-full w-full" />
               </span>
               {active && (
-                <span className="absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full bg-text text-white" aria-hidden="true">
+                <span className="absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white" aria-hidden="true">
                   <Check size={14} strokeWidth={3} />
                 </span>
               )}
             </span>
-            <span className={`text-caption ${active ? 'font-semibold text-text' : 'text-muted'}`}>{name}</span>
+            <span className={`text-caption ${active ? 'font-semibold text-forest' : 'text-muted'}`}>{name}</span>
           </button>
         );
       })}

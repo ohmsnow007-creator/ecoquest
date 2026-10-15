@@ -10,10 +10,11 @@ function progressWith(missionDates: string[], quizDates: Date[]): PlayerProgress
     unlockedBadges: [],
     schemaVersion: 1,
     inProgress: [],
+    impactRecords: [],
     completions: missionDates.map((d, i) => ({
       id: `c${i}`, missionId: 'm', completedAt: `${d}T10:00:00.000Z`, localDate: d, xpAwarded: 10, completionType: 'educational',
     })),
-    quizCompletions: quizDates.map((d, i) => ({ quizId: `q${i}`, completedAt: d.toISOString(), correct: true, xpAwarded: 15 })),
+    quizAttempts: quizDates.map((d, i) => ({ id: `a${i}`, startedAt: d.toISOString(), submittedAt: d.toISOString(), category: "all" as const, difficulty: "all" as const, results: [{ questionId: `q${i}`, answerId: "a", correct: true }], correctCount: 1, total: 1, scorePercent: 100, xpAwarded: 15 })),
   };
 }
 

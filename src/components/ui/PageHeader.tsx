@@ -21,16 +21,18 @@ export function PageHeader({ title, subtitle, eyebrow, back, actions }: PageHead
 
   return (
     <header className="safe-top pt-5 pb-4 lg:pt-10 lg:pb-6">
-      {back && (
-        <IconButton aria-label="ย้อนกลับ" variant="surface" onClick={goBack} className="mb-3">
-          <ArrowLeft size={20} />
-        </IconButton>
-      )}
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0">
-          {eyebrow && <p className="text-caption font-semibold text-primary">{eyebrow}</p>}
-          <h1 className="text-page font-bold lg:text-[1.875rem]">{title}</h1>
-          {subtitle && <p className="mt-1 text-body text-muted">{subtitle}</p>}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          {back && (
+            <IconButton aria-label="ย้อนกลับ" variant="surface" onClick={goBack} className="mt-0.5">
+              <ArrowLeft size={20} />
+            </IconButton>
+          )}
+          <div className="min-w-0">
+            {eyebrow && <p className="text-caption font-semibold tracking-wide text-primary">{eyebrow}</p>}
+            <h1 className="text-page font-bold text-forest lg:text-[1.875rem]">{title}</h1>
+            {subtitle && <p className="mt-1 text-body text-muted">{subtitle}</p>}
+          </div>
         </div>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
       </div>

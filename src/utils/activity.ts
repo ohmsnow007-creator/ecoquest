@@ -2,12 +2,12 @@ import type { PlayerProgress } from '../types';
 import { getLocalDate } from './streak';
 import { getLevelFromXp } from './xp';
 import { missions } from '../data/missions';
-import { quizzes } from '../data/quizzes';
+import { QUIZ_CATEGORY_LABELS } from '../data/quizzes';
 import { badges } from '../data/badges';
 
 export type ActivityEvent =
   | { id: string; type: 'mission'; at: string; missionId: string; title: string; xp: number; selfReported: boolean }
-  | { id: string; type: 'quiz'; at: string; quizId: string; title: string; xp: number; correct: boolean }
+  | { id: string; type: 'quiz'; at: string; attemptId: string; title: string; xp: number; correctCount: number; total: number }
   | { id: string; type: 'badge'; at: string; badgeId: string; title: string }
   | { id: string; type: 'level'; at: string; level: number };
 
@@ -28,14 +28,15 @@ export function buildActivityFeed(progress: PlayerProgress): ActivityEvent[] {
       xp: c.xpAwarded,
       selfReported: c.completionType === 'self-reported',
     })),
-    ...(progress.quizCompletions ?? []).map((q): ActivityEvent => ({
-      id: `q-${q.quizId}`,
+    ...progress.quizAttempts.map((q): ActivityEvent => ({
+      id: `q-${q.id}`,
       type: 'quiz',
-      at: q.completedAt,
-      quizId: q.quizId,
-      title: quizzes.find((x) => x.id === q.quizId)?.question ?? 'ควิซ',
+      at: q.submittedAt,
+      attemptId: q.id,
+      title: q.category === 'all' ? 'ควิซสิ่งแวดล้อม' : `ควิซ${QUIZ_CATEGORY_LABELS[q.category]}`,
       xp: q.xpAwarded,
-      correct: q.correct,
+      correctCount: q.correctCount,
+      total: q.total,
     })),
   ].sort((a, b) => time(a.at) - time(b.at));
 
@@ -55,7 +56,7 @@ export function buildActivityFeed(progress: PlayerProgress): ActivityEvent[] {
     type: 'badge',
     at: b.unlockedAt,
     badgeId: b.badgeId,
-    title: badges.find((x) => x.id === b.badgeId)?.title ?? 'เหรียญตรา',
+    title: badges.find((x) => x.id === b.badgeId)?.name ?? 'เหรียญตรา',
   }));
 
   return [...xpEvents, ...levelEvents, ...badgeEvents].sort((a, b) => time(b.at) - time(a.at));
@@ -95,8 +96,8 @@ export function getRecentActivity(progress: PlayerProgress, days = 7, now: Date 
     const day = byDate.get(c.localDate);
     if (day) day.missions++;
   }
-  for (const q of progress.quizCompletions ?? []) {
-    const day = byDate.get(getLocalDate(new Date(q.completedAt)));
+  for (const q of progress.quizAttempts) {
+    const day = byDate.get(getLocalDate(new Date(q.submittedAt)));
     if (day) day.quizzes++;
   }
   for (const r of result) r.total = r.missions + r.quizzes;

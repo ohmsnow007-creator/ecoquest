@@ -64,7 +64,7 @@ export function Progress() {
               const Icon = CATEGORY_ICON[cat];
               return (
                 <li key={cat} className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary" aria-hidden="true">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pale-mint text-primary" aria-hidden="true">
                     <Icon size={17} />
                   </span>
                   <div className="flex-1">
@@ -80,7 +80,7 @@ export function Progress() {
               );
             })}
           </ul>
-          <Link to="/impact" className="mt-4 flex min-h-11 items-center justify-between rounded-control bg-mint/50 px-3 text-body font-semibold">
+          <Link to="/impact" className="mt-4 flex min-h-11 items-center justify-between rounded-control bg-pale-mint px-3 text-body font-semibold">
             <span className="flex items-center gap-2">
               <Leaf size={17} className="text-primary" aria-hidden="true" /> ดูสรุปผลกระทบและวิธีคำนวณ
             </span>
@@ -98,7 +98,7 @@ export function Progress() {
             {recent.map((e) => {
               const title =
                 e.type === 'mission' ? `ภารกิจ: ${e.title}`
-                : e.type === 'quiz' ? (e.correct ? 'ตอบควิซถูก' : 'ตอบควิซ (ยังไม่ถูก)')
+                : e.type === 'quiz' ? `ทำ${e.title} ถูก ${e.correctCount}/${e.total} ข้อ`
                 : e.type === 'badge' ? `ปลดล็อกเหรียญ "${e.title}"`
                 : `เลื่อนเป็นเลเวล ${e.level}`;
               const xp = e.type === 'mission' || e.type === 'quiz' ? e.xp : 0;

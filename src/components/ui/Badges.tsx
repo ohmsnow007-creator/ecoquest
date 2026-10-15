@@ -8,7 +8,7 @@ interface XPBadgeProps {
 }
 
 const XP_VARIANT = {
-  soft: 'bg-lime text-forest',
+  soft: 'bg-lime/80 text-forest ring-1 ring-lime',
   onDark: 'bg-white/15 text-white',
   solid: 'bg-forest text-lime',
 };
@@ -30,7 +30,7 @@ interface LevelBadgeProps {
 }
 
 export function LevelBadge({ level, variant = 'soft', size = 'sm' }: LevelBadgeProps) {
-  const color = variant === 'soft' ? 'bg-primary/10 text-primary' : 'bg-lime text-forest';
+  const color = variant === 'soft' ? 'bg-forest text-lime' : 'bg-lime text-forest';
   const dims = size === 'lg' ? 'px-4 py-1.5 text-section' : 'px-2.5 py-0.5 text-caption';
   return (
     <span className={`inline-flex items-center rounded-full font-semibold whitespace-nowrap ${color} ${dims}`}>

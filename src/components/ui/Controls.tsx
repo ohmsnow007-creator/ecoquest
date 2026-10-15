@@ -18,7 +18,7 @@ interface SegmentedControlProps<T extends string> {
 export function SegmentedControl<T extends string>({ options, value, onChange, ariaLabel }: SegmentedControlProps<T>) {
   const groupId = useId();
   return (
-    <div role="radiogroup" aria-label={ariaLabel} className="flex w-full rounded-control border border-border bg-surface p-1 sm:w-auto">
+    <div role="radiogroup" aria-label={ariaLabel} className="flex w-full rounded-full border border-border bg-surface p-1 shadow-card sm:w-auto">
       {options.map((opt) => {
         const active = opt.value === value;
         return (
@@ -28,12 +28,12 @@ export function SegmentedControl<T extends string>({ options, value, onChange, a
             role="radio"
             aria-checked={active}
             onClick={() => onChange(opt.value)}
-            className={`relative flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-[0.625rem] px-3 text-caption font-semibold transition-colors sm:flex-none ${active ? 'text-white' : 'text-muted hover:text-text'}`}
+            className={`relative flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-caption font-semibold transition-colors sm:flex-none ${active ? 'text-white' : 'text-muted hover:text-text'}`}
           >
             {active && (
               <motion.span
                 layoutId={`seg-${groupId}`}
-                className="absolute inset-0 rounded-[0.625rem] bg-primary"
+                className="absolute inset-0 rounded-full bg-forest"
                 transition={{ type: 'spring', damping: 30, stiffness: 380 }}
               />
             )}
@@ -71,7 +71,7 @@ export function FilterChips<T extends string>({ options, value, onChange, ariaLa
             aria-pressed={active}
             onClick={() => onChange(v)}
             className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-caption font-semibold transition-colors ${
-              active ? 'border-forest bg-forest text-white' : 'border-border bg-surface text-text hover:border-primary/40'
+              active ? 'border-forest bg-forest text-white shadow-card' : 'border-border bg-surface text-text hover:border-primary/40 hover:bg-pale-mint'
             }`}
           >
             {Icon && <Icon size={15} aria-hidden="true" className={active ? 'text-lime' : 'text-primary'} />}

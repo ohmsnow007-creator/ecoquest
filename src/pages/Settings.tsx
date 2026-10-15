@@ -1,48 +1,90 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Download, Trash2, Check, ShieldCheck, ChevronDown, Plus } from 'lucide-react';
-import { DEFAULT_AVATAR_ID, DEFAULT_PROFILE_COLOR, INTERESTS, MAX_INTERESTS, PROFILE_COLORS } from '../data/avatars';
-import { NAME_MAX_LENGTH, validateDisplayName } from '../utils/profile';
-import { useGame } from '../store/GameContext';
+import { useState, type ReactNode } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Download, Trash2, Check, Plus, ChevronRight, RotateCcw, ShieldCheck, ExternalLink, User, HardDrive, Smartphone, BellRing, Volume2, PartyPopper, Wind, Settings2, type LucideIcon } from 'lucide-react';
+import { INTERESTS, MAX_INTERESTS, PROFILE_COLORS } from '../data/avatars';
+import { EMISSION_FACTORS } from '../data/emissionFactors';
+import { quizzes } from '../data/quizzes';
+import { APP_INFO } from '../config/app';
+import { useGame, type BooleanPreference } from '../store/GameContext';
 import { storageService } from '../services/storageService';
-import { getLevelFromXp } from '../utils/xp';
 import { PageHeader } from '../components/ui/PageHeader';
-import { Card, SectionTitle } from '../components/ui/Card';
-import { Avatar, AvatarSelector } from '../components/ui/AvatarPicker';
-import { LevelBadge, XPBadge } from '../components/ui/Badges';
+import { Avatar } from '../components/ui/AvatarPicker';
 import { PrimaryButton, SecondaryButton } from '../components/ui/Button';
 import { ConfirmationDialog } from '../components/ui/Modal';
 
-export function Settings() {
-  const { profile, progress, updateProfile, setReducedMotion, resetAll } = useGame();
-  const navigate = useNavigate();
-  const [name, setName] = useState(profile?.displayName ?? '');
-  const [avatar, setAvatar] = useState(profile?.avatarId ?? DEFAULT_AVATAR_ID);
-  const [color, setColor] = useState(profile?.preferences.profileColor ?? DEFAULT_PROFILE_COLOR);
-  const [goals, setGoals] = useState<string[]>(profile?.preferences.selectedGoalIds ?? []);
-  const [saved, setSaved] = useState(false);
-  const [confirmReset, setConfirmReset] = useState(false);
+function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+  return (
+    <section aria-labelledby={id} className="rounded-card border border-border bg-surface p-4 shadow-card">
+      <h2 id={id} className="mb-2 text-section font-bold text-forest">{title}</h2>
+      {children}
+    </section>
+  );
+}
 
+// Presentation only: an icon per settings row, looked up by the row's existing id.
+const ROW_ICON: Record<string, LucideIcon> = {
+  'pref-toasts': BellRing,
+  'pref-sound': Volume2,
+  'pref-celebrations': PartyPopper,
+  'pref-motion': Wind,
+};
+
+function ToggleRow({ id, label, hint, checked, onChange }: { id: string; label: string; hint: string; checked: boolean; onChange: (v: boolean) => void }) {
+  const Icon = ROW_ICON[id] ?? Settings2;
+  return (
+    <div className="flex items-center justify-between gap-3 py-3">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center self-start rounded-xl bg-pale-mint text-primary" aria-hidden="true">
+        <Icon size={19} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p id={`${id}-label`} className="text-body font-semibold text-forest">{label}</p>
+        <p id={`${id}-hint`} className="text-caption text-muted">{hint}</p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-labelledby={`${id}-label`}
+        aria-describedby={`${id}-hint`}
+        onClick={() => onChange(!checked)}
+        className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${checked ? 'bg-primary' : 'bg-border'} focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`}
+      >
+        <span className={`absolute top-1 left-1 h-6 w-6 rounded-full bg-white shadow-card transition-transform ${checked ? 'translate-x-6' : ''}`} />
+      </button>
+    </div>
+  );
+}
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  return `${(n / 1024).toFixed(1)} KB`;
+}
+
+const STORAGE_KEY_LABELS: Record<string, string> = {
+  ecoquest_profile: 'โปรไฟล์',
+  ecoquest_progress: 'ความคืบหน้า ภารกิจ ควิซ และบันทึกผลกระทบ',
+  ecoquest_inbox_seen: 'สถานะการแจ้งเตือน',
+  ecoquest_profile_corrupt_backup: 'สำเนาโปรไฟล์ที่อ่านไม่ได้ (สำรองไว้)',
+  ecoquest_progress_corrupt_backup: 'สำเนาความคืบหน้าที่อ่านไม่ได้ (สำรองไว้)',
+};
+
+type Confirm = null | 'reset-game' | 'clear-all';
+
+export function Settings() {
+  const { profile, progress, updateProfile, setPreference, resetProgress, resetAll, notify } = useGame();
+  const navigate = useNavigate();
+  const [confirm, setConfirm] = useState<Confirm>(null);
   if (!profile) return null;
 
-  const nameResult = validateDisplayName(name);
-  const savedGoals = profile.preferences.selectedGoalIds;
-  const dirty =
-    name.trim() !== profile.displayName ||
-    avatar !== profile.avatarId ||
-    color !== (profile.preferences.profileColor ?? DEFAULT_PROFILE_COLOR) ||
-    goals.length !== savedGoals.length ||
-    goals.some((g) => !savedGoals.includes(g));
-  const reduced = profile.preferences.reducedMotion;
+  const prefs = profile.preferences;
+  const pref = (key: BooleanPreference, fallback: boolean) => prefs[key] ?? fallback;
+  const goals = prefs.selectedGoalIds;
+  const usage = storageService.getUsage();
+  const quizSources = [...new Set(quizzes.map((q) => q.source?.name).filter((s): s is string => !!s))];
 
-  const toggleGoal = (id: string) =>
-    setGoals((prev) => (prev.includes(id) ? prev.filter((g) => g !== id) : prev.length < MAX_INTERESTS ? [...prev, id] : prev));
-
-  const handleSave = () => {
-    if (!nameResult.ok) return;
-    updateProfile({ name: nameResult.value, avatarId: avatar, profileColor: color, goalIds: goals });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const toggleGoal = (id: string) => {
+    const next = goals.includes(id) ? goals.filter((g) => g !== id) : goals.length < MAX_INTERESTS ? [...goals, id] : goals;
+    if (next !== goals) updateProfile({ goalIds: next });
   };
 
   const handleExport = () => {
@@ -55,8 +97,16 @@ export function Settings() {
     URL.revokeObjectURL(url);
   };
 
-  const handleReset = () => {
-    setConfirmReset(false);
+  const handleResetGame = () => {
+    setConfirm(null);
+    if (resetProgress()) {
+      notify('รีเซ็ตเกมแล้ว โปรไฟล์ของคุณยังอยู่', 'info');
+      navigate('/home', { replace: true });
+    }
+  };
+
+  const handleClearAll = () => {
+    setConfirm(null);
     resetAll();
     navigate('/welcome', { replace: true });
   };
@@ -67,55 +117,28 @@ export function Settings() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <Card tone="forest">
-            <div className="flex items-center gap-4">
-              <Avatar id={profile.avatarId} color={profile.preferences.profileColor} size="lg" onDark />
-              <div className="min-w-0">
-                <p className="truncate text-section font-semibold">{profile.displayName}</p>
-                <div className="mt-1 flex flex-wrap gap-2">
-                  <LevelBadge level={getLevelFromXp(progress.totalXp)} variant="onDark" />
-                  <XPBadge amount={progress.totalXp} variant="onDark" />
-                </div>
-              </div>
-            </div>
-          </Card>
+          <Link to="/profile" className="flex items-center gap-3 rounded-card border border-border bg-surface p-4 shadow-card hover:border-primary/40">
+            <Avatar id={profile.avatarId} color={prefs.profileColor} size="md" />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-body font-semibold">{profile.displayName}</span>
+              <span className="flex items-center gap-1 text-caption text-muted"><User size={13} aria-hidden="true" /> แก้ไขชื่อและอวาตาร์ที่หน้าโปรไฟล์</span>
+            </span>
+            <ChevronRight size={18} className="text-muted" aria-hidden="true" />
+          </Link>
 
-          <Card>
-            <SectionTitle title="แก้ไขโปรไฟล์" />
-            <label htmlFor="settings-name" className="mb-1.5 block text-caption font-semibold">ชื่อ</label>
-            <input
-              id="settings-name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={NAME_MAX_LENGTH + 10}
-              aria-invalid={!nameResult.ok}
-              aria-describedby="settings-name-error"
-              className={`min-h-12 w-full rounded-control border bg-surface px-4 text-body focus:outline-none ${nameResult.ok ? 'border-border focus:border-primary' : 'border-danger'}`}
-            />
-            <p id="settings-name-error" className="mt-1 text-caption text-danger" role={nameResult.ok ? undefined : 'alert'}>
-              {nameResult.ok ? '' : nameResult.error}
-            </p>
+          <Link to="/install" className="flex items-center gap-3 rounded-card border border-border bg-surface p-4 shadow-card hover:border-primary/40">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-pale-mint text-primary" aria-hidden="true">
+              <Smartphone size={20} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-body font-semibold">ติดตั้งแอปและใช้งานออฟไลน์</span>
+              <span className="block text-caption text-muted">เพิ่มลงหน้าจอหลัก และดูสถานะการใช้งานออฟไลน์</span>
+            </span>
+            <ChevronRight size={18} className="text-muted" aria-hidden="true" />
+          </Link>
 
-            <p className="mt-3 mb-2 text-caption font-semibold">อวาตาร์</p>
-            <AvatarSelector value={avatar} onChange={setAvatar} color={color} layout="grid" />
-
-            <label htmlFor="settings-color" className="mt-4 mb-1.5 block text-caption font-semibold">สีโปรไฟล์</label>
-            <div className="relative">
-              <select
-                id="settings-color"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="min-h-12 w-full appearance-none rounded-control border border-border bg-surface pr-12 pl-4 text-body focus:border-primary focus:outline-none"
-              >
-                {PROFILE_COLORS.map((c) => (
-                  <option key={c.id} value={c.id}>{c.label}</option>
-                ))}
-              </select>
-              <ChevronDown size={18} className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2" aria-hidden="true" />
-            </div>
-
-            <p className="mt-4 mb-2 text-caption font-semibold">เรื่องที่สนใจ (สูงสุด {MAX_INTERESTS})</p>
+          <Section id="prefs-title" title="ความชอบ">
+            <p className="mb-2 text-caption text-muted">เรื่องที่สนใจ (สูงสุด {MAX_INTERESTS}) ใช้แนะนำภารกิจในหน้าหลักและหน้าภารกิจ บันทึกทันทีเมื่อกด</p>
             <div className="flex flex-wrap gap-2" role="group" aria-label="เรื่องที่สนใจ">
               {INTERESTS.map((interest) => {
                 const active = goals.includes(interest.id);
@@ -127,7 +150,7 @@ export function Settings() {
                     aria-pressed={active}
                     aria-disabled={blocked}
                     onClick={() => !blocked && toggleGoal(interest.id)}
-                    className={`inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-caption font-medium ${active ? interest.tone : 'bg-background'} ${blocked ? 'cursor-not-allowed opacity-40' : ''}`}
+                    className={`inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-caption font-medium ${active ? `${interest.tone} ring-2 ring-primary` : 'bg-background ring-1 ring-border'} ${blocked ? 'cursor-not-allowed opacity-40' : ''}`}
                   >
                     {interest.label}
                     {active ? <Check size={15} aria-hidden="true" /> : <Plus size={15} aria-hidden="true" />}
@@ -135,69 +158,149 @@ export function Settings() {
                 );
               })}
             </div>
+          </Section>
 
-            <PrimaryButton className="mt-5" icon={saved ? <Check size={18} /> : undefined} disabled={(!dirty && !saved) || !nameResult.ok} onClick={handleSave}>
-              {saved ? 'บันทึกแล้ว' : 'บันทึกการเปลี่ยนแปลง'}
-            </PrimaryButton>
-          </Card>
+          <Section id="notif-title" title="การแจ้งเตือน">
+            <ToggleRow
+              id="pref-toasts"
+              label="แจ้งเตือนในแอป"
+              hint="ข้อความสั้นมุมจอเมื่อเริ่มภารกิจหรือได้รับ XP (ข้อความแจ้งข้อผิดพลาดจะแสดงเสมอ) แอปนี้ไม่มีการแจ้งเตือนแบบพุช"
+              checked={pref('inAppToasts', true)}
+              onChange={(v) => setPreference('inAppToasts', v)}
+            />
+          </Section>
 
-          <Card>
-            <SectionTitle title="การแสดงผล" />
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p id="reduce-motion-label" className="text-body font-semibold">ลดการเคลื่อนไหว</p>
-                <p className="text-caption text-muted">ปิดแอนิเมชันส่วนใหญ่ในแอป (ระบบจะทำตามการตั้งค่าของอุปกรณ์ด้วย)</p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={reduced}
-                aria-labelledby="reduce-motion-label"
-                onClick={() => setReducedMotion(!reduced)}
-                className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${reduced ? 'bg-primary' : 'bg-border'}`}
-              >
-                <span className={`absolute top-1 left-1 h-6 w-6 rounded-full bg-white shadow-card transition-transform ${reduced ? 'translate-x-6' : ''}`} />
-              </button>
+          <Section id="motion-title" title="เสียงและการเคลื่อนไหว">
+            <div className="divide-y divide-border">
+              <ToggleRow
+                id="pref-sound"
+                label="เสียงเอฟเฟกต์"
+                hint="เล่นเสียงสั้น ๆ เมื่อทำภารกิจสำเร็จหรือได้รับรางวัล"
+                checked={pref('soundEffects', false)}
+                onChange={(v) => setPreference('soundEffects', v)}
+              />
+              <ToggleRow
+                id="pref-celebrations"
+                label="หน้าต่างฉลองรางวัล"
+                hint="แสดงป๊อปอัปเมื่อเลเวลอัปหรือปลดล็อกเหรียญ (รางวัลยังได้รับตามปกติ)"
+                checked={pref('celebrations', true)}
+                onChange={(v) => setPreference('celebrations', v)}
+              />
+              <ToggleRow
+                id="pref-motion"
+                label="ลดการเคลื่อนไหว"
+                hint="ปิดแอนิเมชันส่วนใหญ่ในแอป (ระบบจะทำตามการตั้งค่าของอุปกรณ์ด้วย)"
+                checked={prefs.reducedMotion}
+                onChange={(v) => setPreference('reducedMotion', v)}
+              />
             </div>
-          </Card>
+          </Section>
+
+          <Section id="appearance-title" title="รูปลักษณ์">
+            <p className="mb-2 text-caption text-muted">สีพื้นหลังอวาตาร์ของคุณ</p>
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="สีโปรไฟล์">
+              {PROFILE_COLORS.map((c) => {
+                const active = prefs.profileColor === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => updateProfile({ profileColor: c.id })}
+                    className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-caption font-medium ${active ? 'border-primary bg-pale-mint' : 'border-border'}`}
+                  >
+                    <Avatar id={profile.avatarId} color={c.id} size="sm" />
+                    {c.label}
+                    {active && <Check size={15} className="text-primary" aria-hidden="true" />}
+                  </button>
+                );
+              })}
+            </div>
+          </Section>
         </div>
 
         <div className="space-y-4">
-          <Card>
-            <SectionTitle title="ข้อมูลของคุณ" icon={<ShieldCheck size={18} className="text-primary" aria-hidden="true" />} />
-            <p className="text-caption text-muted">ข้อมูลทั้งหมดเก็บใน localStorage ของเบราว์เซอร์นี้เท่านั้น ไม่มีการส่งออกไปยังเซิร์ฟเวอร์ใด</p>
+          <Section id="data-title" title="จัดการข้อมูล">
+            <p className="flex items-start gap-2 text-caption text-muted">
+              <ShieldCheck size={15} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
+              {APP_INFO.dataHandling}
+            </p>
+            <div className="mt-3 rounded-control bg-pale-mint/60 p-3">
+              <p className="flex items-center gap-1.5 text-caption font-semibold">
+                <HardDrive size={14} aria-hidden="true" /> พื้นที่ที่ใช้: <span data-testid="storage-usage">{formatBytes(usage.bytes)}</span>
+              </p>
+              <ul className="mt-1 space-y-0.5 text-[0.75rem] text-muted">
+                {usage.keys.map((k) => (
+                  <li key={k.key} className="flex justify-between gap-2">
+                    <span>{STORAGE_KEY_LABELS[k.key] ?? k.key}</span>
+                    <span>{formatBytes(k.bytes)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
             <SecondaryButton fullWidth className="mt-3" icon={<Download size={17} />} onClick={handleExport}>
               ส่งออกข้อมูล (JSON)
             </SecondaryButton>
-          </Card>
+            <div className="mt-4 rounded-control border border-danger/25 bg-danger/5 p-3">
+              <p className="mb-2 text-caption font-semibold text-danger">ส่วนที่ต้องระวัง — ย้อนกลับไม่ได้</p>
+              <SecondaryButton fullWidth icon={<RotateCcw size={17} />} onClick={() => setConfirm('reset-game')}>
+                รีเซ็ตเกม
+              </SecondaryButton>
+              <PrimaryButton tone="danger" fullWidth className="mt-2" icon={<Trash2 size={17} />} onClick={() => setConfirm('clear-all')}>
+                ล้างข้อมูลทั้งหมด
+              </PrimaryButton>
+            </div>
+          </Section>
 
-          <Card>
-            <SectionTitle title="เกี่ยวกับ" />
+          <Section id="about-title" title="เกี่ยวกับ">
             <dl className="space-y-1 text-caption">
-              <div className="flex justify-between"><dt className="text-muted">แอป</dt><dd>EcoQuest — ภารกิจพิชิตโลกสีเขียว</dd></div>
-              <div className="flex justify-between"><dt className="text-muted">เวอร์ชัน</dt><dd>1.1.0</dd></div>
-              <div className="flex justify-between"><dt className="text-muted">ประเภท</dt><dd>ผลงานโปรเจกต์มหาวิทยาลัย</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-muted">แอป</dt><dd className="text-right">{APP_INFO.name}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-muted">เวอร์ชัน</dt><dd>{APP_INFO.version}</dd></div>
             </dl>
-          </Card>
+            <p className="mt-3 text-caption">{APP_INFO.purpose}</p>
 
-          <Card className="border-danger/30">
-            <SectionTitle title="รีเซ็ตข้อมูล" />
-            <p className="text-caption text-muted">ลบโปรไฟล์ XP เหรียญตรา และประวัติทั้งหมดในเครื่องนี้ ไม่สามารถกู้คืนได้</p>
-            <PrimaryButton tone="danger" fullWidth className="mt-3" icon={<Trash2 size={17} />} onClick={() => setConfirmReset(true)}>
-              รีเซ็ตข้อมูลทั้งหมด
-            </PrimaryButton>
-          </Card>
+            <h3 className="mt-4 text-caption font-semibold">แหล่งข้อมูลค่าการปล่อยก๊าซ (ใช้ในหน้าผลกระทบ)</h3>
+            <ul className="mt-1 space-y-2 text-caption">
+              {EMISSION_FACTORS.map((f) => (
+                <li key={f.id}>
+                  <p>{f.name}: {f.kgCO2ePerUnit} kgCO2e/{f.unit}</p>
+                  <p className="text-muted">{f.publisher} · มีผล {f.effectiveFrom}</p>
+                  <a href={f.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 font-semibold text-primary">
+                    ดูแหล่งที่มา <ExternalLink size={13} aria-hidden="true" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <p className="text-[0.75rem] text-muted">กิจกรรมอื่นที่ยังไม่มีค่าอ้างอิงจะไม่ถูกคำนวณเป็น CO2e</p>
+
+            <details className="mt-3 text-caption">
+              <summary className="min-h-11 cursor-pointer py-2 font-semibold">แหล่งอ้างอิงของคำถามควิซ ({quizSources.length})</summary>
+              <ul className="list-disc space-y-0.5 pl-5 text-muted">
+                {quizSources.map((s) => <li key={s}>{s}</li>)}
+              </ul>
+            </details>
+          </Section>
         </div>
       </div>
 
       <ConfirmationDialog
-        open={confirmReset}
-        title="ลบข้อมูลทั้งหมด?"
-        description="โปรไฟล์ XP เลเวล เหรียญตรา Streak ประวัติภารกิจ และผลควิซทั้งหมดจะถูกลบออกจากเครื่องนี้ และไม่สามารถกู้คืนได้ หากต้องการเก็บไว้ ให้ส่งออกข้อมูลก่อน"
+        open={confirm === 'reset-game'}
+        title="รีเซ็ตเกม?"
+        description={`XP (${progress.totalXp.toLocaleString('th-TH')}), เลเวล เหรียญตรา Streak ประวัติภารกิจ ผลควิซ และบันทึกผลกระทบจะถูกลบและเริ่มนับใหม่ โปรไฟล์ ชื่อ อวาตาร์ และการตั้งค่าจะยังอยู่ ไม่สามารถกู้คืนได้`}
+        confirmLabel="รีเซ็ตเกม"
+        tone="danger"
+        onConfirm={handleResetGame}
+        onCancel={() => setConfirm(null)}
+      />
+      <ConfirmationDialog
+        open={confirm === 'clear-all'}
+        title="ล้างข้อมูลทั้งหมด?"
+        description="โปรไฟล์ การตั้งค่า XP เลเวล เหรียญตรา ประวัติภารกิจ ผลควิซ และบันทึกผลกระทบทั้งหมดจะถูกลบออกจากเครื่องนี้ แล้วกลับไปหน้าเริ่มต้น ไม่สามารถกู้คืนได้ หากต้องการเก็บไว้ ให้ส่งออกข้อมูลก่อน"
         confirmLabel="ลบทั้งหมด"
         tone="danger"
-        onConfirm={handleReset}
-        onCancel={() => setConfirmReset(false)}
+        onConfirm={handleClearAll}
+        onCancel={() => setConfirm(null)}
       />
     </>
   );

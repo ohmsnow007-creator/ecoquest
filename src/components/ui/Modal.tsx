@@ -47,7 +47,7 @@ export function Modal({ open, onClose, title, hideTitle = false, children, foote
       {open && (
         <div className="fixed inset-0 z-[200] flex items-end justify-center sm:items-center sm:p-6">
           <motion.div
-            className="absolute inset-0 bg-forest/50"
+            className="absolute inset-0 bg-evergreen/60 backdrop-blur-[2px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -67,7 +67,7 @@ export function Modal({ open, onClose, title, hideTitle = false, children, foote
           >
             <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-border sm:hidden" aria-hidden="true" />
             <div className={`flex items-start justify-between gap-3 ${hideTitle ? 'sr-only' : 'mb-3'}`}>
-              <h2 id={titleId} className="text-section font-semibold">{title}</h2>
+              <h2 id={titleId} className="text-section font-bold text-forest">{title}</h2>
               {dismissible && !hideTitle && (
                 <IconButton aria-label="ปิด" onClick={onClose} className="-mt-2 -mr-2">
                   <X size={20} />

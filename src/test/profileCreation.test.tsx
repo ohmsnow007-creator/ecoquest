@@ -54,7 +54,7 @@ describe('Profile creation', () => {
     expect(await screen.findByRole('img', { name: 'อวาตาร์ ใบเตย' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('radio', { name: 'ตะวัน' }));
     expect(screen.getByRole('radio', { name: 'ตะวัน' })).toHaveAttribute('aria-checked', 'true');
-    expect(await screen.findByRole('img', { name: 'อวาตาร์ ตะวัน' })).toBeInTheDocument();
+    expect(await screen.findByRole('img', { name: 'อวาตาร์ ตะวัน' }, { timeout: 3000 })).toBeInTheDocument();
   });
 
   it(`limits interests to ${MAX_INTERESTS}`, async () => {

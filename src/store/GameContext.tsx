@@ -1,11 +1,13 @@
-import { createContext, useContext, useCallback, useState, useEffect, type ReactNode } from 'react';
-import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, MissionCategory, QuizCompletion, MissionProgressStatus } from '../types';
+import { createContext, useContext, useCallback, useState, useEffect, useRef, type ReactNode } from 'react';
+import type { PlayerProfile, PlayerProgress, MissionCategory, MissionProgressStatus, ImpactRecord } from '../types';
+import { getFactorFor } from '../data/emissionFactors';
+import { CALCULATION_VERSION } from '../services/impactCalculator';
 import { storageService } from '../services/storageService';
 import { missions } from '../data/missions';
-import { checkNewBadges } from '../utils/badges';
+import { evaluateMissionCompletion, evaluateQuizAttempt, type RewardOutcome, type MissionRejection, type QuizDraft } from '../services/rewardService';
 import { getLocalDate } from '../utils/streak';
-import { getLevelFromXp } from '../utils/xp';
 import { createId } from '../utils/id';
+import { playSound } from '../services/soundService';
 
 export interface Toast {
   id: string;
@@ -14,7 +16,7 @@ export interface Toast {
 }
 
 export type Celebration =
-  | { id: string; type: 'level'; level: number }
+  | { id: string; type: 'level'; level: number; from: number }
   | { id: string; type: 'badge'; badgeId: string };
 
 export interface NewProfileInput {
@@ -24,7 +26,17 @@ export interface NewProfileInput {
   profileColor?: string;
 }
 
+export type NewImpactRecord = Pick<ImpactRecord, 'activityType' | 'quantity' | 'unit' | 'date' | 'wasteType'>;
+
+export type SubmitQuizResult = { ok: true; attemptId: string; xpAwarded: number } | { ok: false; reason: 'duplicate' | 'invalid' | 'save-failed' };
+
+export type BooleanPreference = 'reducedMotion' | 'soundEffects' | 'inAppToasts' | 'celebrations';
+
 export type CreateProfileResult = 'ok' | 'exists' | 'save-failed';
+
+export type CompleteMissionResult =
+  | { ok: true; xpAwarded: number; completedAt: string }
+  | { ok: false; reason: MissionRejection | 'save-failed' | 'busy' };
 
 export interface ProfileChanges {
   name?: string;
@@ -44,14 +56,20 @@ interface GameActions {
   createProfile: (input: NewProfileInput) => CreateProfileResult;
   updateProfile: (changes: ProfileChanges) => void;
   setReducedMotion: (value: boolean) => void;
-  completeMission: (missionId: string, note?: string) => boolean;
+  setPreference: (key: BooleanPreference, value: boolean) => void;
+  resetProgress: () => boolean;
+  completeMission: (missionId: string, note?: string) => CompleteMissionResult;
   canCompleteMission: (missionId: string) => boolean;
   getMissionStatus: (missionId: string) => MissionProgressStatus;
   startMission: (missionId: string) => void;
-  completeQuiz: (quizId: string, correct: boolean, xp: number) => void;
-  isQuizCompleted: (quizId: string) => boolean;
+  toggleMissionStep: (missionId: string, stepIndex: number) => void;
+  getCompletedSteps: (missionId: string) => number[];
+  submitQuizAttempt: (draft: QuizDraft) => SubmitQuizResult;
   resetAll: () => void;
   dismissToast: (id: string) => void;
+  notify: (message: string, type?: Toast['type']) => void;
+  addImpactRecord: (input: NewImpactRecord) => boolean;
+  deleteImpactRecord: (id: string) => boolean;
   dismissCelebration: () => void;
   getCompletionsByCategory: () => Record<MissionCategory, number>;
   getTodayCompletionCount: () => number;
@@ -75,7 +93,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
     storageService.saveProgress(progress);
   }, [progress]);
 
-  const addToast = useCallback((message: string, type: Toast['type']) => {
+  // Read inside stable callbacks so preference changes apply immediately.
+  const prefsRef = useRef(profile?.preferences);
+  useEffect(() => {
+    prefsRef.current = profile?.preferences;
+  }, [profile]);
+
+  const addToast = useCallback((message: string, type: Toast['type'] = 'info') => {
+    if (type !== 'error' && prefsRef.current?.inAppToasts === false) return;
     const id = newId();
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
@@ -91,22 +116,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setCelebrations((prev) => prev.slice(1));
   }, []);
 
-  // Applies an XP gain, records newly unlocked badges and queues level-up / badge celebrations.
-  const commitProgress = useCallback((prev: PlayerProgress, next: PlayerProgress) => {
-    const newBadges = checkNewBadges(next);
-    const now = new Date().toISOString();
-    if (newBadges.length > 0) {
-      const records: BadgeRecord[] = newBadges.map((b) => ({ badgeId: b.id, unlockedAt: now }));
-      next = { ...next, unlockedBadges: [...next.unlockedBadges, ...records] };
-    }
-    setProgress(next);
-
+  // Persists a reward outcome before showing it: if saving fails, no XP, badge or level change is applied.
+  const applyReward = useCallback((outcome: RewardOutcome): boolean => {
+    if (!storageService.saveProgress(outcome.next)) return false;
+    setProgress(outcome.next);
+    if (prefsRef.current?.soundEffects) playSound(outcome.levelTo > outcome.levelFrom || outcome.newBadges.length > 0 ? 'reward' : 'success');
+    if (prefsRef.current?.celebrations === false) return true;
     const queued: Celebration[] = [];
-    const prevLevel = getLevelFromXp(prev.totalXp);
-    const nextLevel = getLevelFromXp(next.totalXp);
-    if (nextLevel > prevLevel) queued.push({ id: newId(), type: 'level', level: nextLevel });
-    for (const b of newBadges) queued.push({ id: newId(), type: 'badge', badgeId: b.id });
+    if (outcome.levelTo > outcome.levelFrom) queued.push({ id: newId(), type: 'level', level: outcome.levelTo, from: outcome.levelFrom });
+    for (const b of outcome.newBadges) queued.push({ id: newId(), type: 'badge', badgeId: b.id });
     if (queued.length > 0) setCelebrations((c) => [...c, ...queued]);
+    return true;
   }, []);
 
   // Local demo mode allows exactly one profile, and a new profile always starts from empty progress.
@@ -153,6 +173,22 @@ export function GameProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const setPreference = useCallback((key: BooleanPreference, value: boolean) => {
+    setProfile((prev) =>
+      prev ? { ...prev, preferences: { ...prev.preferences, [key]: value }, updatedAt: new Date().toISOString() } : prev,
+    );
+  }, []);
+
+  // Clears game progress but keeps the profile.
+  const resetProgress = useCallback((): boolean => {
+    const fresh = storageService.getDefaultProgress();
+    if (!storageService.saveProgress(fresh)) return false;
+    storageService.setInboxSeenAt(new Date().toISOString());
+    setCelebrations([]);
+    setProgress(fresh);
+    return true;
+  }, []);
+
   const setReducedMotion = useCallback((value: boolean) => {
     setProfile((prev) =>
       prev ? { ...prev, preferences: { ...prev.preferences, reducedMotion: value }, updatedAt: new Date().toISOString() } : prev,
@@ -179,60 +215,94 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [progress.completions, progress.inProgress]);
 
   const startMission = useCallback((missionId: string) => {
-    if (!canCompleteMission(missionId)) return;
+    if (!canCompleteMission(missionId) || progress.inProgress.some((s) => s.missionId === missionId)) return;
     setProgress((prev) =>
       prev.inProgress.some((s) => s.missionId === missionId)
         ? prev
-        : { ...prev, inProgress: [...prev.inProgress, { missionId, startedAt: new Date().toISOString() }] },
+        : { ...prev, inProgress: [...prev.inProgress, { missionId, startedAt: new Date().toISOString(), completedSteps: [] }] },
     );
-  }, [canCompleteMission]);
+    const title = missions.find((m) => m.id === missionId)?.title;
+    addToast(title ? `เริ่มภารกิจ "${title}" แล้ว` : 'เริ่มภารกิจแล้ว', 'info');
+  }, [canCompleteMission, progress.inProgress, addToast]);
 
-  const completeMission = useCallback((missionId: string, note?: string): boolean => {
-    const mission = missions.find((m) => m.id === missionId);
-    if (!mission || !mission.active || !canCompleteMission(missionId)) return false;
+  const toggleMissionStep = useCallback((missionId: string, stepIndex: number) => {
+    setProgress((prev) => ({
+      ...prev,
+      inProgress: prev.inProgress.map((s) =>
+        s.missionId !== missionId
+          ? s
+          : {
+              ...s,
+              completedSteps: s.completedSteps.includes(stepIndex)
+                ? s.completedSteps.filter((i) => i !== stepIndex)
+                : [...s.completedSteps, stepIndex].sort((a, b) => a - b),
+            },
+      ),
+    }));
+  }, []);
 
-    const now = new Date();
-    const completion: MissionCompletion = {
+  const getCompletedSteps = useCallback(
+    (missionId: string) => progress.inProgress.find((s) => s.missionId === missionId)?.completedSteps ?? [],
+    [progress.inProgress],
+  );
+
+  // Rejects a second completion of the same mission before the first one has re-rendered (e.g. a double tap).
+  const completingRef = useRef(new Set<string>());
+  useEffect(() => {
+    completingRef.current.clear();
+  }, [progress]);
+
+  const completeMission = useCallback((missionId: string, note?: string): CompleteMissionResult => {
+    if (completingRef.current.has(missionId)) return { ok: false, reason: 'busy' };
+    const result = evaluateMissionCompletion(progress, missionId, new Date(), note);
+    if (!result.ok) return result;
+    completingRef.current.add(missionId);
+    if (!applyReward(result)) {
+      completingRef.current.delete(missionId);
+      return { ok: false, reason: 'save-failed' };
+    }
+    addToast(`ภารกิจสำเร็จ! +${result.xpAwarded} XP`, 'xp');
+    return { ok: true, xpAwarded: result.xpAwarded, completedAt: result.completion.completedAt };
+  }, [progress, applyReward, addToast]);
+
+  // Grades, rewards and saves a quiz once; the same attempt id is rejected if submitted again.
+  const submitQuizAttempt = useCallback((draft: QuizDraft): SubmitQuizResult => {
+    if (completingRef.current.has(draft.id)) return { ok: false, reason: 'duplicate' };
+    const result = evaluateQuizAttempt(progress, draft, new Date());
+    if (!result.ok) return result;
+    completingRef.current.add(draft.id);
+    if (!applyReward(result)) {
+      completingRef.current.delete(draft.id);
+      return { ok: false, reason: 'save-failed' };
+    }
+    if (result.xpAwarded > 0) addToast(`+${result.xpAwarded} XP จากควิซ`, 'xp');
+    return { ok: true, attemptId: result.attempt.id, xpAwarded: result.xpAwarded };
+  }, [progress, applyReward, addToast]);
+
+  // Saved before it is shown, like rewards; entering quantities never awards XP.
+  const addImpactRecord = useCallback((input: NewImpactRecord): boolean => {
+    const record: ImpactRecord = {
       id: createId(),
-      missionId,
-      completedAt: now.toISOString(),
-      localDate: getLocalDate(now),
-      xpAwarded: mission.xp,
-      completionType: mission.type,
-      note,
+      ...input,
+      ...(input.activityType === 'waste-sorted' ? {} : { wasteType: undefined }),
+      emissionFactorId: getFactorFor(input.activityType)?.id,
+      source: 'user-entered',
+      calculationVersion: CALCULATION_VERSION,
+      createdAt: new Date().toISOString(),
     };
-
-    commitProgress(progress, {
-      ...progress,
-      totalXp: progress.totalXp + mission.xp,
-      inProgress: progress.inProgress.filter((s) => s.missionId !== missionId),
-      completions: [...progress.completions, completion],
-    });
-    addToast(`+${mission.xp} XP`, 'xp');
+    const next = { ...progress, impactRecords: [...progress.impactRecords, record] };
+    if (!storageService.saveProgress(next)) return false;
+    setProgress(next);
     return true;
-  }, [progress, canCompleteMission, commitProgress, addToast]);
+  }, [progress]);
 
-  const completeQuiz = useCallback((quizId: string, correct: boolean, xp: number) => {
-    if ((progress.quizCompletions ?? []).some((q) => q.quizId === quizId)) return;
+  const deleteImpactRecord = useCallback((id: string): boolean => {
+    const next = { ...progress, impactRecords: progress.impactRecords.filter((r) => r.id !== id) };
+    if (!storageService.saveProgress(next)) return false;
+    setProgress(next);
+    return true;
+  }, [progress]);
 
-    const record: QuizCompletion = {
-      quizId,
-      completedAt: new Date().toISOString(),
-      correct,
-      xpAwarded: correct ? xp : 0,
-    };
-
-    commitProgress(progress, {
-      ...progress,
-      totalXp: progress.totalXp + (correct ? xp : 0),
-      quizCompletions: [...(progress.quizCompletions ?? []), record],
-    });
-    if (correct) addToast(`+${xp} XP จากควิซ`, 'xp');
-  }, [progress, commitProgress, addToast]);
-
-  const isQuizCompleted = useCallback((quizId: string): boolean => {
-    return (progress.quizCompletions ?? []).some((q) => q.quizId === quizId);
-  }, [progress.quizCompletions]);
 
   const resetAll = useCallback(() => {
     storageService.resetAll();
@@ -265,14 +335,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
         createProfile,
         updateProfile,
         setReducedMotion,
+        setPreference,
+        resetProgress,
         completeMission,
         canCompleteMission,
         getMissionStatus,
         startMission,
-        completeQuiz,
-        isQuizCompleted,
+        toggleMissionStep,
+        getCompletedSteps,
+        submitQuizAttempt,
         resetAll,
         dismissToast,
+        notify: addToast,
+        addImpactRecord,
+        deleteImpactRecord,
         dismissCelebration,
         getCompletionsByCategory,
         getTodayCompletionCount,

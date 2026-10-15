@@ -11,7 +11,7 @@ import { ProgressBar } from '../ui/ProgressBar';
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   `flex min-h-11 items-center gap-3 rounded-control px-3 text-body transition-colors ${
-    isActive ? 'bg-white/12 font-semibold text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'
+    isActive ? 'bg-white/12 font-semibold text-white ring-1 ring-white/10' : 'text-white/75 hover:bg-white/5 hover:text-white'
   }`;
 
 export function DesktopSidebar() {
@@ -24,7 +24,7 @@ export function DesktopSidebar() {
   return (
     <aside
       aria-label="เมนูหลัก"
-      className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col bg-forest px-4 py-6 text-white lg:flex"
+      className="bg-forest-hero fixed inset-y-0 left-0 z-40 hidden w-64 flex-col px-4 py-6 text-white lg:flex"
     >
       <div className="flex items-center gap-2 px-2">
         <EcoMascot size={40} title="EcoQuest" />
@@ -34,7 +34,7 @@ export function DesktopSidebar() {
         </div>
       </div>
 
-      <div className="mt-6 rounded-card bg-white/8 p-3">
+      <div className="mt-6 rounded-card bg-white/8 p-3 ring-1 ring-white/10">
         <div className="flex items-center gap-3">
           <Avatar id={profile.avatarId} color={profile.preferences.profileColor} onDark />
           <div className="min-w-0">
@@ -55,7 +55,7 @@ export function DesktopSidebar() {
         </div>
       </div>
 
-      <nav className="mt-6 flex-1 overflow-y-auto">
+      <nav aria-label="เมนูหลัก" className="mt-6 flex-1 overflow-y-auto">
         <ul className="space-y-1">
           {SIDEBAR_NAV.map(({ to, label, icon: Icon }) => (
             <li key={to}>

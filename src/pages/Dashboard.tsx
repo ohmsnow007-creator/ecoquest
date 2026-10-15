@@ -24,10 +24,10 @@ import { EmptyState } from '../components/ui/States';
 import { buttonClasses } from '../components/ui/Button';
 
 const STATUS_META: Record<MissionProgressStatus, { label: string; icon: LucideIcon; className: string }> = {
-  available: { label: 'พร้อมทำ', icon: Circle, className: 'bg-primary/10 text-primary' },
-  'in-progress': { label: 'กำลังทำ', icon: Timer, className: 'bg-warning/15 text-text' },
-  'completed-today': { label: 'สำเร็จแล้ว', icon: CheckCircle2, className: 'bg-success/10 text-success' },
-  'completed-once': { label: 'สำเร็จแล้ว', icon: CheckCircle2, className: 'bg-success/10 text-success' },
+  available: { label: 'พร้อมทำ', icon: Circle, className: 'bg-pale-mint text-primary' },
+  'in-progress': { label: 'กำลังทำ', icon: Timer, className: 'bg-lime text-forest' },
+  'completed-today': { label: 'สำเร็จแล้ว', icon: CheckCircle2, className: 'bg-forest text-mint' },
+  'completed-once': { label: 'สำเร็จแล้ว', icon: CheckCircle2, className: 'bg-forest text-mint' },
 };
 
 const STATUS_ORDER: Record<MissionProgressStatus, number> = { 'in-progress': 0, available: 1, 'completed-today': 2, 'completed-once': 3 };
@@ -50,12 +50,12 @@ function ViewAll({ to }: { to: string }) {
 function StatLink({ to, icon: Icon, label, value, hint, delay }: { to: string; icon: LucideIcon; label: string; value: string; hint?: string; delay: number }) {
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}>
-      <Link to={to} className="flex h-full flex-col rounded-card border border-border bg-surface p-3 shadow-card transition-colors hover:border-primary/40 sm:p-4">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary" aria-hidden="true">
-          <Icon size={16} />
+      <Link to={to} className="flex h-full flex-col rounded-card border border-border bg-surface p-3 shadow-card transition-colors hover:border-primary/40 hover:bg-pale-mint/40 sm:p-4">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-pale-mint text-primary" aria-hidden="true">
+          <Icon size={17} />
         </span>
         <span className="mt-1.5 text-[0.75rem] leading-tight whitespace-nowrap text-muted sm:text-caption">{label}</span>
-        <span className="mt-1 text-xl leading-tight font-bold">{value}</span>
+        <span className="mt-1 text-xl leading-tight font-bold text-forest">{value}</span>
         {hint && <span className="mt-0.5 text-[0.75rem] leading-snug text-muted">{hint}</span>}
       </Link>
     </motion.div>
@@ -67,16 +67,16 @@ function DailyMissionRow({ mission, status }: { mission: Mission; status: Missio
   const meta = STATUS_META[status];
   return (
     <li className="flex items-center gap-3 rounded-card border border-border bg-surface p-3 shadow-card sm:p-4">
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-mint text-forest" aria-hidden="true">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] bg-pale-mint text-primary ring-1 ring-mint" aria-hidden="true">
         <Icon size={22} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-card font-semibold">{mission.title}</p>
+        <p className="truncate text-card font-semibold text-forest">{mission.title}</p>
         <p className="truncate text-caption text-muted">
           {CATEGORY_LABELS[mission.category]} · {DIFFICULTY_LABELS[mission.difficulty]}
         </p>
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <XPBadge amount={mission.xp} />
+          <XPBadge amount={mission.xpReward} />
           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-caption font-semibold ${meta.className}`}>
             <meta.icon size={12} aria-hidden="true" />
             {meta.label}
@@ -86,7 +86,7 @@ function DailyMissionRow({ mission, status }: { mission: Mission; status: Missio
       <Link
         to={`/missions/${mission.id}`}
         aria-label={`ดูภารกิจ ${mission.title}`}
-        className="inline-flex min-h-11 shrink-0 items-center rounded-full bg-primary px-4 text-caption font-semibold text-white hover:bg-forest"
+        className="inline-flex min-h-11 shrink-0 items-center rounded-full bg-primary px-4 text-caption font-semibold text-white shadow-[0_4px_12px_rgb(14_127_89/0.25)] hover:bg-forest"
       >
         ดูภารกิจ
       </Link>
@@ -107,7 +107,7 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
     if (event.selfReported) tag = 'รายงานเอง';
   } else if (event.type === 'quiz') {
     Icon = Brain;
-    text = event.correct ? 'ตอบควิซถูก' : 'ตอบควิซ (ยังไม่ถูก)';
+    text = `ทำ${event.title} ถูก ${event.correctCount}/${event.total} ข้อ`;
     xp = event.xp;
   } else if (event.type === 'badge') {
     Icon = Medal;
@@ -119,7 +119,7 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
 
   return (
     <li className="flex items-center gap-3 py-3">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mint/60 text-forest" aria-hidden="true">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pale-mint text-primary" aria-hidden="true">
         <Icon size={18} />
       </span>
       <div className="min-w-0 flex-1">
@@ -157,11 +157,11 @@ export function Dashboard() {
     <>
       {/* 1. Header */}
       <header className="safe-top flex items-center gap-3 pt-5 pb-4 lg:pt-10 lg:pb-6">
-        <Link to="/settings" aria-label="แก้ไขโปรไฟล์" className="shrink-0 rounded-full ring-2 ring-mint ring-offset-2 ring-offset-background">
+        <Link to="/profile" aria-label="โปรไฟล์ของฉัน" className="shrink-0 rounded-full ring-2 ring-mint ring-offset-2 ring-offset-background">
           <Avatar id={profile.avatarId} color={profile.preferences.profileColor} size="lg" />
         </Link>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-section leading-tight font-bold">สวัสดี {profile.displayName}</p>
+          <h1 className="truncate text-section leading-tight font-bold text-forest">สวัสดี {profile.displayName}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption">
             <LevelBadge level={stats.level} />
             <span className="text-muted">
@@ -188,7 +188,7 @@ export function Dashboard() {
           <Link
             to="/settings"
             aria-label="ตั้งค่า"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-text shadow-card hover:bg-background"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-forest shadow-card hover:bg-pale-mint"
           >
             <Settings size={19} aria-hidden="true" />
           </Link>
@@ -197,27 +197,27 @@ export function Dashboard() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-6">
         {/* 2. Virtual world hero */}
-        <section aria-labelledby="world-title" className="overflow-hidden rounded-[1.75rem] border border-border bg-surface shadow-card lg:col-span-2">
-          <div className="relative h-60 sm:h-72 lg:h-80">
+        <section aria-labelledby="world-title" className="bg-forest-hero overflow-hidden rounded-hero text-white shadow-raised lg:col-span-2">
+          <div className="relative h-60 overflow-hidden rounded-b-[1.5rem] sm:h-72 lg:h-80">
             <GreenWorldScene key={world.current.stage} stage={world.current.stage} />
             <motion.p
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute top-3 left-1/2 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 rounded-2xl bg-surface/95 px-4 py-2 text-center text-caption font-medium shadow-card"
+              className="absolute top-3 left-1/2 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 rounded-2xl bg-surface/95 px-4 py-2 text-center text-caption font-medium text-forest shadow-card"
             >
               {explainWorld(stats.missionsCompleted, stats.byCategory)}
             </motion.p>
-            <span className="absolute bottom-3 left-3 rounded-2xl bg-surface/95 px-3 py-1.5 shadow-card">
-              <span className="block text-[0.75rem] leading-tight text-muted">ระดับ {world.current.stage}</span>
+            <span className="absolute bottom-3 left-3 rounded-2xl bg-forest/90 px-3 py-1.5 text-white shadow-card ring-1 ring-white/15 backdrop-blur">
+              <span className="block text-[0.75rem] leading-tight text-mint">ระดับ {world.current.stage}</span>
               <span id="world-title" className="block text-caption leading-tight font-semibold">{world.current.title}</span>
             </span>
             <span className="absolute right-2 bottom-1">
               <EcoMascot size={64} mood={world.current.stage >= 3 ? 'cheer' : 'happy'} title="" />
             </span>
           </div>
-          <div className="flex items-center gap-4 px-4 py-3">
+          <div className="flex items-center gap-4 px-4 py-3.5 sm:px-5">
             <div className="min-w-0 flex-1">
-              <p className="mb-1.5 text-caption">
+              <p className="mb-1.5 text-caption text-white/85">
                 {world.next ? (
                   <>
                     อีก <span className="font-semibold">{world.missionsToNext} ภารกิจ</span> ถึง “{world.next.title}”
@@ -226,9 +226,9 @@ export function Dashboard() {
                   'โลกของคุณเติบโตเต็มที่แล้ว'
                 )}
               </p>
-              <ProgressBar value={world.progress} label="ความคืบหน้าโลกสีเขียว" size="sm" />
+              <ProgressBar value={world.progress} label="ความคืบหน้าโลกสีเขียว" size="md" tone="lime" onDark />
             </div>
-            <Link to="/world" className="inline-flex min-h-11 shrink-0 items-center gap-0.5 text-caption font-semibold text-primary">
+            <Link to="/world" className="inline-flex min-h-11 shrink-0 items-center gap-0.5 rounded-full bg-lime px-4 text-caption font-semibold text-forest hover:bg-mint">
               ดูโลกของฉัน <ChevronRight size={15} aria-hidden="true" />
             </Link>
           </div>
@@ -265,10 +265,10 @@ export function Dashboard() {
             {QUICK_ACTIONS.map(({ to, label, aria, icon: Icon, tone }) => (
               <li key={to}>
                 <Link to={to} aria-label={aria} className="group flex flex-col items-center gap-1.5 rounded-2xl p-1 text-center">
-                  <span className={`flex h-14 w-14 items-center justify-center rounded-2xl shadow-card transition-transform group-hover:-translate-y-0.5 ${tone}`} aria-hidden="true">
+                  <span className={`flex h-14 w-14 items-center justify-center rounded-[1.125rem] shadow-card ring-1 ring-forest/5 transition-transform group-hover:-translate-y-0.5 ${tone}`} aria-hidden="true">
                     <Icon size={24} />
                   </span>
-                  <span className="text-caption font-medium">{label}</span>
+                  <span className="text-caption font-medium text-forest">{label}</span>
                 </Link>
               </li>
             ))}

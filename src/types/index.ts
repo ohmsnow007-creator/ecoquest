@@ -11,19 +11,31 @@ export type MissionType = 'educational' | 'simulation' | 'self-reported';
 export type RepeatPolicy = 'once' | 'daily';
 export type MissionStatus = 'available' | 'in-progress' | 'completed';
 
+export type ImpactType =
+  | 'waste-reduction'
+  | 'energy-saving'
+  | 'water-saving'
+  | 'emission-reduction'
+  | 'resource-saving'
+  | 'biodiversity'
+  | 'awareness';
+
 export interface Mission {
   id: string;
   title: string;
   description: string;
   category: MissionCategory;
   difficulty: MissionDifficulty;
-  xp: number;
-  durationMinutes: number;
+  xpReward: number;
+  estimatedMinutes: number;
   type: MissionType;
   repeatPolicy: RepeatPolicy;
   active: boolean;
-  instructions: string[];
-  learningPoint: string;
+  steps: string[];
+  environmentalExplanation: string;
+  impactType: ImpactType;
+  /** Set only when a sourced impact factor exists for this mission (used by Green Impact). */
+  impactFactorId?: string;
 }
 
 export interface MissionCompletion {
@@ -51,38 +63,83 @@ export interface PlayerProfile {
     reducedMotion: boolean;
     selectedGoalIds: string[];
     profileColor?: string;
+    soundEffects?: boolean;
+    inAppToasts?: boolean;
+    celebrations?: boolean;
   };
 }
 
-export interface QuizCompletion {
-  quizId: string;
-  completedAt: string;
+export type QuizCategory = 'waste' | 'energy' | 'water' | 'carbon' | 'lifestyle';
+export type QuizDifficulty = 'easy' | 'medium' | 'hard';
+
+export interface QuizQuestionResult {
+  questionId: string;
+  answerId: string | null;
   correct: boolean;
+}
+
+/** One submitted quiz. The id is created when the quiz starts, so the same submission can never be rewarded twice. */
+export interface QuizAttempt {
+  id: string;
+  startedAt: string;
+  submittedAt: string;
+  category: QuizCategory | 'all';
+  difficulty: QuizDifficulty | 'all';
+  results: QuizQuestionResult[];
+  correctCount: number;
+  total: number;
+  scorePercent: number;
   xpAwarded: number;
+  /** Migrated from the old one-question-at-a-time quiz; answers were not stored then. */
+  legacy?: boolean;
 }
 
 export interface MissionStart {
   missionId: string;
   startedAt: string;
+  completedSteps: number[];
 }
 
 export type MissionProgressStatus = 'available' | 'in-progress' | 'completed-today' | 'completed-once';
 
+export type ImpactActivityType = 'electricity-saved' | 'water-saved' | 'waste-sorted' | 'low-carbon-distance' | 'electricity-usage';
+export type ImpactUnit = 'kWh' | 'L' | 'kg' | 'km';
+export type WasteType = 'plastic' | 'paper' | 'glass' | 'metal' | 'organic' | 'other';
+
+/** A quantity the player measured and entered themselves. Never converted from XP. */
+export interface ImpactRecord {
+  id: string;
+  activityType: ImpactActivityType;
+  quantity: number;
+  unit: ImpactUnit;
+  /** Local date YYYY-MM-DD (first day of the month for monthly electricity usage). */
+  date: string;
+  wasteType?: WasteType;
+  emissionFactorId?: string;
+  source: 'user-entered';
+  calculationVersion: string;
+  createdAt: string;
+}
+
 export interface PlayerProgress {
   totalXp: number;
+  impactRecords: ImpactRecord[];
   inProgress: MissionStart[];
   completions: MissionCompletion[];
   unlockedBadges: BadgeRecord[];
-  quizCompletions: QuizCompletion[];
+  quizAttempts: QuizAttempt[];
   schemaVersion: number;
 }
 
+export type BadgeGroup = 'missions' | 'consistency' | 'learning' | 'world';
+
 export interface Badge {
   id: string;
-  title: string;
+  name: string;
   description: string;
   icon: string;
-  ruleType: 'total-completions' | 'category-completions' | 'total-xp' | 'streak' | 'level';
+  group: BadgeGroup;
+  ruleType: 'total-completions' | 'category-completions' | 'streak' | 'quiz-correct' | 'world-stage';
   ruleCategory?: MissionCategory;
   threshold: number;
   rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';

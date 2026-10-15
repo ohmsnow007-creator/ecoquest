@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BottomNavigation } from './BottomNavigation';
 import { DesktopSidebar } from './DesktopSidebar';
+import { ConnectionBanner } from './ConnectionBanner';
 import { ToastNotification } from '../feedback/Toast';
 import { CelebrationModal } from '../feedback/CelebrationModal';
 import { ErrorBoundary, LoadingSkeleton } from '../ui/States';
@@ -14,15 +15,18 @@ export function AppShell() {
 
   if (!profile) {
     return (
-      <Suspense fallback={<LoadingSkeleton />}>
-        <Outlet />
-      </Suspense>
+      <ErrorBoundary key={pathname}>
+        <Suspense fallback={<LoadingSkeleton />}>
+          <Outlet />
+        </Suspense>
+      </ErrorBoundary>
     );
   }
 
   return (
     <div className="min-h-dvh lg:pl-64">
       <DesktopSidebar />
+      <ConnectionBanner />
       <main className="pb-nav lg:pb-12">
         <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-10">
           <ErrorBoundary key={pathname}>

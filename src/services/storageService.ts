@@ -1,4 +1,5 @@
-import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, QuizCompletion, MissionType, MissionStart } from '../types';
+import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, QuizAttempt, QuizQuestionResult, MissionType, MissionStart, ImpactRecord, ImpactActivityType, WasteType } from '../types';
+import { IMPACT_ACTIVITIES } from '../data/impactActivities';
 import { validateDisplayName } from '../utils/profile';
 import { DEFAULT_AVATAR_ID, DEFAULT_PROFILE_COLOR, INTERESTS, MAX_INTERESTS, isKnownAvatar, isKnownProfileColor } from '../data/avatars';
 
@@ -18,7 +19,7 @@ const isStr = (v: unknown): v is string => typeof v === 'string' && v.length > 0
 const isXp = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0;
 
 function getDefaultProgress(): PlayerProgress {
-  return { totalXp: 0, inProgress: [], completions: [], unlockedBadges: [], quizCompletions: [], schemaVersion: CURRENT_SCHEMA_VERSION };
+  return { totalXp: 0, impactRecords: [], inProgress: [], completions: [], unlockedBadges: [], quizAttempts: [], schemaVersion: CURRENT_SCHEMA_VERSION };
 }
 
 // Returns a usable profile, repairing optional fields; null when the core identity is unusable.
@@ -44,6 +45,9 @@ export function sanitizeProfile(data: unknown): PlayerProfile | null {
       reducedMotion: prefs.reducedMotion === true,
       selectedGoalIds: goals,
       profileColor: isKnownProfileColor(prefs.profileColor) ? prefs.profileColor : DEFAULT_PROFILE_COLOR,
+      soundEffects: prefs.soundEffects === true,
+      inAppToasts: prefs.inAppToasts !== false,
+      celebrations: prefs.celebrations !== false,
     },
   };
 }
@@ -67,13 +71,76 @@ function sanitizeBadge(v: unknown): BadgeRecord | null {
   return isObj(v) && isStr(v.badgeId) && isStr(v.unlockedAt) ? { badgeId: v.badgeId, unlockedAt: v.unlockedAt } : null;
 }
 
-function sanitizeQuiz(v: unknown): QuizCompletion | null {
+const QUIZ_CATS = ['all', 'waste', 'energy', 'water', 'carbon', 'lifestyle'];
+const QUIZ_DIFFS = ['all', 'easy', 'medium', 'hard'];
+
+function sanitizeAttempt(v: unknown): QuizAttempt | null {
+  if (!isObj(v) || !isStr(v.id) || !isStr(v.startedAt) || !isStr(v.submittedAt) || !isXp(v.xpAwarded) || !Array.isArray(v.results)) return null;
+  const results: QuizQuestionResult[] = v.results
+    .filter((r): r is Obj => isObj(r) && isStr(r.questionId) && typeof r.correct === 'boolean')
+    .map((r) => ({ questionId: r.questionId as string, answerId: typeof r.answerId === 'string' ? r.answerId : null, correct: r.correct as boolean }));
+  if (results.length === 0) return null;
+  const correctCount = results.filter((r) => r.correct).length;
+  return {
+    id: v.id,
+    startedAt: v.startedAt,
+    submittedAt: v.submittedAt,
+    category: (QUIZ_CATS.includes(v.category as string) ? v.category : 'all') as QuizAttempt['category'],
+    difficulty: (QUIZ_DIFFS.includes(v.difficulty as string) ? v.difficulty : 'all') as QuizAttempt['difficulty'],
+    results,
+    correctCount,
+    total: results.length,
+    scorePercent: Math.round((correctCount / results.length) * 100),
+    xpAwarded: v.xpAwarded,
+    ...(v.legacy === true ? { legacy: true } : {}),
+  };
+}
+
+/** Old saves stored one record per answered question; each becomes a one-question legacy attempt. */
+function migrateLegacyQuiz(v: unknown): QuizAttempt | null {
   if (!isObj(v) || !isStr(v.quizId) || !isStr(v.completedAt) || typeof v.correct !== 'boolean' || !isXp(v.xpAwarded)) return null;
-  return { quizId: v.quizId, completedAt: v.completedAt, correct: v.correct, xpAwarded: v.xpAwarded };
+  return {
+    id: `legacy-${v.quizId}`,
+    startedAt: v.completedAt,
+    submittedAt: v.completedAt,
+    category: 'all',
+    difficulty: 'all',
+    results: [{ questionId: v.quizId, answerId: null, correct: v.correct }],
+    correctCount: v.correct ? 1 : 0,
+    total: 1,
+    scorePercent: v.correct ? 100 : 0,
+    xpAwarded: v.xpAwarded,
+    legacy: true,
+  };
 }
 
 function sanitizeStart(v: unknown): MissionStart | null {
-  return isObj(v) && isStr(v.missionId) && isStr(v.startedAt) ? { missionId: v.missionId, startedAt: v.startedAt } : null;
+  if (!isObj(v) || !isStr(v.missionId) || !isStr(v.startedAt)) return null;
+  const steps = Array.isArray(v.completedSteps)
+    ? [...new Set(v.completedSteps.filter((n): n is number => Number.isInteger(n) && n >= 0 && n < 50))].sort((a, b) => a - b)
+    : [];
+  return { missionId: v.missionId, startedAt: v.startedAt, completedSteps: steps };
+}
+
+const WASTE_TYPES: WasteType[] = ['plastic', 'paper', 'glass', 'metal', 'organic', 'other'];
+
+function sanitizeImpact(v: unknown): ImpactRecord | null {
+  if (!isObj(v) || !isStr(v.id) || typeof v.date !== 'string' || !DATE_RE.test(v.date) || !isStr(v.createdAt)) return null;
+  const meta = IMPACT_ACTIVITIES.find((a) => a.type === (v.activityType as ImpactActivityType));
+  if (!meta || v.unit !== meta.unit) return null;
+  if (typeof v.quantity !== 'number' || !Number.isFinite(v.quantity) || v.quantity <= 0 || v.quantity > meta.max) return null;
+  return {
+    id: v.id,
+    activityType: meta.type,
+    quantity: v.quantity,
+    unit: meta.unit,
+    date: v.date,
+    ...(meta.type === 'waste-sorted' ? { wasteType: WASTE_TYPES.includes(v.wasteType as WasteType) ? (v.wasteType as WasteType) : 'other' } : {}),
+    ...(isStr(v.emissionFactorId) ? { emissionFactorId: v.emissionFactorId } : {}),
+    source: 'user-entered',
+    calculationVersion: isStr(v.calculationVersion) ? v.calculationVersion : 'unknown',
+    createdAt: v.createdAt,
+  };
 }
 
 function cleanList<T>(v: unknown, fn: (x: unknown) => T | null): T[] {
@@ -84,21 +151,41 @@ function cleanList<T>(v: unknown, fn: (x: unknown) => T | null): T[] {
 export function sanitizeProgress(data: unknown): PlayerProgress {
   if (!isObj(data)) return getDefaultProgress();
   const completions = cleanList(data.completions, sanitizeCompletion);
-  const quizCompletions = cleanList(data.quizCompletions, sanitizeQuiz);
+  const seenAttempts = new Set<string>();
+  const quizAttempts = [...cleanList(data.quizAttempts, sanitizeAttempt), ...cleanList(data.quizCompletions, migrateLegacyQuiz)].filter(
+    (a) => !seenAttempts.has(a.id) && seenAttempts.add(a.id),
+  );
   const seenBadges = new Set<string>();
   const unlockedBadges = cleanList(data.unlockedBadges, sanitizeBadge).filter((b) => !seenBadges.has(b.badgeId) && seenBadges.add(b.badgeId));
   const totalXp =
-    completions.reduce((s, c) => s + c.xpAwarded, 0) + quizCompletions.reduce((s, q) => s + q.xpAwarded, 0);
+    completions.reduce((s, c) => s + c.xpAwarded, 0) + quizAttempts.reduce((s, q) => s + q.xpAwarded, 0);
   const seenStarts = new Set<string>();
   const inProgress = cleanList(data.inProgress, sanitizeStart).filter((s) => !seenStarts.has(s.missionId) && seenStarts.add(s.missionId));
-  return { totalXp, inProgress, completions, unlockedBadges, quizCompletions, schemaVersion: CURRENT_SCHEMA_VERSION };
+  const impactRecords = cleanList(data.impactRecords, sanitizeImpact);
+  return { totalXp, impactRecords, inProgress, completions, unlockedBadges, quizAttempts, schemaVersion: CURRENT_SCHEMA_VERSION };
 }
 
+export const CORRUPT_BACKUP_SUFFIX = '_corrupt_backup';
+
+// Unreadable JSON is copied to a backup key before anything can overwrite it, then treated as empty.
 function readJson(key: string): unknown {
+  let raw: string | null = null;
   try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
+    raw = localStorage.getItem(key);
   } catch {
+    return null;
+  }
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    try {
+      localStorage.setItem(key + CORRUPT_BACKUP_SUFFIX, raw);
+      localStorage.removeItem(key);
+    } catch {
+      // Storage full or blocked: nothing more we can do safely.
+    }
+    console.warn(`EcoQuest: ${key} was not valid JSON; a copy was kept in ${key}${CORRUPT_BACKUP_SUFFIX}.`);
     return null;
   }
 }
@@ -148,11 +235,28 @@ export const storageService = {
     }
   },
 
+  /** Bytes used by EcoQuest's own keys (UTF-16 chars × 2, as browsers count localStorage). */
+  getUsage(): { bytes: number; keys: { key: string; bytes: number }[] } {
+    const all = Object.values(STORAGE_KEYS).flatMap((k) => [k, k + CORRUPT_BACKUP_SUFFIX]);
+    const keys = all.map((key) => {
+      let raw: string | null = null;
+      try {
+        raw = localStorage.getItem(key);
+      } catch {
+        raw = null;
+      }
+      return { key, bytes: raw ? (key.length + raw.length) * 2 : 0 };
+    });
+    const present = keys.filter((k) => k.bytes > 0 || !k.key.endsWith(CORRUPT_BACKUP_SUFFIX));
+    return { bytes: present.reduce((s, k) => s + k.bytes, 0), keys: present };
+  },
+
   resetAll(): void {
     try {
-      localStorage.removeItem(STORAGE_KEYS.profile);
-      localStorage.removeItem(STORAGE_KEYS.progress);
-      localStorage.removeItem(STORAGE_KEYS.inboxSeen);
+      for (const key of Object.values(STORAGE_KEYS)) {
+        localStorage.removeItem(key);
+        localStorage.removeItem(key + CORRUPT_BACKUP_SUFFIX);
+      }
     } catch (e) {
       console.error('Failed to reset:', e);
     }

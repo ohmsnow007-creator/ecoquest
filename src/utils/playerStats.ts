@@ -26,14 +26,14 @@ export interface PlayerStats {
 // The one place player numbers are computed, so every page reports the same values.
 export function getPlayerStats(progress: PlayerProgress, now: Date = new Date()): PlayerStats {
   const today = getLocalDate(now);
-  const quizzes = progress.quizCompletions ?? [];
+  const attempts = progress.quizAttempts;
   const byCategory: Record<MissionCategory, number> = { waste: 0, energy: 0, water: 0, transport: 0, consumption: 0, nature: 0 };
   for (const c of progress.completions) {
     const m = missions.find((x) => x.id === c.missionId);
     if (m) byCategory[m.category]++;
   }
   const todayCompletions = progress.completions.filter((c) => c.localDate === today);
-  const todayQuizXp = quizzes.filter((q) => getLocalDate(new Date(q.completedAt)) === today).reduce((s, q) => s + q.xpAwarded, 0);
+  const todayQuizXp = attempts.filter((q) => getLocalDate(new Date(q.submittedAt)) === today).reduce((s, q) => s + q.xpAwarded, 0);
   const selfReportedCount = progress.completions.filter((c) => c.completionType === 'self-reported').length;
 
   return {
@@ -45,9 +45,9 @@ export function getPlayerStats(progress: PlayerProgress, now: Date = new Date())
     missionsCompleted: progress.completions.length,
     selfReportedCount,
     learningCount: progress.completions.length - selfReportedCount,
-    quizzesAnswered: quizzes.length,
-    quizzesCorrect: quizzes.filter((q) => q.correct).length,
-    activityCount: progress.completions.length + quizzes.length,
+    quizzesAnswered: attempts.length,
+    quizzesCorrect: new Set(attempts.flatMap((a) => a.results.filter((r) => r.correct).map((r) => r.questionId))).size,
+    activityCount: progress.completions.length + attempts.length,
     todayMissions: todayCompletions.length,
     todayXp: todayCompletions.reduce((s, c) => s + c.xpAwarded, 0) + todayQuizXp,
     streak: calculateStreak(progress.completions),

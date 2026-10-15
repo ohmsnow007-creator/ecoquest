@@ -20,7 +20,7 @@ interface ResponsiveChartProps {
 }
 
 export const CHART_THEME = {
-  bar: 'var(--color-primary)',
+  bar: 'var(--color-emerald)',
   barMuted: 'var(--color-mint)',
   grid: 'var(--color-border)',
   axis: 'var(--color-muted)',
@@ -40,7 +40,7 @@ export function ResponsiveChart({
 }: ResponsiveChartProps) {
   return (
     <Card as="section" aria-label={title}>
-      <h2 className="text-section font-semibold">{title}</h2>
+      <h2 className="text-section font-bold text-forest">{title}</h2>
       {description && <p className="mt-0.5 text-caption text-muted">{description}</p>}
 
       {isEmpty ? (
