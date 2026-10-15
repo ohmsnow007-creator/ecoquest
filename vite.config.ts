@@ -4,6 +4,12 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vite'
 
+// Where the app is served from: '/ecoquest/' on GitHub Pages (default), '/' on Netlify (set in netlify.toml).
+// A Windows shell can rewrite "/" into a drive path (e.g. C:/Program Files/Git/); that always means the root.
+const env = process.env.BASE_PATH
+const raw = env === undefined ? '/ecoquest/' : /^[A-Za-z]:[\\/]/.test(env) ? '/' : env
+const BASE = `/${raw.replace(/^\/+|\/+$/g, '')}/`.replace(/\/+/g, '/')
+
 export default defineConfig({
   plugins: [
     react(),
@@ -15,7 +21,7 @@ export default defineConfig({
       injectRegister: false,
       includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {
-        id: '/ecoquest/',
+        id: BASE,
         name: 'EcoQuest — ภารกิจพิชิตโลกสีเขียว',
         short_name: 'EcoQuest',
         description: 'เปลี่ยนนิสัยเล็ก ๆ ให้กลายเป็นการเปลี่ยนแปลงที่ยิ่งใหญ่',
@@ -25,8 +31,8 @@ export default defineConfig({
         background_color: '#123C2E',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/ecoquest/#/home',
-        scope: '/ecoquest/',
+        start_url: `${BASE}#/home`,
+        scope: BASE,
         categories: ['education', 'games', 'lifestyle'],
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
@@ -61,7 +67,7 @@ export default defineConfig({
       },
     }),
   ],
-  base: '/ecoquest/',
+  base: BASE,
   server: {
     host: '0.0.0.0',
     port: 5173,

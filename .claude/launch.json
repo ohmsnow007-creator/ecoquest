@@ -22,6 +22,20 @@
         "--strictPort"
       ],
       "port": 4173
+    },
+    {
+      "name": "netlify-preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "preview",
+        "--base",
+        "/",
+        "--port",
+        "4174",
+        "--strictPort"
+      ],
+      "port": 4174
     }
   ]
 }
