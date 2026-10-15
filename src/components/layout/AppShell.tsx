@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
+import { hasAdminGrants } from '../../utils/admin';
 import { motion } from 'framer-motion';
 import { BottomNavigation } from './BottomNavigation';
 import { DesktopSidebar } from './DesktopSidebar';
@@ -11,7 +12,7 @@ import { ErrorBoundary, LoadingSkeleton } from '../ui/States';
 import { useGame } from '../../store/GameContext';
 
 export function AppShell() {
-  const { profile } = useGame();
+  const { profile, progress } = useGame();
   const { pathname } = useLocation();
 
   if (!profile) {
@@ -28,6 +29,14 @@ export function AppShell() {
     <div className="min-h-dvh lg:pl-64">
       <DesktopSidebar />
       <ConnectionBanner />
+      {hasAdminGrants(progress) && pathname !== '/admin' && (
+        <Link
+          to="/admin"
+          className="block border-b border-warning/40 bg-tag-yellow px-4 py-1.5 text-center text-[0.75rem] font-semibold text-forest"
+        >
+          โหมดสาธิต: มีค่าที่ผู้ดูแลเพิ่มให้ ไม่นับเป็นผลการเล่นจริง · จัดการ
+        </Link>
+      )}
       <main className="pb-nav lg:pb-12">
         <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-10">
           <ErrorBoundary key={pathname}>

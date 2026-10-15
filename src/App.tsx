@@ -17,6 +17,7 @@ const Progress = lazy(() => import('./pages/Progress').then((m) => ({ default: m
 const Impact = lazy(() => import('./pages/Impact').then((m) => ({ default: m.Impact })));
 const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })));
 const Quiz = lazy(() => import('./pages/Quiz').then((m) => ({ default: m.Quiz })));
+const Admin = lazy(() => import('./pages/Admin').then((m) => ({ default: m.Admin })));
 const QuizTimed = lazy(() => import('./pages/QuizTimed').then((m) => ({ default: m.QuizTimed })));
 const QuizResult = lazy(() => import('./pages/QuizResult').then((m) => ({ default: m.QuizResult })));
 const Leaderboard = lazy(() => import('./pages/Leaderboard').then((m) => ({ default: m.Leaderboard })));
@@ -59,6 +60,7 @@ function AppRoutes() {
         <Route path="/quiz" element={guard(<Quiz />)} />
         <Route path="/quiz/result" element={guard(<QuizResult />)} />
         <Route path="/quiz/timed" element={guard(<QuizTimed />)} />
+        <Route path="/admin" element={guard(<Admin />)} />
         <Route path="/leaderboard" element={guard(<Leaderboard />)} />
         <Route path="/ranking" element={<Navigate to="/leaderboard" replace />} />
         <Route path="/profile" element={guard(<Profile />)} />

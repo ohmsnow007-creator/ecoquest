@@ -11,7 +11,7 @@ interface AchievementBadgeProps {
 }
 
 export function AchievementBadge({ status, size = 'md' }: AchievementBadgeProps) {
-  const { badge, unlocked, unlockedAt, current, target, progress, unlockCondition } = status;
+  const { badge, unlocked, unlockedAt, current, target, progress, unlockCondition, byAdmin } = status;
 
   if (size === 'lg') {
     return (
@@ -31,7 +31,7 @@ export function AchievementBadge({ status, size = 'md' }: AchievementBadgeProps)
       <h3 className={`mt-2 text-caption leading-snug font-semibold ${unlocked ? 'text-forest' : 'text-muted'}`}>{badge.name}</h3>
       <p className="mt-0.5 flex-1 text-[0.75rem] leading-snug text-muted">{unlockCondition}</p>
       {unlocked ? (
-        <p className="mt-1.5 rounded-full bg-pale-mint px-2 py-0.5 text-[0.75rem] font-semibold text-success">{unlockedAt ? formatDate(unlockedAt) : 'ปลดล็อกแล้ว'}</p>
+        <p className="mt-1.5 rounded-full bg-pale-mint px-2 py-0.5 text-[0.75rem] font-semibold text-success">{byAdmin ? 'มอบโดยผู้ดูแล (สาธิต)' : unlockedAt ? formatDate(unlockedAt) : 'ปลดล็อกแล้ว'}</p>
       ) : (
         <div className="mt-1.5 w-full">
           <p className="mb-1 text-[0.75rem] font-semibold">

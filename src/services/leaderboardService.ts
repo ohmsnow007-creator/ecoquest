@@ -1,4 +1,5 @@
 import type { PlayerProfile, PlayerProgress } from '../types';
+import { earnedXp } from '../utils/admin';
 import { DEMO_PLAYERS } from '../data/demoLeaderboard';
 import { badges } from '../data/badges';
 import { getLevelFromXp } from '../utils/xp';
@@ -57,15 +58,16 @@ function lastXpTime(progress: PlayerProgress): string | null {
 
 export function playerEntry(profile: PlayerProfile, progress: PlayerProgress, period: LeaderboardPeriod, now: Date = new Date()): LeaderboardEntry {
   const weekly = weeklyXp(progress, now);
-  const unlocked = badges.filter((b) => progress.unlockedBadges.some((r) => r.badgeId === b.id));
+  const unlocked = badges.filter((b) => progress.unlockedBadges.some((r) => r.badgeId === b.id && r.source !== 'admin'));
   const top = [...unlocked].sort((a, b) => RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity))[0];
   return {
     id: `player-${profile.id}`,
     name: profile.displayName,
     avatarId: profile.avatarId,
     profileColor: profile.preferences.profileColor,
-    xp: period === 'weekly' ? weekly.xp : progress.totalXp,
-    level: getLevelFromXp(progress.totalXp),
+    // Demo-admin XP never counts here; only what the player earned by playing.
+    xp: period === 'weekly' ? weekly.xp : earnedXp(progress),
+    level: getLevelFromXp(earnedXp(progress)),
     badgeCount: unlocked.length,
     topBadge: top?.name,
     lastXpAt: period === 'weekly' ? weekly.lastXpAt : lastXpTime(progress),

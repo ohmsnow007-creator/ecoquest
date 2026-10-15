@@ -53,7 +53,15 @@ export interface MissionCompletion {
 export interface BadgeRecord {
   badgeId: string;
   unlockedAt: string;
+  /** Set when a demo admin granted the badge instead of the player earning it. */
+  source?: 'admin';
 }
+
+/** Something a demo admin added on this device. Always shown as "สาธิต" and kept out of real stats. */
+export type AdminGrant =
+  | { id: string; at: string; kind: 'xp'; amount: number }
+  | { id: string; at: string; kind: 'badge'; badgeId: string }
+  | { id: string; at: string; kind: 'cosmetic'; cosmeticId: string };
 
 /** One 60-second timed quiz run. Timed mode gives no XP; it only keeps the player's best. */
 export interface TimedQuizRun {
@@ -156,6 +164,8 @@ export interface PlayerProgress {
   challengeRewards?: ChallengeReward[];
   /** Results of 60-second timed quiz runs (no XP; kept for personal bests). */
   timedRuns?: TimedQuizRun[];
+  /** Demo admin grants (separate from the player's own records). */
+  adminGrants?: AdminGrant[];
   schemaVersion: number;
 }
 

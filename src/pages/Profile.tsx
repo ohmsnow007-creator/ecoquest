@@ -207,7 +207,7 @@ export function Profile() {
                 {feed.map((e) => (
                   <li key={e.id} className="flex items-center justify-between gap-3 py-2.5">
                     <span className="min-w-0 truncate text-body">
-                      {e.type === 'mission' ? `ทำภารกิจ "${e.title}"` : e.type === 'quiz' ? `ทำ${e.title} ถูก ${e.correctCount}/${e.total}` : e.type === 'badge' ? `ได้รับเหรียญ "${e.title}"` : e.type === 'challenge' ? (e.kind === 'daily' ? 'ทำภารกิจประจำวันครบ' : `สำเร็จชาเลนจ์ "${e.title}"`) : `เลื่อนเป็นเลเวล ${e.level}`}
+                      {e.type === 'mission' ? `ทำภารกิจ "${e.title}"` : e.type === 'quiz' ? `ทำ${e.title} ถูก ${e.correctCount}/${e.total}` : e.type === 'badge' ? `ได้รับเหรียญ "${e.title}"` : e.type === 'admin' ? e.title : e.type === 'challenge' ? (e.kind === 'daily' ? 'ทำภารกิจประจำวันครบ' : `สำเร็จชาเลนจ์ "${e.title}"`) : `เลื่อนเป็นเลเวล ${e.level}`}
                     </span>
                     <span className="shrink-0 text-caption text-muted">{formatRelativeTime(e.at)}</span>
                   </li>

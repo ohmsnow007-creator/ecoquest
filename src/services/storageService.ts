@@ -1,4 +1,4 @@
-import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, ChallengeReward, TimedQuizRun, QuizAttempt, QuizQuestionResult, MissionType, MissionStart, ImpactRecord, ImpactActivityType, WasteType } from '../types';
+import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, ChallengeReward, TimedQuizRun, AdminGrant, QuizAttempt, QuizQuestionResult, MissionType, MissionStart, ImpactRecord, ImpactActivityType, WasteType } from '../types';
 import { IMPACT_ACTIVITIES } from '../data/impactActivities';
 import { COSMETICS } from '../data/cosmetics';
 import { validateDisplayName } from '../utils/profile';
@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   profile: 'ecoquest_profile',
   progress: 'ecoquest_progress',
   inboxSeen: 'ecoquest_inbox_seen',
+  adminPin: 'ecoquest_admin_pin',
 } as const;
 
 const CURRENT_SCHEMA_VERSION = 1;
@@ -99,7 +100,20 @@ function sanitizeTimedRun(v: unknown): TimedQuizRun | null {
 }
 
 function sanitizeBadge(v: unknown): BadgeRecord | null {
-  return isObj(v) && isStr(v.badgeId) && isStr(v.unlockedAt) ? { badgeId: v.badgeId, unlockedAt: v.unlockedAt } : null;
+  if (!isObj(v) || !isStr(v.badgeId) || !isStr(v.unlockedAt)) return null;
+  return { badgeId: v.badgeId, unlockedAt: v.unlockedAt, ...(v.source === 'admin' ? { source: 'admin' as const } : {}) };
+}
+
+function sanitizeAdminGrant(v: unknown): AdminGrant | null {
+  if (!isObj(v) || !isStr(v.id) || !isStr(v.at)) return null;
+  if (v.kind === 'xp' && typeof v.amount === 'number' && Number.isInteger(v.amount) && v.amount > 0 && v.amount <= 100000) {
+    return { id: v.id, at: v.at, kind: 'xp', amount: v.amount };
+  }
+  if (v.kind === 'badge' && isStr(v.badgeId)) return { id: v.id, at: v.at, kind: 'badge', badgeId: v.badgeId };
+  if (v.kind === 'cosmetic' && isStr(v.cosmeticId) && COSMETICS.some((c) => c.id === v.cosmeticId)) {
+    return { id: v.id, at: v.at, kind: 'cosmetic', cosmeticId: v.cosmeticId };
+  }
+  return null;
 }
 
 const QUIZ_CATS = ['all', 'waste', 'energy', 'water', 'carbon', 'lifestyle'];
@@ -193,10 +207,12 @@ export function sanitizeProgress(data: unknown): PlayerProgress {
   const challengeRewards = cleanList(data.challengeRewards, sanitizeChallengeReward).filter(
     (r) => !seenRewards.has(`${r.kind}:${r.periodKey}`) && seenRewards.add(`${r.kind}:${r.periodKey}`),
   );
+  const adminGrants = cleanList(data.adminGrants, sanitizeAdminGrant);
   const totalXp =
     completions.reduce((s, c) => s + c.xpAwarded, 0) +
     quizAttempts.reduce((s, q) => s + q.xpAwarded, 0) +
-    challengeRewards.reduce((s, r) => s + r.xpAwarded, 0);
+    challengeRewards.reduce((s, r) => s + r.xpAwarded, 0) +
+    adminGrants.reduce((s, g) => s + (g.kind === 'xp' ? g.amount : 0), 0);
   const seenStarts = new Set<string>();
   const inProgress = cleanList(data.inProgress, sanitizeStart).filter((s) => !seenStarts.has(s.missionId) && seenStarts.add(s.missionId));
   const impactRecords = cleanList(data.impactRecords, sanitizeImpact);
@@ -210,6 +226,7 @@ export function sanitizeProgress(data: unknown): PlayerProgress {
     quizAttempts,
     challengeRewards,
     ...(timedRuns.length ? { timedRuns } : {}),
+    ...(adminGrants.length ? { adminGrants } : {}),
     schemaVersion: CURRENT_SCHEMA_VERSION,
   };
 }
@@ -298,6 +315,23 @@ export const storageService = {
     });
     const present = keys.filter((k) => k.bytes > 0 || !k.key.endsWith(CORRUPT_BACKUP_SUFFIX));
     return { bytes: present.reduce((s, k) => s + k.bytes, 0), keys: present };
+  },
+
+  getAdminPinHash(): string | null {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.adminPin);
+    } catch {
+      return null;
+    }
+  },
+
+  setAdminPinHash(hash: string): boolean {
+    try {
+      localStorage.setItem(STORAGE_KEYS.adminPin, hash);
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   resetAll(): void {

@@ -65,6 +65,7 @@ const STORAGE_KEY_LABELS: Record<string, string> = {
   ecoquest_profile: 'โปรไฟล์',
   ecoquest_progress: 'ความคืบหน้า ภารกิจ ควิซ และบันทึกผลกระทบ',
   ecoquest_inbox_seen: 'สถานะการแจ้งเตือน',
+  ecoquest_admin_pin: 'PIN ผู้ดูแล (สาธิต)',
   ecoquest_profile_corrupt_backup: 'สำเนาโปรไฟล์ที่อ่านไม่ได้ (สำรองไว้)',
   ecoquest_progress_corrupt_backup: 'สำเนาความคืบหน้าที่อ่านไม่ได้ (สำรองไว้)',
 };
@@ -286,6 +287,10 @@ export function Settings() {
               ))}
             </ul>
             <p className="text-[0.75rem] text-muted">กิจกรรมอื่นที่ยังไม่มีค่าอ้างอิงจะไม่ถูกคำนวณเป็น CO2e</p>
+
+            <Link to="/admin" className="mt-3 inline-flex min-h-11 items-center gap-1.5 font-semibold text-primary">
+              <ShieldCheck size={15} aria-hidden="true" /> โหมดผู้ดูแล (สาธิต)
+            </Link>
 
             <details className="mt-3 text-caption">
               <summary className="min-h-11 cursor-pointer py-2 font-semibold">แหล่งอ้างอิงของคำถามควิซ ({quizSources.length})</summary>

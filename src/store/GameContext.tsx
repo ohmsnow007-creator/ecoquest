@@ -1,10 +1,14 @@
-import { createContext, useContext, useCallback, useState, useEffect, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useCallback, useMemo, useState, useEffect, useRef, type ReactNode } from 'react';
+import { badges } from '../data/badges';
+import { COSMETICS } from '../data/cosmetics';
+import { MAX_LEVEL } from '../config/levels';
+import { getLevelFromXp, totalXpForLevel } from '../utils/xp';
 import { checkNewBadges } from '../utils/badges';
 import { getCosmetic, getCosmeticStatus, type CosmeticSlot } from '../data/cosmetics';
-import type { PlayerProfile, PlayerProgress, MissionCategory, MissionProgressStatus, ImpactRecord } from '../types';
+import type { PlayerProfile, PlayerProgress, MissionCategory, MissionProgressStatus, ImpactRecord, AdminGrant, BadgeRecord } from '../types';
 import { getFactorFor } from '../data/emissionFactors';
 import { CALCULATION_VERSION } from '../services/impactCalculator';
-import { storageService, TIMED_RUNS_KEPT } from '../services/storageService';
+import { storageService, sanitizeProgress, TIMED_RUNS_KEPT } from '../services/storageService';
 import { missions } from '../data/missions';
 import { evaluateChallengeClaim, evaluateMissionCompletion, evaluateQuizAttempt, type ChallengeRejection, type RewardOutcome, type MissionRejection, type QuizDraft } from '../services/rewardService';
 import { getLocalDate } from '../utils/streak';
@@ -50,6 +54,17 @@ export interface ProfileChanges {
 
 export type WearResult = 'ok' | 'locked' | 'unknown';
 
+/** Demo-admin actions. Each one saves first; grants are stored apart from the player's own records. */
+export interface AdminActions {
+  grantXp: (amount: number) => boolean;
+  grantLevel: (level: number) => boolean;
+  grantBadge: (badgeId: string) => boolean;
+  grantCosmetic: (cosmeticId: string) => boolean;
+  grantEverything: () => boolean;
+  revoke: (grantId: string) => boolean;
+  revokeAll: () => boolean;
+}
+
 interface GameState {
   profile: PlayerProfile | null;
   progress: PlayerProgress;
@@ -64,6 +79,7 @@ interface GameActions {
   setPreference: (key: BooleanPreference, value: boolean) => void;
   wearCosmetic: (slot: CosmeticSlot, id: string | null) => WearResult;
   markCosmeticsSeen: (ids: string[]) => void;
+  admin: AdminActions;
   resetProgress: () => boolean;
   completeMission: (missionId: string, note?: string) => CompleteMissionResult;
   canCompleteMission: (missionId: string) => boolean;
@@ -201,6 +217,85 @@ export function GameProvider({ children }: { children: ReactNode }) {
     },
     [progress],
   );
+
+  // ---- Demo admin ----
+  const commitAdmin = useCallback(
+    (next: PlayerProgress): boolean => {
+      // totalXp is always recomputed from records + grants, exactly as storage does on load.
+      const normalized = sanitizeProgress(next);
+      if (!storageService.saveProgress(normalized)) return false;
+      const from = getLevelFromXp(progress.totalXp);
+      const to = getLevelFromXp(normalized.totalXp);
+      setProgress(normalized);
+      if (to > from && prefsRef.current?.celebrations !== false) setCelebrations((c) => [...c, { id: newId(), type: 'level', level: to, from }]);
+      return true;
+    },
+    [progress],
+  );
+
+  const admin = useMemo<AdminActions>(() => {
+    const stamp = () => ({ id: createId(), at: new Date().toISOString() });
+    const grants = progress.adminGrants ?? [];
+    const withGrants = (extra: AdminGrant[], badgeRecords: BadgeRecord[] = []): PlayerProgress => ({
+      ...progress,
+      adminGrants: [...grants, ...extra],
+      unlockedBadges: [...progress.unlockedBadges, ...badgeRecords],
+    });
+    const badgeGrant = (badgeId: string): [AdminGrant, BadgeRecord] | null => {
+      if (!badges.some((b) => b.id === badgeId) || progress.unlockedBadges.some((r) => r.badgeId === badgeId)) return null;
+      const st = stamp();
+      return [{ ...st, kind: 'badge', badgeId }, { badgeId, unlockedAt: st.at, source: 'admin' }];
+    };
+    const xpTo = (level: number) => Math.max(0, totalXpForLevel(Math.min(Math.max(level, 1), MAX_LEVEL)) - progress.totalXp);
+
+    return {
+      grantXp: (amount) => {
+        const n = Math.floor(amount);
+        if (!(n > 0 && n <= 100000)) return false;
+        return commitAdmin(withGrants([{ ...stamp(), kind: 'xp', amount: n }]));
+      },
+      grantLevel: (level) => {
+        const n = xpTo(level);
+        return n > 0 ? commitAdmin(withGrants([{ ...stamp(), kind: 'xp', amount: n }])) : false;
+      },
+      grantBadge: (badgeId) => {
+        const g = badgeGrant(badgeId);
+        return g ? commitAdmin(withGrants([g[0]], [g[1]])) : false;
+      },
+      grantCosmetic: (cosmeticId) => {
+        if (!COSMETICS.some((c) => c.id === cosmeticId) || grants.some((g) => g.kind === 'cosmetic' && g.cosmeticId === cosmeticId)) return false;
+        return commitAdmin(withGrants([{ ...stamp(), kind: 'cosmetic', cosmeticId }]));
+      },
+      grantEverything: () => {
+        const extra: AdminGrant[] = [];
+        const records: BadgeRecord[] = [];
+        const n = xpTo(15);
+        if (n > 0) extra.push({ ...stamp(), kind: 'xp', amount: n });
+        for (const b of badges) {
+          const g = badgeGrant(b.id);
+          if (g) {
+            extra.push(g[0]);
+            records.push(g[1]);
+          }
+        }
+        for (const c of COSMETICS) {
+          if (!grants.some((g) => g.kind === 'cosmetic' && g.cosmeticId === c.id)) extra.push({ ...stamp(), kind: 'cosmetic', cosmeticId: c.id });
+        }
+        return extra.length ? commitAdmin(withGrants(extra, records)) : false;
+      },
+      revoke: (grantId) => {
+        const g = grants.find((x) => x.id === grantId);
+        if (!g) return false;
+        return commitAdmin({
+          ...progress,
+          adminGrants: grants.filter((x) => x.id !== grantId),
+          unlockedBadges: g.kind === 'badge' ? progress.unlockedBadges.filter((r) => !(r.badgeId === g.badgeId && r.source === 'admin')) : progress.unlockedBadges,
+        });
+      },
+      revokeAll: () =>
+        commitAdmin({ ...progress, adminGrants: [], unlockedBadges: progress.unlockedBadges.filter((r) => r.source !== 'admin') }),
+    };
+  }, [progress, commitAdmin]);
 
   // Remembers which unlocked cosmetics were already announced, so each one is celebrated only once.
   const markCosmeticsSeen = useCallback((ids: string[]) => {
@@ -415,6 +510,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setPreference,
         wearCosmetic,
         markCosmeticsSeen,
+        admin,
         resetProgress,
         completeMission,
         canCompleteMission,

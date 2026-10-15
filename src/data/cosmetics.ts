@@ -51,6 +51,12 @@ export interface CosmeticStatus {
 }
 
 export function getCosmeticStatus(cosmetic: Cosmetic, progress: PlayerProgress): CosmeticStatus {
+  const granted = (progress.adminGrants ?? []).some((g) => g.kind === 'cosmetic' && g.cosmeticId === cosmetic.id);
+  const earned = getEarnedCosmeticStatus(cosmetic, progress);
+  return granted && !earned.unlocked ? { ...earned, unlocked: true, condition: 'มอบโดยผู้ดูแล (สาธิต)', current: earned.target } : earned;
+}
+
+function getEarnedCosmeticStatus(cosmetic: Cosmetic, progress: PlayerProgress): CosmeticStatus {
   const rule = cosmetic.unlock;
   switch (rule.type) {
     case 'badge': {

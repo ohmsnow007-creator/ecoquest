@@ -11,7 +11,8 @@ export type ActivityEvent =
   | { id: string; type: 'quiz'; at: string; attemptId: string; title: string; xp: number; correctCount: number; total: number }
   | { id: string; type: 'badge'; at: string; badgeId: string; title: string }
   | { id: string; type: 'level'; at: string; level: number }
-  | { id: string; type: 'challenge'; at: string; kind: 'daily' | 'weekly'; title: string; xp: number };
+  | { id: string; type: 'challenge'; at: string; kind: 'daily' | 'weekly'; title: string; xp: number }
+  | { id: string; type: 'admin'; at: string; title: string; xp: number };
 
 const time = (iso: string) => {
   const t = new Date(iso).getTime();
@@ -40,6 +41,18 @@ export function buildActivityFeed(progress: PlayerProgress): ActivityEvent[] {
       correctCount: q.correctCount,
       total: q.total,
     })),
+    ...(progress.adminGrants ?? []).map((g): ActivityEvent => ({
+      id: `a-${g.id}`,
+      type: 'admin',
+      at: g.at,
+      title:
+        g.kind === 'xp'
+          ? `ผู้ดูแลเพิ่ม XP (สาธิต)`
+          : g.kind === 'badge'
+            ? `ผู้ดูแลมอบเหรียญ “${badges.find((b) => b.id === g.badgeId)?.name ?? g.badgeId}” (สาธิต)`
+            : `ผู้ดูแลมอบของแต่ง (สาธิต)`,
+      xp: g.kind === 'xp' ? g.amount : 0,
+    })),
     ...(progress.challengeRewards ?? []).map((r): ActivityEvent => ({
       id: `c-${r.id}`,
       type: 'challenge',
@@ -54,14 +67,14 @@ export function buildActivityFeed(progress: PlayerProgress): ActivityEvent[] {
   let xp = 0;
   for (const e of xpEvents) {
     const before = getLevelFromXp(xp);
-    xp += e.type === 'mission' || e.type === 'quiz' || e.type === 'challenge' ? e.xp : 0;
+    xp += e.type === 'mission' || e.type === 'quiz' || e.type === 'challenge' || e.type === 'admin' ? e.xp : 0;
     const after = getLevelFromXp(xp);
     for (let lv = before + 1; lv <= after; lv++) {
       levelEvents.push({ id: `l-${lv}`, type: 'level', at: new Date(time(e.at) + 1).toISOString(), level: lv });
     }
   }
 
-  const badgeEvents: ActivityEvent[] = progress.unlockedBadges.map((b) => ({
+  const badgeEvents: ActivityEvent[] = progress.unlockedBadges.filter((b) => b.source !== 'admin').map((b) => ({
     id: `b-${b.badgeId}`,
     type: 'badge',
     at: b.unlockedAt,

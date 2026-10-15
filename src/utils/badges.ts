@@ -45,6 +45,8 @@ export interface BadgeStatus {
   badge: Badge;
   unlocked: boolean;
   unlockedAt?: string;
+  /** Granted by a demo admin rather than earned. */
+  byAdmin?: boolean;
   current: number;
   target: number;
   progress: number;
@@ -59,6 +61,7 @@ export function getBadgeStatus(badge: Badge, progress: PlayerProgress): BadgeSta
     badge,
     unlocked: Boolean(record),
     unlockedAt: record?.unlockedAt,
+    byAdmin: record?.source === 'admin',
     current: record ? badge.threshold : current,
     target: badge.threshold,
     progress: record ? 1 : current / badge.threshold,

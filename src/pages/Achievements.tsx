@@ -45,7 +45,7 @@ function BadgeRow({ status }: { status: BadgeStatus }) {
         <p className="text-body font-semibold">{status.badge.name}</p>
         <p className="text-caption text-muted">{status.unlockCondition}</p>
         {status.unlocked ? (
-          <p className="text-caption font-medium text-success">ปลดล็อกเมื่อ {status.unlockedAt ? formatDate(status.unlockedAt) : '-'}</p>
+          <p className="text-caption font-medium text-success">{status.byAdmin ? 'มอบโดยผู้ดูแล (สาธิต)' : `ปลดล็อกเมื่อ ${status.unlockedAt ? formatDate(status.unlockedAt) : '-'}`}</p>
         ) : (
           <div className="mt-1.5">
             <ProgressBar value={status.progress} size="sm" label={`ความคืบหน้า ${status.badge.name}`} showLabel valueText={`${status.current}/${status.target}`} />

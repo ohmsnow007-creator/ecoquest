@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useOutfit } from '../components/cosmetics/useOutfit';
 import { motion } from 'framer-motion';
 import {
-  Settings, Flame, Target, ListChecks, Leaf, ChevronRight, Brain, Medal, TrendingUp, Sparkles, Timer, CheckCircle2, Circle, Trophy,
+  Settings, Flame, Target, ListChecks, Leaf, ChevronRight, Brain, Medal, TrendingUp, Sparkles, Timer, CheckCircle2, Circle, Trophy, ShieldCheck,
   type LucideIcon,
 } from 'lucide-react';
 import { useGame } from '../store/GameContext';
@@ -115,6 +115,11 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
   } else if (event.type === 'badge') {
     Icon = Medal;
     text = `ปลดล็อกเหรียญ "${event.title}"`;
+  } else if (event.type === 'admin') {
+    Icon = ShieldCheck;
+    text = event.title;
+    xp = event.xp;
+    tag = 'สาธิต';
   } else if (event.type === 'challenge') {
     Icon = Trophy;
     text = event.kind === 'daily' ? 'ทำภารกิจประจำวันครบ' : `สำเร็จชาเลนจ์ "${event.title}"`;
