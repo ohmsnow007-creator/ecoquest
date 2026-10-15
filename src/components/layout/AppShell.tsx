@@ -6,6 +6,7 @@ import { DesktopSidebar } from './DesktopSidebar';
 import { ConnectionBanner } from './ConnectionBanner';
 import { ToastNotification } from '../feedback/Toast';
 import { CelebrationModal } from '../feedback/CelebrationModal';
+import { CosmeticUnlockCelebration } from '../cosmetics/CosmeticUnlockCelebration';
 import { ErrorBoundary, LoadingSkeleton } from '../ui/States';
 import { useGame } from '../../store/GameContext';
 
@@ -41,6 +42,7 @@ export function AppShell() {
       <BottomNavigation />
       <ToastNotification />
       <CelebrationModal />
+      <CosmeticUnlockCelebration />
     </div>
   );
 }

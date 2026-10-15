@@ -19,6 +19,8 @@ function currentValue(badge: Badge, progress: PlayerProgress): number {
       return new Set(progress.quizAttempts.flatMap((a) => a.results.filter((r) => r.correct).map((r) => r.questionId))).size;
     case 'world-stage':
       return getWorldState(progress.completions.length).current.stage;
+    case 'timed-best':
+      return Math.max(0, ...(progress.timedRuns ?? []).map((r) => r.correct));
   }
 }
 
@@ -34,6 +36,8 @@ export function describeUnlockCondition(badge: Badge): string {
       return `ตอบควิซถูก ${badge.threshold} ข้อ (ไม่นับข้อซ้ำ)`;
     case 'world-stage':
       return `โลกเสมือนเติบโตถึงระดับ ${badge.threshold}`;
+    case 'timed-best':
+      return `ตอบถูก ${badge.threshold} ข้อในควิซจับเวลา 60 วินาที`;
   }
 }
 

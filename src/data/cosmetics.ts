@@ -24,6 +24,7 @@ export const COSMETICS: Cosmetic[] = [
   { id: 'hat-straw', slot: 'hat', name: 'หมวกฟางสายลม', unlock: { type: 'weekly', count: 1 } },
   { id: 'hat-flower-crown', slot: 'hat', name: 'มงกุฎดอกไม้', unlock: { type: 'level', level: 8 } },
   { id: 'hat-golden-leaf', slot: 'hat', name: 'มงกุฎใบไม้ทอง', unlock: { type: 'level', level: 15 } },
+  { id: 'hat-headband', slot: 'hat', name: 'ผ้าคาดหัวสายฟ้า', unlock: { type: 'badge', badgeId: 'badge-timed-8' } },
   { id: 'eyes-round', slot: 'eyes', name: 'แว่นนักวิชาการ', unlock: { type: 'badge', badgeId: 'badge-quiz-5' } },
   { id: 'eyes-sun', slot: 'eyes', name: 'แว่นกันแดด', unlock: { type: 'badge', badgeId: 'badge-streak-7' } },
   { id: 'bag-tote', slot: 'bag', name: 'กระเป๋าผ้ารักษ์โลก', unlock: { type: 'badge', badgeId: 'badge-waste-5' } },

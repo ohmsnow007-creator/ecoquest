@@ -84,7 +84,7 @@ describe('wardrobe', () => {
         </MemoryRouter>
       </MotionConfig>,
     );
-    expect(screen.getByText('ปลดล็อกแล้ว 1/8')).toBeInTheDocument();
+    expect(screen.getByText('ปลดล็อกแล้ว 1/9')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /หมวกใบไม้/ }));
     expect(screen.getByTestId('outfit')).toHaveTextContent('"hat":"hat-leaf-cap"');
     expect(storageService.getProfile()?.preferences.outfit).toEqual({ hat: 'hat-leaf-cap' });
@@ -174,5 +174,74 @@ describe('cosmetics never double up with a character’s own accessories', () =>
       expect(worn.container.querySelectorAll('circle[r="11"]').length).toBe(0);
       worn.unmount();
     }
+  });
+});
+
+describe('timed-quiz badges and the new-item celebration', () => {
+  beforeEach(() => {
+    cleanup();
+    localStorage.clear();
+  });
+
+  function Saver() {
+    const { saveTimedRun, progress } = useGame();
+    return (
+      <>
+        <button type="button" onClick={() => saveTimedRun(8, 10)}>save-8</button>
+        <p data-testid="badges">{progress.unlockedBadges.map((b) => b.badgeId).join(',')}</p>
+      </>
+    );
+  }
+
+  it('a timed run with 8 correct unlocks Quick Thinker and the headband', () => {
+    localStorage.setItem('ecoquest_profile', JSON.stringify(profile));
+    render(
+      <MemoryRouter>
+        <GameProvider>
+          <Saver />
+        </GameProvider>
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByText('save-8'));
+    expect(screen.getByTestId('badges')).toHaveTextContent('badge-timed-8');
+    const statuses = getAllCosmeticStatuses(storageService.getProgress());
+    expect(statuses.find((s) => s.cosmetic.id === 'hat-headband')?.unlocked).toBe(true);
+  });
+
+  async function renderShell() {
+    const { CosmeticUnlockCelebration } = await import('../components/cosmetics/CosmeticUnlockCelebration');
+    return render(
+      <MotionConfig reducedMotion="always">
+        <MemoryRouter>
+          <GameProvider>
+            <CosmeticUnlockCelebration />
+          </GameProvider>
+        </MemoryRouter>
+      </MotionConfig>,
+    );
+  }
+  const withLeafCap = () =>
+    localStorage.setItem('ecoquest_progress', JSON.stringify({ ...fresh(), unlockedBadges: [{ badgeId: 'badge-first-mission', unlockedAt: '2026-10-01T00:00:00.000Z' }] }));
+
+  it('celebrates a newly unlocked item once; “ใส่เลย!” wears it', async () => {
+    localStorage.setItem('ecoquest_profile', JSON.stringify({ ...profile, preferences: { ...profile.preferences, seenCosmetics: [] } }));
+    withLeafCap();
+    await renderShell();
+    expect(screen.getByRole('dialog', { name: 'หมวกใบไม้' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'ใส่เลย!' }));
+    const saved = storageService.getProfile()!.preferences;
+    expect(saved.outfit).toEqual({ hat: 'hat-leaf-cap' });
+    expect(saved.seenCosmetics).toContain('hat-leaf-cap');
+    cleanup();
+    await renderShell();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('an existing player is not flooded: items unlocked before this feature count as seen', async () => {
+    localStorage.setItem('ecoquest_profile', JSON.stringify(profile));
+    withLeafCap();
+    await renderShell();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(storageService.getProfile()!.preferences.seenCosmetics).toEqual(['hat-leaf-cap']);
   });
 });

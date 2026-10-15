@@ -23,6 +23,8 @@ export const badges: Badge[] = [
   // Learning
   { id: 'badge-quiz-1', name: 'Curious Mind', description: 'เริ่มต้นเรียนรู้เรื่องสิ่งแวดล้อม', icon: 'Lightbulb', group: 'learning', ruleType: 'quiz-correct', threshold: 1, rarity: 'common' },
   { id: 'badge-quiz-5', name: 'Knowledge Seeker', description: 'ผู้แสวงหาความรู้', icon: 'BookOpen', group: 'learning', ruleType: 'quiz-correct', threshold: 5, rarity: 'uncommon' },
+  { id: 'badge-timed-8', name: 'Quick Thinker', description: 'ตอบไวและแม่นในควิซจับเวลา', icon: 'Timer', group: 'learning', ruleType: 'timed-best', threshold: 8, rarity: 'uncommon' },
+  { id: 'badge-timed-15', name: 'Lightning Brain', description: 'สมองไวดั่งสายฟ้า', icon: 'Zap', group: 'learning', ruleType: 'timed-best', threshold: 15, rarity: 'epic' },
   { id: 'badge-quiz-15', name: 'Eco Scholar', description: 'ผู้รอบรู้เรื่องสิ่งแวดล้อม', icon: 'GraduationCap', group: 'learning', ruleType: 'quiz-correct', threshold: 15, rarity: 'epic' },
 
   // Virtual world

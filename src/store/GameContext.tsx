@@ -1,4 +1,5 @@
 import { createContext, useContext, useCallback, useState, useEffect, useRef, type ReactNode } from 'react';
+import { checkNewBadges } from '../utils/badges';
 import { getCosmetic, getCosmeticStatus, type CosmeticSlot } from '../data/cosmetics';
 import type { PlayerProfile, PlayerProgress, MissionCategory, MissionProgressStatus, ImpactRecord } from '../types';
 import { getFactorFor } from '../data/emissionFactors';
@@ -62,6 +63,7 @@ interface GameActions {
   setReducedMotion: (value: boolean) => void;
   setPreference: (key: BooleanPreference, value: boolean) => void;
   wearCosmetic: (slot: CosmeticSlot, id: string | null) => WearResult;
+  markCosmeticsSeen: (ids: string[]) => void;
   resetProgress: () => boolean;
   completeMission: (missionId: string, note?: string) => CompleteMissionResult;
   canCompleteMission: (missionId: string) => boolean;
@@ -200,6 +202,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
     [progress],
   );
 
+  // Remembers which unlocked cosmetics were already announced, so each one is celebrated only once.
+  const markCosmeticsSeen = useCallback((ids: string[]) => {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const seen = new Set(prev.preferences.seenCosmetics ?? []);
+      const before = seen.size;
+      ids.forEach((id) => seen.add(id));
+      if (seen.size === before && prev.preferences.seenCosmetics) return prev;
+      return { ...prev, preferences: { ...prev.preferences, seenCosmetics: [...seen] } };
+    });
+  }, []);
+
   const setPreference = useCallback((key: BooleanPreference, value: boolean) => {
     setProfile((prev) =>
       prev ? { ...prev, preferences: { ...prev.preferences, [key]: value }, updatedAt: new Date().toISOString() } : prev,
@@ -313,10 +327,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
   // Timed quiz: store the result for personal bests. No XP, so it cannot be farmed.
   const saveTimedRun = useCallback(
     (correct: number, answered: number): boolean => {
-      const run = { id: createId(), at: new Date().toISOString(), correct, answered };
-      const next: PlayerProgress = { ...progress, timedRuns: [...(progress.timedRuns ?? []), run].slice(-TIMED_RUNS_KEPT) };
+      const now = new Date();
+      const run = { id: createId(), at: now.toISOString(), correct, answered };
+      let next: PlayerProgress = { ...progress, timedRuns: [...(progress.timedRuns ?? []), run].slice(-TIMED_RUNS_KEPT) };
+      const newBadges = checkNewBadges(next);
+      if (newBadges.length) next = { ...next, unlockedBadges: [...next.unlockedBadges, ...newBadges.map((b) => ({ badgeId: b.id, unlockedAt: now.toISOString() }))] };
       if (!storageService.saveProgress(next)) return false;
       setProgress(next);
+      if (newBadges.length && prefsRef.current?.celebrations !== false) {
+        setCelebrations((c) => [...c, ...newBadges.map((b) => ({ id: newId(), type: 'badge' as const, badgeId: b.id }))]);
+      }
       return true;
     },
     [progress],
@@ -394,6 +414,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setReducedMotion,
         setPreference,
         wearCosmetic,
+        markCosmeticsSeen,
         resetProgress,
         completeMission,
         canCompleteMission,

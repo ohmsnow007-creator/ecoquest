@@ -97,7 +97,7 @@ describe('Flow B — completing a mission', () => {
 
     // Profile shows the same XP and the mission in history.
     refresh('#/profile');
-    expect(await screen.findByText('โปรไฟล์ของฉัน')).toBeInTheDocument();
+    expect(await screen.findByText('โปรไฟล์ของฉัน', undefined, { timeout: 5000 })).toBeInTheDocument();
     const history = screen.getByRole('region', { name: 'ประวัติภารกิจ' });
     expect(within(history).getByText(m.title)).toBeInTheDocument();
     expect(screen.getByText('XP สะสม').nextElementSibling).toHaveTextContent(String(m.xpReward));

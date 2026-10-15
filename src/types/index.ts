@@ -89,6 +89,8 @@ export interface PlayerProfile {
     celebrations?: boolean;
     /** Equipped cosmetics by slot (hat, eyes, bag); only unlocked items are worn. */
     outfit?: Partial<Record<'hat' | 'eyes' | 'bag', string>>;
+    /** Cosmetics the player has already been shown as "new"; undefined until first checked. */
+    seenCosmetics?: string[];
   };
 }
 
@@ -165,7 +167,7 @@ export interface Badge {
   description: string;
   icon: string;
   group: BadgeGroup;
-  ruleType: 'total-completions' | 'category-completions' | 'streak' | 'quiz-correct' | 'world-stage';
+  ruleType: 'total-completions' | 'category-completions' | 'streak' | 'quiz-correct' | 'world-stage' | 'timed-best';
   ruleCategory?: MissionCategory;
   threshold: number;
   rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';

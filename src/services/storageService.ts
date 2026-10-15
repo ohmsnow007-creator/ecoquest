@@ -50,6 +50,9 @@ export function sanitizeProfile(data: unknown): PlayerProfile | null {
       inAppToasts: prefs.inAppToasts !== false,
       celebrations: prefs.celebrations !== false,
       ...sanitizeOutfit(prefs.outfit),
+      ...(Array.isArray(prefs.seenCosmetics)
+        ? { seenCosmetics: prefs.seenCosmetics.filter((id): id is string => isStr(id) && COSMETICS.some((c) => c.id === id)) }
+        : {}),
     },
   };
 }

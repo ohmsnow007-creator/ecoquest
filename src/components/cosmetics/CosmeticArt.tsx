@@ -48,6 +48,14 @@ export function HatArt({ id }: { id: string }) {
           ))}
         </g>
       );
+    case 'hat-headband':
+      return (
+        <g>
+          <path d="M50 78 Q100 60 150 78 L150 90 Q100 72 50 90 Z" fill="#22C55E" stroke="#15803D" strokeWidth={2} />
+          <path d="M96 66 L88 80 L98 80 L92 94 L110 74 L100 74 L106 66 Z" fill="#FDE047" stroke="#CA8A04" strokeWidth={1.5} strokeLinejoin="round" />
+          <path d="M150 84 C160 80 168 86 172 94 C164 92 158 92 150 90 Z" fill="#22C55E" stroke="#15803D" strokeWidth={1.5} />
+        </g>
+      );
     case 'hat-golden-leaf':
       return (
         <g>
