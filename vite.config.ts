@@ -3,6 +3,10 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vite'
+import { readFileSync } from 'node:fs'
+
+// The app version shown in Settings comes from package.json only.
+const APP_VERSION = (JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }).version
 
 // Where the app is served from: '/ecoquest/' on GitHub Pages (default), '/' on Netlify (set in netlify.toml).
 // A Windows shell can rewrite "/" into a drive path (e.g. C:/Program Files/Git/); that always means the root.
@@ -78,6 +82,9 @@ export default defineConfig({
     }),
   ],
   base: BASE,
+  define: {
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
+  },
   server: {
     host: '0.0.0.0',
     port: 5173,

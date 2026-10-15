@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import App from '../App';
-import { SKIP_INTRO_TEST_KEY } from '../components/layout/Launcher';
+import { SKIP_INTRO_TEST_KEY } from '../components/layout/launcherContext';
 import { DAILY_POOL, getDailyMissions, getDailyStatus, getWeeklyChallenge, getWeeklyStatus, weekStart, daysLeftInWeek } from '../utils/challenges';
 import { DAILY_BONUS_XP, DAILY_MISSION_COUNT, WEEKLY_CHALLENGES } from '../config/challenges';
 import { evaluateChallengeClaim } from '../services/rewardService';

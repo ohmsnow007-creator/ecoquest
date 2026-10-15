@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
+import { useOutfit } from '../cosmetics/useOutfit';
 import { X, Sparkles, Award, TrendingUp, Info, AlertCircle } from 'lucide-react';
 import { useGame, type Toast } from '../../store/GameContext';
 import { SproutySeed } from '../illustrations/SproutySeed';
@@ -9,6 +10,7 @@ const CHEERS = ['เยี่ยมไปเลย!', 'สุดยอด!', '�
 
 /** XP rewards: Sprouty pops up, hops and cheers instead of a plain notice. */
 function SproutyCheer({ toast, stage, onClose }: { toast: Toast; stage: ReturnType<typeof getSproutyStage>['stage']; onClose: () => void }) {
+  const outfit = useOutfit();
   const cheer = CHEERS[[...toast.id].reduce((n, ch) => n + ch.charCodeAt(0), 0) % CHEERS.length];
   return (
     <motion.div
@@ -26,7 +28,7 @@ function SproutyCheer({ toast, stage, onClose }: { toast: Toast; stage: ReturnTy
         transition={{ duration: 0.8, ease: 'easeOut' }}
         aria-hidden="true"
       >
-        <SproutySeed size={64} className="h-auto w-full" mood="cheer" stage={stage} title="" />
+        <SproutySeed size={64} className="h-auto w-full" mood="cheer" stage={stage} title="" outfit={outfit} />
       </motion.span>
       <span className="min-w-0 flex-1 pb-1.5">
         <span className="block font-display text-body leading-tight font-bold text-forest">{cheer}</span>

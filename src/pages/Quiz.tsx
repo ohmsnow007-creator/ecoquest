@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Brain, Clock, Sparkles, Play, ArrowLeft, ArrowRight, Send, X, Check, Recycle, Zap, Droplets, Cloud, Leaf, Layers, Trophy, History, ChevronRight, AlertCircle, type LucideIcon } from 'lucide-react';
+import { Brain, Clock, Sparkles, Play, ArrowLeft, ArrowRight, Send, X, Check, Recycle, Zap, Droplets, Cloud, Leaf, Layers, Trophy, History, ChevronRight, AlertCircle, Timer, type LucideIcon } from 'lucide-react';
 import { useGame } from '../store/GameContext';
 import { quizzes, getQuestion, QUIZ_CATEGORY_LABELS, QUIZ_DIFFICULTY_LABELS, QUIZ_SET_SIZE, MINUTES_PER_QUESTION } from '../data/quizzes';
 import { QUIZ_XP_BY_DIFFICULTY, correctlyAnsweredIds, type QuizDraft } from '../services/rewardService';
 import type { QuizCategory, QuizDifficulty } from '../types';
 import { createId } from '../utils/id';
 import { PlayerSprouty } from '../components/sprouty/PlayerSprouty';
+import { bestTimedRun } from '../utils/timedQuiz';
 import { SegmentedControl } from '../components/ui/Controls';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { PrimaryButton, SecondaryButton } from '../components/ui/Button';
@@ -87,6 +88,7 @@ export function Quiz() {
   const solved = useMemo(() => correctlyAnsweredIds(progress), [progress]);
   const pool = quizzes.filter((q) => (category === 'all' || q.category === category) && (difficulty === 'all' || q.difficulty === difficulty));
   const setSize = Math.min(QUIZ_SET_SIZE, pool.length);
+  const bestTimed = bestTimedRun(progress.timedRuns);
   const maxXp = pool
     .filter((q) => !solved.has(q.id))
     .map((q) => QUIZ_XP_BY_DIFFICULTY[q.difficulty])
@@ -284,6 +286,22 @@ export function Quiz() {
               : `ได้ XP เฉพาะข้อที่ตอบถูกเป็นครั้งแรก (ง่าย ${QUIZ_XP_BY_DIFFICULTY.easy} · ปานกลาง ${QUIZ_XP_BY_DIFFICULTY.medium} · ยาก ${QUIZ_XP_BY_DIFFICULTY.hard} XP) ทำซ้ำได้ไม่จำกัด`}
           </p>
         </div>
+
+        <Link
+          to="/quiz/timed"
+          className="flex items-center gap-3 rounded-card border border-warning/40 bg-tag-yellow/60 p-4 shadow-card hover:border-warning"
+        >
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-forest text-lime" aria-hidden="true">
+            <Timer size={22} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-body font-bold text-forest">ควิซจับเวลา 60 วินาที</span>
+            <span className="block text-caption text-muted">
+              ตอบให้ถูกมากที่สุด · สถิติดีที่สุด {bestTimed ? `${bestTimed.correct} ข้อ` : 'ยังไม่มี'}
+            </span>
+          </span>
+          <ChevronRight size={18} className="text-muted" aria-hidden="true" />
+        </Link>
       </div>
 
       <aside className="space-y-5">

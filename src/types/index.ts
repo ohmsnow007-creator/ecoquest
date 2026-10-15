@@ -55,6 +55,14 @@ export interface BadgeRecord {
   unlockedAt: string;
 }
 
+/** One 60-second timed quiz run. Timed mode gives no XP; it only keeps the player's best. */
+export interface TimedQuizRun {
+  id: string;
+  at: string;
+  correct: number;
+  answered: number;
+}
+
 /** Bonus XP for finishing the daily missions or the weekly challenge; at most one per kind and period. */
 export interface ChallengeReward {
   id: string;
@@ -79,6 +87,8 @@ export interface PlayerProfile {
     soundEffects?: boolean;
     inAppToasts?: boolean;
     celebrations?: boolean;
+    /** Equipped cosmetics by slot (hat, eyes, bag); only unlocked items are worn. */
+    outfit?: Partial<Record<'hat' | 'eyes' | 'bag', string>>;
   };
 }
 
@@ -142,6 +152,8 @@ export interface PlayerProgress {
   unlockedBadges: BadgeRecord[];
   quizAttempts: QuizAttempt[];
   challengeRewards?: ChallengeReward[];
+  /** Results of 60-second timed quiz runs (no XP; kept for personal bests). */
+  timedRuns?: TimedQuizRun[];
   schemaVersion: number;
 }
 

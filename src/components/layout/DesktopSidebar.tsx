@@ -3,7 +3,7 @@ import { Settings, Power } from 'lucide-react';
 import { useGame } from '../../store/GameContext';
 import { getLevelFromXp, getLevelProgress, getXpInCurrentLevel, getXpToNextLevel } from '../../utils/xp';
 import { SIDEBAR_NAV } from './navItems';
-import { useCloseApp } from './Launcher';
+import { useCloseApp } from './launcherContext';
 import { EcoMascot } from '../ui/EcoMascot';
 import { Avatar } from '../ui/AvatarPicker';
 import { LevelBadge } from '../ui/Badges';

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { Outfit } from '../../data/cosmetics';
 import { motion, useReducedMotion } from 'framer-motion';
 import { SproutySeed } from '../illustrations/SproutySeed';
 import { SPROUTY_STAGES, getSproutyGreeting, getSproutyStage } from '../../utils/sprouty';
@@ -12,10 +13,11 @@ interface Props {
   streak: number;
   dailyComplete: boolean;
   now?: Date;
+  outfit?: Outfit;
 }
 
 /** Sprouty on Home: greets by time of day, shows a mood from today's real records, and grows with the level. */
-export function SproutyHomeCard({ name, level, todayCount, streak, dailyComplete, now }: Props) {
+export function SproutyHomeCard({ name, level, todayCount, streak, dailyComplete, now, outfit }: Props) {
   const reduce = useReducedMotion();
   const [hour] = useState(() => (now ?? new Date()).getHours());
   const { mood, hello, line } = getSproutyGreeting({ hour, name, todayCount, streak, dailyComplete });
@@ -61,7 +63,7 @@ export function SproutyHomeCard({ name, level, todayCount, streak, dailyComplete
             animate={reduce ? undefined : tantrum.angry ? { x: [0, -7, 7, -6, 6, -3, 3, 0], rotate: [0, -4, 4, -3, 3, 0] } : { y: [0, -4, 0] }}
             transition={tantrum.angry ? { duration: 0.5 } : { duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <SproutySeed size={120} className="h-auto w-full" mood={tantrum.angry ? 'angry' : mood} stage={growth.stage} blinking={blinking} hop={reduce ? 0 : hop} title="" />
+            <SproutySeed size={120} className="h-auto w-full" mood={tantrum.angry ? 'angry' : mood} stage={growth.stage} blinking={blinking} hop={reduce ? 0 : hop} title="" outfit={outfit} />
           </motion.div>
         </button>
         <div className="min-w-0 flex-1 pb-1">

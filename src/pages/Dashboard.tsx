@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useOutfit } from '../components/cosmetics/useOutfit';
 import { motion } from 'framer-motion';
 import {
   Settings, Flame, Target, ListChecks, Leaf, ChevronRight, Brain, Medal, TrendingUp, Sparkles, Timer, CheckCircle2, Circle, Trophy,
@@ -142,6 +143,7 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
 
 export function Dashboard() {
   const { profile, progress, getMissionStatus, claimChallenge } = useGame();
+  const outfit = useOutfit();
   if (!profile) return null;
 
   const stats = getPlayerStats(progress);
@@ -160,7 +162,7 @@ export function Dashboard() {
       {/* 1. Header */}
       <header className="safe-top flex items-center gap-3 pt-5 pb-4 lg:pt-10 lg:pb-6">
         <Link to="/profile" aria-label="โปรไฟล์ของฉัน" className="shrink-0 rounded-full ring-2 ring-mint ring-offset-2 ring-offset-background">
-          <Avatar id={profile.avatarId} color={profile.preferences.profileColor} size="lg" />
+          <Avatar id={profile.avatarId} color={profile.preferences.profileColor} size="lg" outfit={outfit} />
         </Link>
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-section leading-tight font-bold text-forest">สวัสดี {profile.displayName}</h1>
@@ -206,6 +208,7 @@ export function Dashboard() {
             todayCount={stats.todayMissions}
             streak={stats.streak}
             dailyComplete={dailyStatus.complete}
+            outfit={outfit}
           />
         </div>
 

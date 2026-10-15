@@ -1,4 +1,6 @@
 import type { Accessory, CharacterLook, HairStyle } from '../../data/avatars';
+import type { Outfit } from '../../data/cosmetics';
+import { AvatarCosmetics } from '../cosmetics/CosmeticArt';
 
 const INK = '#2B1B17';
 const CHEEK = '#F7A6B8';
@@ -139,9 +141,11 @@ interface CharacterAvatarProps {
   framing?: 'full' | 'bust';
   className?: string;
   title?: string;
+  /** Unlocked cosmetics the player is wearing. */
+  outfit?: Outfit;
 }
 
-export function CharacterAvatar({ look, framing = 'full', className = '', title }: CharacterAvatarProps) {
+export function CharacterAvatar({ look, framing = 'full', className = '', title, outfit }: CharacterAvatarProps) {
   const { skin, hair, hairStyle, shirt, pants, accent, accessory = 'none' } = look;
   const lashes = ['long', 'pigtails', 'bun', 'bob', 'ponytail', 'wavy', 'headscarf', 'puffs'].includes(hairStyle);
   const viewBox = framing === 'bust' ? '26 8 148 156' : '0 0 200 250';
@@ -154,6 +158,7 @@ export function CharacterAvatar({ look, framing = 'full', className = '', title 
       aria-label={title}
       aria-hidden={title ? undefined : true}
     >
+      <AvatarCosmetics outfit={outfit} layer="back" />
       <HairBack style={hairStyle} hair={hair} accent={accent} />
 
       {framing === 'full' && (
@@ -207,6 +212,7 @@ export function CharacterAvatar({ look, framing = 'full', className = '', title 
       <ellipse cx={130} cy={117} rx={8} ry={5} fill={CHEEK} opacity={0.85} />
       <path d="M94 118 q6 7 12 0" stroke={MOUTH} strokeWidth={3} strokeLinecap="round" fill="none" />
       <AccessoryLayer kind={accessory} accent={accent} />
+      <AvatarCosmetics outfit={outfit} layer="front" />
     </svg>
   );
 }

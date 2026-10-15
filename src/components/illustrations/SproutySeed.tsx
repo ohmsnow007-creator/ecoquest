@@ -1,5 +1,7 @@
 import { useId, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import type { Outfit } from '../../data/cosmetics';
+import { SproutyCosmetics } from '../cosmetics/CosmeticArt';
 
 export type SproutyMood = 'happy' | 'cheer' | 'sleepy' | 'worried' | 'angry';
 /** 1 seed with two leaves · 2 four leaves · 3 flowering · 4 small tree. */
@@ -20,6 +22,8 @@ interface SproutySeedProps {
   /** Play the "just sprouted" entrance: leaves unfurl from the stem after `sproutDelay` seconds. */
   sprout?: boolean;
   sproutDelay?: number;
+  /** Unlocked cosmetics Sprouty is wearing. */
+  outfit?: Outfit;
 }
 
 const SPRING = { type: 'spring', stiffness: 160, damping: 14 } as const;
@@ -144,6 +148,7 @@ export function SproutySeed({
   title,
   sprout = false,
   sproutDelay = 0.9,
+  outfit,
 }: SproutySeedProps) {
   const id = useId().replace(/:/g, '');
   const lx = Math.max(-1, Math.min(1, look.x));
@@ -243,6 +248,7 @@ export function SproutySeed({
 
           {/* seed body breathes slowly */}
           <motion.g style={{ transformOrigin: '120px 206px' }} animate={breathe} transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}>
+            <SproutyCosmetics outfit={outfit} part="back" />
             <path d="M120 88 C164 88 186 128 184 160 C182 192 154 208 120 208 C86 208 58 192 56 160 C54 128 76 88 120 88Z" fill={`url(#${id}-body)`} />
             <path d="M120 88 C164 88 186 128 184 160 C182 192 154 208 120 208 C86 208 58 192 56 160 C54 128 76 88 120 88Z" fill={`url(#${id}-warm)`} />
             <path d="M172 134 C182 150 182 172 172 188" stroke="#FFFFFF" strokeOpacity={0.35} strokeWidth={4} strokeLinecap="round" fill="none" />
@@ -252,7 +258,9 @@ export function SproutySeed({
             {/* face slides toward the look direction */}
             <motion.g animate={{ x: lx * 9, y: ly * 6 }} transition={SPRING}>
               <Face mood={mood} blinking={blinking} lx={lx} ly={ly} />
+              <SproutyCosmetics outfit={outfit} part="face" />
             </motion.g>
+            <SproutyCosmetics outfit={outfit} part="body" />
           </motion.g>
 
           {mood === 'sleepy' && (

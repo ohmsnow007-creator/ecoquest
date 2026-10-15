@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useOutfit } from '../components/cosmetics/useOutfit';
+import { Wardrobe } from '../components/cosmetics/Wardrobe';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Pencil, Settings, Target, Medal, Flame, Sparkles, Brain, ListChecks, ChevronRight, ShieldCheck, History, BarChart3, Trophy, CalendarDays, ArrowRight } from 'lucide-react';
 import { useGame } from '../store/GameContext';
@@ -85,6 +87,7 @@ function EditProfileDialog({ open, onClose }: { open: boolean; onClose: () => vo
 
 export function Profile() {
   const { profile, progress } = useGame();
+  const outfit = useOutfit();
   const [params, setParams] = useSearchParams();
   const [editing, setEditing] = useState(params.get('edit') === '1');
   const [editKey, setEditKey] = useState(0);
@@ -125,7 +128,7 @@ export function Profile() {
           <section aria-label="ข้อมูลผู้เล่น" className="bg-forest-hero rounded-hero p-4 text-white shadow-raised sm:p-5">
             <div className="flex items-center gap-4">
               <span className="rounded-full ring-4 ring-mint/80">
-                <Avatar id={profile.avatarId} color={profile.preferences.profileColor} size="lg" />
+                <Avatar id={profile.avatarId} color={profile.preferences.profileColor} size="lg" outfit={outfit} />
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1">
@@ -191,6 +194,8 @@ export function Profile() {
               <BarChart3 size={15} aria-hidden="true" /> ดูสถิติทั้งหมด <ChevronRight size={15} aria-hidden="true" />
             </Link>
           </section>
+
+          <Wardrobe />
 
           {/* Recent activity */}
           <section aria-labelledby="recent-title" className="rounded-card border border-border bg-surface p-4 shadow-card">

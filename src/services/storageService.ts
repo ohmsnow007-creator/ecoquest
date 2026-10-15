@@ -1,5 +1,6 @@
-import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, ChallengeReward, QuizAttempt, QuizQuestionResult, MissionType, MissionStart, ImpactRecord, ImpactActivityType, WasteType } from '../types';
+import type { PlayerProfile, PlayerProgress, MissionCompletion, BadgeRecord, ChallengeReward, TimedQuizRun, QuizAttempt, QuizQuestionResult, MissionType, MissionStart, ImpactRecord, ImpactActivityType, WasteType } from '../types';
 import { IMPACT_ACTIVITIES } from '../data/impactActivities';
+import { COSMETICS } from '../data/cosmetics';
 import { validateDisplayName } from '../utils/profile';
 import { DEFAULT_AVATAR_ID, DEFAULT_PROFILE_COLOR, INTERESTS, MAX_INTERESTS, isKnownAvatar, isKnownProfileColor } from '../data/avatars';
 
@@ -48,8 +49,20 @@ export function sanitizeProfile(data: unknown): PlayerProfile | null {
       soundEffects: prefs.soundEffects === true,
       inAppToasts: prefs.inAppToasts !== false,
       celebrations: prefs.celebrations !== false,
+      ...sanitizeOutfit(prefs.outfit),
     },
   };
+}
+
+// Keeps known cosmetic ids in their own slot; whether they are unlocked is checked when worn.
+function sanitizeOutfit(v: unknown): { outfit?: Partial<Record<'hat' | 'eyes' | 'bag', string>> } {
+  if (!isObj(v)) return {};
+  const outfit: Partial<Record<'hat' | 'eyes' | 'bag', string>> = {};
+  for (const slot of ['hat', 'eyes', 'bag'] as const) {
+    const id = v[slot];
+    if (isStr(id) && COSMETICS.some((c) => c.id === id && c.slot === slot)) outfit[slot] = id;
+  }
+  return Object.keys(outfit).length ? { outfit } : {};
 }
 
 function sanitizeCompletion(v: unknown): MissionCompletion | null {
@@ -71,6 +84,15 @@ function sanitizeChallengeReward(v: unknown): ChallengeReward | null {
   if (!isObj(v) || !isStr(v.id) || (v.kind !== 'daily' && v.kind !== 'weekly') || !isStr(v.periodKey) || !DATE_RE.test(v.periodKey)) return null;
   if (!isStr(v.challengeId) || !isXp(v.xpAwarded) || !isStr(v.awardedAt)) return null;
   return { id: v.id, kind: v.kind, periodKey: v.periodKey, challengeId: v.challengeId, xpAwarded: v.xpAwarded, awardedAt: v.awardedAt };
+}
+
+export const TIMED_RUNS_KEPT = 50;
+
+function sanitizeTimedRun(v: unknown): TimedQuizRun | null {
+  if (!isObj(v) || !isStr(v.id) || !isStr(v.at)) return null;
+  const ok = (n: unknown): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= 500;
+  if (!ok(v.correct) || !ok(v.answered) || v.correct > v.answered) return null;
+  return { id: v.id, at: v.at, correct: v.correct, answered: v.answered };
 }
 
 function sanitizeBadge(v: unknown): BadgeRecord | null {
@@ -175,7 +197,18 @@ export function sanitizeProgress(data: unknown): PlayerProgress {
   const seenStarts = new Set<string>();
   const inProgress = cleanList(data.inProgress, sanitizeStart).filter((s) => !seenStarts.has(s.missionId) && seenStarts.add(s.missionId));
   const impactRecords = cleanList(data.impactRecords, sanitizeImpact);
-  return { totalXp, impactRecords, inProgress, completions, unlockedBadges, quizAttempts, challengeRewards, schemaVersion: CURRENT_SCHEMA_VERSION };
+  const timedRuns = cleanList(data.timedRuns, sanitizeTimedRun).slice(-TIMED_RUNS_KEPT);
+  return {
+    totalXp,
+    impactRecords,
+    inProgress,
+    completions,
+    unlockedBadges,
+    quizAttempts,
+    challengeRewards,
+    ...(timedRuns.length ? { timedRuns } : {}),
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+  };
 }
 
 export const CORRUPT_BACKUP_SUFFIX = '_corrupt_backup';

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useOutfit } from '../cosmetics/useOutfit';
 import { motion, useReducedMotion } from 'framer-motion';
 import { SproutySeed, type SproutyMood } from '../illustrations/SproutySeed';
 import { useGame } from '../../store/GameContext';
@@ -42,7 +43,8 @@ export function PlayerSprouty({ size = 96, mood = 'happy', title = '', className
   const reduce = useReducedMotion();
   const blinking = useBlinking(mood !== 'sleepy' && !reduce);
   const stage = getSproutyStage(getLevelFromXp(progress.totalXp)).stage;
-  return <SproutySeed size={size} className={className} mood={mood} stage={stage} title={title} blinking={blinking} hop={reduce ? 0 : hop} />;
+  const outfit = useOutfit();
+  return <SproutySeed size={size} className={className} mood={mood} stage={stage} title={title} blinking={blinking} hop={reduce ? 0 : hop} outfit={outfit} />;
 }
 
 interface SproutyTalkProps {

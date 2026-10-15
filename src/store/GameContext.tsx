@@ -1,8 +1,9 @@
 import { createContext, useContext, useCallback, useState, useEffect, useRef, type ReactNode } from 'react';
+import { getCosmetic, getCosmeticStatus, type CosmeticSlot } from '../data/cosmetics';
 import type { PlayerProfile, PlayerProgress, MissionCategory, MissionProgressStatus, ImpactRecord } from '../types';
 import { getFactorFor } from '../data/emissionFactors';
 import { CALCULATION_VERSION } from '../services/impactCalculator';
-import { storageService } from '../services/storageService';
+import { storageService, TIMED_RUNS_KEPT } from '../services/storageService';
 import { missions } from '../data/missions';
 import { evaluateChallengeClaim, evaluateMissionCompletion, evaluateQuizAttempt, type ChallengeRejection, type RewardOutcome, type MissionRejection, type QuizDraft } from '../services/rewardService';
 import { getLocalDate } from '../utils/streak';
@@ -46,6 +47,8 @@ export interface ProfileChanges {
   goalIds?: string[];
 }
 
+export type WearResult = 'ok' | 'locked' | 'unknown';
+
 interface GameState {
   profile: PlayerProfile | null;
   progress: PlayerProgress;
@@ -58,6 +61,7 @@ interface GameActions {
   updateProfile: (changes: ProfileChanges) => void;
   setReducedMotion: (value: boolean) => void;
   setPreference: (key: BooleanPreference, value: boolean) => void;
+  wearCosmetic: (slot: CosmeticSlot, id: string | null) => WearResult;
   resetProgress: () => boolean;
   completeMission: (missionId: string, note?: string) => CompleteMissionResult;
   canCompleteMission: (missionId: string) => boolean;
@@ -67,6 +71,7 @@ interface GameActions {
   getCompletedSteps: (missionId: string) => number[];
   submitQuizAttempt: (draft: QuizDraft) => SubmitQuizResult;
   claimChallenge: (kind: 'daily' | 'weekly') => ClaimChallengeResult;
+  saveTimedRun: (correct: number, answered: number) => boolean;
   resetAll: () => void;
   dismissToast: (id: string) => void;
   notify: (message: string, type?: Toast['type']) => void;
@@ -174,6 +179,26 @@ export function GameProvider({ children }: { children: ReactNode }) {
         : prev,
     );
   }, []);
+
+  // Equip (or with null, take off) a cosmetic. Locked items are refused here, not only hidden in the UI.
+  const wearCosmetic = useCallback(
+    (slot: CosmeticSlot, id: string | null): WearResult => {
+      if (id !== null) {
+        const item = getCosmetic(id);
+        if (!item || item.slot !== slot) return 'unknown';
+        if (!getCosmeticStatus(item, progress).unlocked) return 'locked';
+      }
+      setProfile((prev) => {
+        if (!prev) return prev;
+        const outfit = { ...(prev.preferences.outfit ?? {}) };
+        if (id === null) delete outfit[slot];
+        else outfit[slot] = id;
+        return { ...prev, preferences: { ...prev.preferences, outfit }, updatedAt: new Date().toISOString() };
+      });
+      return 'ok';
+    },
+    [progress],
+  );
 
   const setPreference = useCallback((key: BooleanPreference, value: boolean) => {
     setProfile((prev) =>
@@ -285,6 +310,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
     [profile, progress, applyReward, addToast],
   );
 
+  // Timed quiz: store the result for personal bests. No XP, so it cannot be farmed.
+  const saveTimedRun = useCallback(
+    (correct: number, answered: number): boolean => {
+      const run = { id: createId(), at: new Date().toISOString(), correct, answered };
+      const next: PlayerProgress = { ...progress, timedRuns: [...(progress.timedRuns ?? []), run].slice(-TIMED_RUNS_KEPT) };
+      if (!storageService.saveProgress(next)) return false;
+      setProgress(next);
+      return true;
+    },
+    [progress],
+  );
+
   // Grades, rewards and saves a quiz once; the same attempt id is rejected if submitted again.
   const submitQuizAttempt = useCallback((draft: QuizDraft): SubmitQuizResult => {
     if (completingRef.current.has(draft.id)) return { ok: false, reason: 'duplicate' };
@@ -356,6 +393,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         updateProfile,
         setReducedMotion,
         setPreference,
+        wearCosmetic,
         resetProgress,
         completeMission,
         canCompleteMission,
@@ -365,6 +403,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         getCompletedSteps,
         submitQuizAttempt,
         claimChallenge,
+        saveTimedRun,
         resetAll,
         dismissToast,
         notify: addToast,

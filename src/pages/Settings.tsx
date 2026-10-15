@@ -1,4 +1,5 @@
 import { startTransition, useState, type ReactNode } from 'react';
+import { useOutfit } from '../components/cosmetics/useOutfit';
 import { Link, useNavigate } from 'react-router-dom';
 import { Download, Trash2, UserX, Check, Plus, ChevronRight, RotateCcw, ShieldCheck, ExternalLink, User, HardDrive, Smartphone, BellRing, Volume2, PartyPopper, Wind, Settings2, type LucideIcon } from 'lucide-react';
 import { INTERESTS, MAX_INTERESTS, PROFILE_COLORS } from '../data/avatars';
@@ -72,6 +73,7 @@ type Confirm = null | 'reset-game' | 'delete-account';
 
 export function Settings() {
   const { profile, progress, updateProfile, setPreference, resetProgress, resetAll, notify } = useGame();
+  const outfit = useOutfit();
   const navigate = useNavigate();
   const [confirm, setConfirm] = useState<Confirm>(null);
   if (!profile) return null;
@@ -122,7 +124,7 @@ export function Settings() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <Link to="/profile" className="flex items-center gap-3 rounded-card border border-border bg-surface p-4 shadow-card hover:border-primary/40">
-            <Avatar id={profile.avatarId} color={prefs.profileColor} size="md" />
+            <Avatar id={profile.avatarId} color={prefs.profileColor} size="md" outfit={outfit} />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-body font-semibold">{profile.displayName}</span>
               <span className="flex items-center gap-1 text-caption text-muted"><User size={13} aria-hidden="true" /> แก้ไขชื่อและอวาตาร์ที่หน้าโปรไฟล์</span>

@@ -1,4 +1,6 @@
-import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { LauncherContext, SKIP_INTRO_TEST_KEY } from './launcherContext';
+import { useOutfit } from '../cosmetics/useOutfit';
 import { AnimatePresence, motion, useMotionValue, useTransform, animate, useReducedMotion, type PanInfo } from 'framer-motion';
 import { ChevronsRight, ArrowRight, Flame, Target } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -13,15 +15,9 @@ import { getSproutyStage } from '../../utils/sprouty';
 import { getPlayerStats } from '../../utils/playerStats';
 import { getDailyStatus } from '../../utils/challenges';
 
-export const SKIP_INTRO_TEST_KEY = 'ecoquest_skip_intro_in_tests';
 const KNOB = 48;
 const UNLOCK_AT = 0.85;
 
-const LauncherContext = createContext<(() => void) | null>(null);
-
-export function useCloseApp() {
-  return useContext(LauncherContext);
-}
 
 /** The intro shows on every page load. Only the test suite may skip it, to test the app behind it. */
 function startOpen(): boolean {
@@ -174,7 +170,7 @@ const BURST = Array.from({ length: 14 }, (_, i) => {
 function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
   const { profile, progress } = useGame();
   const reduce = useReducedMotion();
-  const timeOfDay = getTimeOfDay(new Date().getHours());
+  const [timeOfDay] = useState(() => getTimeOfDay(new Date().getHours()));
   const stats = profile ? getPlayerStats(progress) : null;
   const daily = profile ? getDailyStatus(progress, profile.id) : null;
   const growth = getSproutyStage(stats?.level ?? 1);
@@ -182,6 +178,7 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
   const [awake, setAwake] = useState(!!reduce);
   const [touched, setTouched] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [hop, setHop] = useState(0);
   useEffect(() => {
     if (reduce) return;
     const t1 = setTimeout(() => setAwake(true), 1250);
@@ -194,7 +191,6 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
   const mascotRef = useRef<HTMLDivElement>(null);
   const idle = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [look, setLook] = useState({ x: 0, y: 0 });
-  const [hop, setHop] = useState(0);
   const blinking = useBlink();
   const greeting: SproutyTip = profile
     ? { lead: `ยินดีต้อนรับกลับ ${profile.displayName}!\n`, hl: 'วันนี้ช่วยโลกกันอีกนะ' }
@@ -236,6 +232,7 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
   }, [reduce]);
 
   const tantrum = useTantrum();
+  const outfit = useOutfit();
   const mood = leaving ? 'cheer' : tantrum.angry ? 'angry' : timeOfDay === 'night' && !touched ? 'sleepy' : 'happy';
 
   // Unlocking: Sprouty cheers, leaves burst out, the card drops away, then the app opens.
@@ -363,6 +360,7 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
               mood={mood}
               stage={growth.stage}
               sprout={!reduce}
+              outfit={outfit}
             />
             </motion.span>
             {leaving && (

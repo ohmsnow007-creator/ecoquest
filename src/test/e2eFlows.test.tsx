@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, within, cleanup } from '@testing-library/react';
 import App from '../App';
-import { SKIP_INTRO_TEST_KEY } from '../components/layout/Launcher';
+import { SKIP_INTRO_TEST_KEY } from '../components/layout/launcherContext';
 import { missions } from '../data/missions';
 import { storageService, CORRUPT_BACKUP_SUFFIX } from '../services/storageService';
 import { evaluateMissionCompletion } from '../services/rewardService';

@@ -1,3 +1,4 @@
+import { createElement } from 'react';
 import { Lock } from 'lucide-react';
 import type { Badge } from '../../types';
 import { getBadgeIcon } from '../../data/icons';
@@ -20,7 +21,6 @@ interface BadgeMedalProps {
 
 export function BadgeMedal({ badge, unlocked, size = 64 }: BadgeMedalProps) {
   const t = TIERS[unlocked ? badge.rarity : 'locked'];
-  const Icon = getBadgeIcon(badge.icon);
   return (
     <span className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }} aria-hidden="true">
       <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full">
@@ -29,7 +29,7 @@ export function BadgeMedal({ badge, unlocked, size = 64 }: BadgeMedalProps) {
         <path d="M50 12 L83 31 L83 44 C66 38 34 38 17 44 L17 31Z" fill={t.shine} opacity={0.55} />
         {unlocked && <path d="M26 20 l3 -6 l3 6 l6 3 l-6 3 l-3 6 l-3 -6 l-6 -3Z" fill="#FFFFFF" opacity={0.85} />}
       </svg>
-      <Icon size={Math.round(size * 0.36)} color={t.icon} strokeWidth={2.2} className="relative" />
+      {createElement(getBadgeIcon(badge.icon), { size: Math.round(size * 0.36), color: t.icon, strokeWidth: 2.2, className: 'relative' })}
       {!unlocked && (
         <span
           className="absolute -right-0.5 -bottom-0.5 flex items-center justify-center rounded-full border-2 border-surface bg-text text-white"
