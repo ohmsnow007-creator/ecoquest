@@ -76,6 +76,14 @@ body {
   font-size: var(--text-body);
   line-height: 1.65;
   background-color: var(--color-background);
+  /* Soft leaf sprigs in the top corners: decorative only, scrolls with the page. */
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 220'%3E%3Cg fill='%23A8F0CF' opacity='0.55'%3E%3Cpath d='M200 10 C150 40 110 90 90 170' stroke='%23A8F0CF' stroke-width='4' fill='none'/%3E%3Cpath d='M178 26 C150 0 112 6 104 30 C128 46 160 44 178 26Z'/%3E%3Cpath d='M160 46 C186 72 184 108 162 116 C146 92 146 64 160 46Z'/%3E%3Cpath d='M140 66 C110 48 76 58 72 82 C98 94 126 88 140 66Z'/%3E%3Cpath d='M122 98 C146 124 140 158 118 164 C104 140 106 116 122 98Z'/%3E%3Cpath d='M106 124 C78 112 50 126 50 148 C76 156 98 146 106 124Z'/%3E%3C/g%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cg fill='%23D9F76A' opacity='0.35'%3E%3Cpath d='M20 100 C40 70 70 50 110 40' stroke='%23D9F76A' stroke-width='3' fill='none'/%3E%3Cpath d='M60 62 C58 34 80 18 98 26 C96 50 80 62 60 62Z'/%3E%3Cpath d='M40 82 C20 64 2 72 4 90 C20 98 32 94 40 82Z'/%3E%3C/g%3E%3C/svg%3E"),
+    radial-gradient(90% 40% at 50% 0%, var(--color-pale-mint) 0%, transparent 70%);
+  background-repeat: no-repeat;
+  background-position: right -36px top -28px, left -24px top 180px, top center;
+  background-size: 220px 220px, 120px 120px, 100% 520px;
   color: var(--color-text);
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;

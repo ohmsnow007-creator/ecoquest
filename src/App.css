@@ -110,3 +110,51 @@
 @media (prefers-reduced-motion: reduce) {
   .intro-chevrons { animation: none; }
 }
+
+/* Falling leaves over the intro landscape (decorative). */
+.intro-leaves {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.intro-leaves span {
+  position: absolute;
+  top: -24px;
+  border-radius: 0 70% 0 70%;
+  background: linear-gradient(135deg, #B6DB7A 0%, #5DA54F 100%);
+  opacity: 0;
+  animation-name: intro-leaf-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.intro-leaves span:nth-child(even) { background: linear-gradient(135deg, #F2D46B 0%, #A9B95A 100%); }
+@keyframes intro-leaf-fall {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  8% { opacity: 0.9; }
+  50% { transform: translate(-28px, 50vh) rotate(200deg); }
+  85% { opacity: 0.85; }
+  100% { transform: translate(18px, 92vh) rotate(420deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-leaves { display: none; }
+}
+html[data-reduced-motion='true'] .intro-leaves { display: none; }
+
+/* ---------- Sprouty on Home ---------- */
+.sprouty-card {
+  background:
+    radial-gradient(60% 70% at 85% 10%, rgb(255 236 170 / 0.9) 0%, transparent 70%),
+    linear-gradient(160deg, #F6E3A1 0%, #DCE9A4 55%, #B9DCA0 100%);
+}
+.sprouty-bubble::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  bottom: 8px;
+  width: 14px;
+  height: 14px;
+  background: var(--color-surface);
+  transform: rotate(45deg);
+  border-radius: 3px;
+}

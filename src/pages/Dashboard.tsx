@@ -14,6 +14,7 @@ import type { Mission, MissionProgressStatus } from '../types';
 import { CATEGORY_ICON } from '../data/icons';
 import { getDailyStatus, getWeeklyStatus } from '../utils/challenges';
 import { ChallengeBonus, WeeklyChallengeCard } from '../components/challenges/ChallengeCards';
+import { SproutyHomeCard } from '../components/sprouty/SproutyHomeCard';
 import { GreenWorldScene } from '../components/world/GreenWorldScene';
 import { NotificationBell } from '../components/feedback/NotificationBell';
 import { Avatar } from '../components/ui/AvatarPicker';
@@ -197,6 +198,17 @@ export function Dashboard() {
       </header>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-6">
+        {/* 1b. Sprouty greets and grows with the player */}
+        <div className="lg:col-span-3">
+          <SproutyHomeCard
+            name={profile.displayName}
+            level={stats.level}
+            todayCount={stats.todayMissions}
+            streak={stats.streak}
+            dailyComplete={dailyStatus.complete}
+          />
+        </div>
+
         {/* 2. Virtual world hero */}
         <section aria-labelledby="world-title" className="bg-forest-hero overflow-hidden rounded-hero text-white shadow-raised lg:col-span-2">
           <div className="relative h-60 overflow-hidden rounded-b-[1.5rem] sm:h-72 lg:h-80">

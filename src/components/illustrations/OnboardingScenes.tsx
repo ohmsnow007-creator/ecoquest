@@ -33,6 +33,15 @@ export function WelcomeScene() {
       </g>
       <Cloud x={60} y={44} />
       <Cloud x={170} y={30} s={0.7} />
+      {/* distant ridge and forest line */}
+      <path d="M-10 170 L40 128 L84 150 L140 112 L200 146 L250 116 L330 150 L330 280 L-10 280 Z" fill="#CFEBDD" />
+      <g opacity={0.9}>
+        <PineTree x={18} y={186} s={0.42} />
+        <RoundTree x={58} y={180} s={0.34} face={false} crown="fill-primary" />
+        <PineTree x={254} y={172} s={0.46} />
+        <RoundTree x={296} y={172} s={0.36} face={false} />
+        <PineTree x={318} y={180} s={0.34} />
+      </g>
       <path d="M-10 196 C40 150 100 150 150 186 C190 158 250 140 330 176 L330 280 L-10 280 Z" className="fill-mint" />
       <path d="M-10 232 C60 200 120 208 170 228 C220 206 280 202 330 222 L330 280 L-10 280 Z" className="fill-primary" />
       <g transform="translate(88 64)">
@@ -41,6 +50,14 @@ export function WelcomeScene() {
       <Sprout x={52} y={238} s={1.3} />
       <Sprout x={268} y={232} s={1.1} />
       <Sprout x={236} y={252} s={0.9} />
+      {[[24, 262, '#FFFFFF'], [96, 256, '#FFD84D'], [190, 262, '#F7A6B8'], [300, 258, '#FFFFFF']].map(([x, y, c]) => (
+        <g key={`${x}`} transform={`translate(${x} ${y})`}>
+          {[0, 72, 144, 216, 288].map((r) => (
+            <circle key={r} cx={0} cy={-3.4} r={2.6} fill={c as string} transform={`rotate(${r})`} />
+          ))}
+          <circle r={1.8} fill={ART.sun} />
+        </g>
+      ))}
       <Leaf x={34} y={110} r={-30} />
       <Leaf x={282} y={130} r={20} s={0.8} />
       <Leaf x={226} y={98} r={160} s={0.6} />

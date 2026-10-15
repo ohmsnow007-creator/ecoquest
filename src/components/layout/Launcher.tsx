@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useMotionValue, useTransform, animate, useRedu
 import { ChevronsRight, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { SproutySeed } from '../illustrations/SproutySeed';
+import { IntroLandscape } from '../illustrations/IntroLandscape';
 import { markSplashSeen } from '../../utils/session';
 import { useGame } from '../../store/GameContext';
 import { SPROUTY_TIPS, nextTipOrder, type SproutyTip } from '../../data/sproutyTips';
@@ -196,6 +197,20 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
           <span style={{ right: '6%', top: '22%', width: 130, height: 130 }} />
           <span style={{ left: '-6%', top: '46%', width: 120, height: 120 }} />
           <span style={{ right: '14%', top: '52%', width: 60, height: 60 }} />
+        </div>
+
+        <IntroLandscape />
+        <div className="intro-leaves" aria-hidden="true">
+          {[
+            { left: '12%', delay: '0s', dur: '11s', size: 14 },
+            { left: '34%', delay: '3.5s', dur: '13s', size: 10 },
+            { left: '58%', delay: '1.5s', dur: '12s', size: 16 },
+            { left: '80%', delay: '6s', dur: '14s', size: 12 },
+            { left: '92%', delay: '9s', dur: '10s', size: 9 },
+            { left: '4%', delay: '7.5s', dur: '15s', size: 11 },
+          ].map((l) => (
+            <span key={l.left} style={{ left: l.left, width: l.size, height: l.size, animationDelay: l.delay, animationDuration: l.dur }} />
+          ))}
         </div>
 
         <section className="relative z-10 flex flex-1 flex-col items-center px-5 pt-[max(2.25rem,env(safe-area-inset-top))]">

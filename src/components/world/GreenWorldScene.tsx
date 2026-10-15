@@ -54,6 +54,37 @@ function Bush({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
   );
 }
 
+function MiniPine({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${s})`}>
+      <rect x={-1.2} y={-4} width={2.4} height={5} fill={ART.trunkDark} />
+      <path d="M0 -22 L7 -11 L4 -11 L9 -3 L-9 -3 L-4 -11 L-7 -11 Z" className="fill-primary" opacity={0.85} />
+    </g>
+  );
+}
+
+function GrassTuft({ x, y, s = 1, dry = false }: { x: number; y: number; s?: number; dry?: boolean }) {
+  return (
+    <path
+      transform={`translate(${x} ${y}) scale(${s})`}
+      d="M-6 0 Q-5 -7 -2 -10 Q-2 -4 -1 0 Q0 -9 2 -12 Q2 -5 3 0 Q5 -6 7 -8 Q5 -3 6 0 Z"
+      className={dry ? undefined : 'fill-forest'}
+      fill={dry ? LAND.crack : undefined}
+      opacity={dry ? 0.6 : 0.55}
+    />
+  );
+}
+
+function DeadTree({ x, y }: { x: number; y: number }) {
+  return (
+    <g transform={`translate(${x} ${y})`} stroke={LAND.crack} strokeWidth={3} strokeLinecap="round" fill="none">
+      <path d="M0 0 L0 -26" />
+      <path d="M0 -14 L-9 -22" strokeWidth={2} />
+      <path d="M0 -19 L8 -28" strokeWidth={2} />
+    </g>
+  );
+}
+
 function Rabbit({ x, y }: { x: number; y: number }) {
   return (
     <g transform={`translate(${x} ${y})`}>
@@ -82,6 +113,8 @@ export function GreenWorldScene({ stage, className = '' }: GreenWorldSceneProps)
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const dry = stage === 0;
   const skyId = `sky-${uid}`;
+  const glowId = `glow-${uid}`;
+  const rangeId = `range-${uid}`;
 
   return (
     <svg
@@ -96,8 +129,17 @@ export function GreenWorldScene({ stage, className = '' }: GreenWorldSceneProps)
           <stop offset="0%" stopColor={dry ? LAND.dustTop : LAND.skyTop} />
           <stop offset="100%" stopColor={dry ? LAND.dustLow : LAND.skyLow} />
         </linearGradient>
+        <radialGradient id={glowId} cx="84%" cy="20%" r="45%">
+          <stop offset="0%" stopColor={ART.sun} stopOpacity={dry ? 0.35 : 0.45} />
+          <stop offset="100%" stopColor={ART.sun} stopOpacity={0} />
+        </radialGradient>
+        <linearGradient id={rangeId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={dry ? '#DCCDB2' : '#D6F1E1'} />
+          <stop offset="100%" stopColor={dry ? LAND.dryFar : '#A8E2C4'} />
+        </linearGradient>
       </defs>
       <rect width={360} height={220} fill={`url(#${skyId})`} />
+      <rect width={360} height={220} fill={`url(#${glowId})`} />
 
       {stage >= 4 && (
         <motion.g {...pop()} fill="none" strokeWidth={7} opacity={0.55}>
@@ -119,11 +161,19 @@ export function GreenWorldScene({ stage, className = '' }: GreenWorldSceneProps)
         </motion.g>
       )}
 
-      {stage >= 4 && (
+      {stage >= 2 && (
         <motion.g {...pop(0.2)} className="stroke-forest" strokeWidth={1.8} fill="none" strokeLinecap="round">
           <path d="M112 58 q4 -4 8 0 q4 -4 8 0" />
           <path d="M134 46 q3 -3 6 0 q3 -3 6 0" />
         </motion.g>
+      )}
+
+      <path d="M-10 140 L30 104 L74 126 L128 84 L190 118 L246 76 L300 112 L370 92 L370 220 L-10 220Z" fill={`url(#${rangeId})`} opacity={0.8} />
+      {!dry && (
+        <g fill="#FFFFFF" opacity={0.75}>
+          <path d="M128 84 L138 93 L132 92 L128 97 L123 92 L118 93 Z" />
+          <path d="M246 76 L256 85 L250 84 L246 89 L241 84 L236 85 Z" />
+        </g>
       )}
 
       <path
@@ -131,6 +181,14 @@ export function GreenWorldScene({ stage, className = '' }: GreenWorldSceneProps)
         fill={dry ? LAND.dryFar : undefined}
         className={dry ? undefined : 'fill-mint'}
       />
+
+      {stage >= 2 && (
+        <motion.g {...pop(0.05)}>
+          {[[16, 150], [30, 146], [44, 150], [256, 142], [270, 146], [284, 140], [344, 150]].map(([x, y], i) => (
+            <MiniPine key={`${x}`} x={x} y={y} s={0.8 + (i % 3) * 0.15} />
+          ))}
+        </motion.g>
+      )}
 
       {stage >= 4 && (
         <motion.g {...pop(0.1)}>
@@ -145,6 +203,7 @@ export function GreenWorldScene({ stage, className = '' }: GreenWorldSceneProps)
         className={dry ? undefined : 'fill-emerald'}
         opacity={dry ? 1 : 0.75}
       />
+      <path d="M-10 166 C50 146 120 146 190 160" fill="none" stroke="#FFFFFF" strokeOpacity={dry ? 0.25 : 0.3} strokeWidth={2} strokeLinecap="round" />
 
       {stage >= 2 && (
         <motion.g {...pop(0.1)}>
@@ -183,6 +242,21 @@ export function GreenWorldScene({ stage, className = '' }: GreenWorldSceneProps)
           <ellipse cx={110} cy={196} rx={8} ry={4} fill={LAND.rock} stroke="none" />
           <ellipse cx={250} cy={202} rx={6} ry={3} fill={LAND.rock} stroke="none" />
         </g>
+      )}
+      {dry && (
+        <g>
+          <DeadTree x={318} y={196} />
+          {[[28, 206], [160, 210], [222, 200]].map(([x, y]) => (
+            <GrassTuft key={`${x}`} x={x} y={y} dry />
+          ))}
+        </g>
+      )}
+      {stage >= 1 && (
+        <motion.g {...pop(0.05)}>
+          {[[12, 212], [70, 216], [132, 214], [178, 218], [210, 212], [276, 216], [352, 214]].map(([x, y], i) => (
+            <GrassTuft key={`${x}`} x={x} y={y} s={0.9 + (i % 3) * 0.2} />
+          ))}
+        </motion.g>
       )}
 
       {stage >= 3 && (
