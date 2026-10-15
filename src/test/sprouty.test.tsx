@@ -165,3 +165,16 @@ describe('mission cosmetics', () => {
     }
   });
 });
+
+describe('Sprouty head rubs on a phone', () => {
+  const rect = { left: 0, top: 0, width: 120, height: 120, right: 120, bottom: 120, x: 0, y: 0, toJSON: () => ({}) };
+  it('a wobbly, diagonal finger rub still counts, and the touch is not handed to page scrolling', () => {
+    render(<SproutyHomeCard name="มินท์" level={1} todayCount={0} streak={0} dailyComplete={false} now={new Date(2026, 9, 15, 9)} />);
+    const btn = screen.getByRole('button', { name: /ลูบหัว Sprouty/ });
+    btn.getBoundingClientRect = () => rect as DOMRect;
+    expect(btn.style.touchAction).toBe('none');
+    fireEvent.pointerDown(btn, { pointerId: 2, pointerType: 'touch', clientX: 40, clientY: 40 });
+    for (const [x, y] of [[48, 46], [58, 50], [66, 44], [58, 38], [48, 44], [40, 50]]) fireEvent.pointerMove(btn, { pointerId: 2, pointerType: 'touch', clientX: x, clientY: y });
+    expect(SHY_LINES).toContain(screen.getByText(/./, { selector: 'p[aria-live]' }).textContent);
+  });
+});
