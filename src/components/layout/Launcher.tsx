@@ -6,7 +6,7 @@ import { markSplashSeen } from '../../utils/session';
 import { useGame } from '../../store/GameContext';
 
 const SESSION_KEY = 'ecoquest_launcher_open';
-const KNOB = 56;
+const KNOB = 48;
 const UNLOCK_AT = 0.85;
 
 const LauncherContext = createContext<(() => void) | null>(null);
@@ -76,7 +76,7 @@ function SlideToUnlock({ label, onUnlock }: { label: string; onUnlock: () => voi
   return (
     <div
       ref={trackRef}
-      className="intro-track relative flex h-16 w-full items-center rounded-full p-1"
+      className="intro-track relative flex h-14 w-full items-center rounded-full p-1"
     >
       <motion.span
         style={{ opacity: labelOpacity }}
@@ -99,7 +99,7 @@ function SlideToUnlock({ label, onUnlock }: { label: string; onUnlock: () => voi
         style={{ x, width: KNOB, height: KNOB }}
         className="relative z-10 flex shrink-0 cursor-grab touch-none items-center justify-center rounded-full bg-forest text-lime shadow-raised active:cursor-grabbing"
       >
-        <ArrowRight size={24} aria-hidden="true" />
+        <ArrowRight size={21} aria-hidden="true" />
       </motion.button>
     </div>
   );
@@ -151,23 +151,23 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
           initial={reduce ? false : { y: 40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: 'spring', damping: 22, delay: 0.1 }}
-          className="intro-card relative z-10 px-7 pt-9 pb-[max(1.75rem,env(safe-area-inset-bottom))] text-center text-white"
+          className="intro-card relative z-10 px-6 pt-7 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-center text-white"
         >
           <p className="text-caption font-semibold tracking-wide text-lime">EcoQuest · ภารกิจพิชิตโลกสีเขียว</p>
-          <h1 className="mt-2 font-display text-[2rem] leading-tight font-bold">
+          <h1 className="mt-1.5 font-display text-[1.75rem] leading-tight font-bold">
             ปลูกวันนี้
             <br />
             เปลี่ยนวันพรุ่งนี้
           </h1>
-          <p className="mx-auto mt-3 max-w-[18rem] text-body text-white/75">
+          <p className="mx-auto mt-2 max-w-[17rem] text-caption text-white/80">
             เริ่มนิสัยรักษ์โลกเล็ก ๆ ทีละภารกิจ แล้วดูโลกสีเขียวของคุณเติบโต
           </p>
 
-          <div className="mt-7">
+          <div className="mt-5">
             <SlideToUnlock label={profile ? 'เลื่อนเพื่อเข้าเกม' : 'เลื่อนเพื่อเริ่มต้น'} onUnlock={onUnlock} />
           </div>
 
-          <p className="mt-5 text-caption text-white/60">
+          <p className="mt-3.5 text-[0.75rem] text-white/65">
             {profile ? (
               <>
                 ยินดีต้อนรับกลับ <span className="font-semibold text-lime">{profile.displayName}</span>

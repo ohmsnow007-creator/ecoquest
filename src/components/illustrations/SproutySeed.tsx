@@ -26,8 +26,8 @@ export function SproutySeed({ size = 220, className = '' }: { size?: number; cla
       </defs>
 
       {/* soil */}
-      <ellipse cx="120" cy="214" rx="96" ry="22" fill={`url(#${id}-soil)`} />
-      <ellipse cx="120" cy="206" rx="58" ry="9" fill="#2B1C12" opacity={0.35} />
+      <ellipse cx="120" cy="214" rx="114" ry="25" fill={`url(#${id}-soil)`} />
+      <ellipse cx="120" cy="206" rx="66" ry="10" fill="#2B1C12" opacity={0.35} />
 
       {/* stem + leaves */}
       <path d="M120 92 C121 78 122 70 124 60" stroke="#6FB64E" strokeWidth={6} strokeLinecap="round" fill="none" />
