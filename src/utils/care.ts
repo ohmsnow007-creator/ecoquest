@@ -21,6 +21,8 @@ const WATER_POINTS = 10;
 const FERTILIZER_POINTS = 15;
 /** Days without a mission before Sprouty says it misses the player. */
 export const LONELY_AFTER_DAYS = 3;
+/** Days since the last watering before Sprouty turns on the puppy eyes and begs for water. */
+export const THIRSTY_AFTER_DAYS = 2;
 
 export interface CareRecord {
   /** Local dates (YYYY-MM-DD) the player watered Sprouty with the day's water. */
@@ -74,6 +76,10 @@ export interface CareState {
   fertilizer: number;
   /** Days since the last recorded mission (null if none yet). */
   daysAway: number | null;
+  /** Days since the last watering (null if never watered). */
+  daysSinceWater: number | null;
+  /** Not watered for a while: Sprouty begs with puppy eyes (no penalty). */
+  thirsty: boolean;
   bond: ReturnType<typeof bondFromCare>;
   mood: SproutyMood;
   line: string;
@@ -90,10 +96,17 @@ export function getCareState(progress: PlayerProgress, today: string = getLocalD
   const bond = bondFromCare(care, adminTotal(progress, 'bond'));
   const bonusWater = Math.max(0, adminTotal(progress, 'water') - (care.bonusWaterUsed ?? 0));
   const waterLeft = (hasWaterToday && !wateredToday ? 1 : 0) + bonusWater;
+  const lastWatered = care.wateredDays.length ? care.wateredDays[care.wateredDays.length - 1] : null;
+  const daysSinceWater = lastWatered ? Math.max(0, daysBetween(lastWatered, today)) : null;
+  const thirsty = !wateredToday && ((daysSinceWater !== null && daysSinceWater >= THIRSTY_AFTER_DAYS) || (daysSinceWater === null && daysAway !== null && daysAway >= LONELY_AFTER_DAYS));
 
   let mood: SproutyMood = 'happy';
   let line: string;
-  if (wateredToday) {
+  if (thirsty) {
+    mood = 'pleading';
+    const since = daysSinceWater !== null ? `ไม่ได้รดน้ำมา ${daysSinceWater} วันแล้ว…` : 'ยังไม่เคยได้รดน้ำเลย…';
+    line = waterLeft > 0 ? `${since} มีน้ำอยู่ รดให้หน่อยน้า 🥺` : `${since} คอแห้งจัง ทำภารกิจสักข้อแล้วมารดน้ำให้หน่อยนะ 🥺`;
+  } else if (wateredToday) {
     mood = 'cheer';
     line = fertilizer > 0 ? 'สดชื่นจัง! ขอบคุณที่รดน้ำนะ มีปุ๋ยเหลืออยู่ด้วย อยากกินจัง~' : 'สดชื่นจัง! ขอบคุณที่รดน้ำให้นะ พรุ่งนี้มาเจอกันอีก';
   } else if (hasWaterToday || bonusWater > 0) {
@@ -108,7 +121,7 @@ export function getCareState(progress: PlayerProgress, today: string = getLocalD
     mood = 'sleepy';
     line = 'คอแห้งนิดหน่อย ทำภารกิจสักข้อเพื่อได้น้ำมารดนะ';
   }
-  return { care, hasWaterToday, wateredToday, bonusWater, waterLeft, fertilizerEarned, fertilizer, daysAway, bond, mood, line };
+  return { care, hasWaterToday, wateredToday, bonusWater, waterLeft, fertilizerEarned, fertilizer, daysAway, daysSinceWater, thirsty, bond, mood, line };
 }
 
 /** Completions that dropped fertilizer, newest first (for "where did my fertilizer come from"). */

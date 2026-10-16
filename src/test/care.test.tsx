@@ -10,6 +10,7 @@ import { getCareState, givesFertilizer, bondFromCare, BOND_STEP } from '../utils
 import { ECO_EVENTS, getActiveEvent, getNextEvent, inEventWindow } from '../data/events';
 import { COSMETICS, getCosmeticStatus, wearableOutfit } from '../data/cosmetics';
 import { PotFront } from '../components/cosmetics/SproutyScenery';
+import { SproutySeed } from '../components/illustrations/SproutySeed';
 import { getLocalDate } from '../utils/streak';
 import type { PlayerProgress } from '../types';
 
@@ -44,8 +45,8 @@ describe('care rules', () => {
     const today = '2026-10-17';
     expect(getCareState(progressWith([completion('a', today)]), today)).toMatchObject({ hasWaterToday: true, wateredToday: false });
     const away = getCareState(progressWith([completion('a', '2026-10-10')], { wateredDays: ['2026-10-10'], fertilizerUsed: 0 }), today);
-    expect(away).toMatchObject({ hasWaterToday: false, daysAway: 7, mood: 'worried' });
-    expect(away.line).toContain('คิดถึง');
+    expect(away).toMatchObject({ hasWaterToday: false, daysAway: 7, daysSinceWater: 7, thirsty: true, mood: 'pleading' });
+    expect(away.line).toContain('ไม่ได้รดน้ำมา 7 วัน');
     expect(away.bond.points).toBe(10);
   });
 
@@ -349,5 +350,44 @@ describe('choosing a frame and Sprouty’s background where you expect them', ()
     // pots are locked for a new player: tapping one changes nothing
     fireEvent.click(within(screen.getByRole('radiogroup', { name: 'กระถาง' })).getByRole('radio', { name: /^กระถางดินเผา/ }));
     expect(storageService.getProfile()?.preferences.sproutyOutfit?.pot).toBeUndefined();
+  });
+});
+
+describe('Sprouty on the care page feels alive', () => {
+  it('begs with puppy eyes after 2+ days without water, and is fine again once watered', () => {
+    const today = '2026-10-17';
+    const yesterday = getCareState(progressWith([completion('a', '2026-10-16')], { wateredDays: ['2026-10-16'], fertilizerUsed: 0 }), today);
+    expect(yesterday.thirsty).toBe(false);
+    const twoDays = getCareState(progressWith([completion('a', today)], { wateredDays: ['2026-10-15'], fertilizerUsed: 0 }), today);
+    expect(twoDays).toMatchObject({ thirsty: true, mood: 'pleading', waterLeft: 1 });
+    expect(twoDays.line).toContain('รดให้หน่อยน้า');
+    const watered = getCareState(progressWith([completion('a', today)], { wateredDays: ['2026-10-15', today], fertilizerUsed: 0 }), today);
+    expect(watered).toMatchObject({ thirsty: false, mood: 'cheer' });
+  });
+
+  it('greets the player by name when the page opens, then shows how it is doing', async () => {
+    cleanup();
+    localStorage.clear();
+    localStorage.setItem('ecoquest_profile', JSON.stringify(profile));
+    localStorage.setItem('ecoquest_progress', JSON.stringify(progressWith([])));
+    render(
+      <MotionConfig reducedMotion="always">
+        <MemoryRouter>
+          <GameProvider>
+            <SproutyCare />
+          </GameProvider>
+        </MemoryRouter>
+      </MotionConfig>,
+    );
+    expect(screen.getByText(/สวัสดี Tester! 👋/)).toBeInTheDocument();
+    expect(await screen.findByText('ทำภารกิจแรกเพื่อเอาน้ำมารดให้ฉันหน่อยนะ', {}, { timeout: 4000 })).toBeInTheDocument();
+  }, 10_000);
+
+  it('the pleading face renders at every stage', () => {
+    for (const stage of [1, 2, 3, 4] as const) {
+      const { container, unmount } = render(<SproutySeed stage={stage} mood="pleading" />);
+      expect(container.querySelector('svg')).not.toBeNull();
+      unmount();
+    }
   });
 });

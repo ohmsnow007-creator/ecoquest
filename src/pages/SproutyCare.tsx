@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Droplets, Heart, Sparkles, Shirt, CalendarHeart, Info, Gift, CheckCircle2 } from 'lucide-react';
@@ -11,6 +11,7 @@ import { BackgroundArt } from '../components/cosmetics/SproutyScenery';
 import { ItemPicker } from '../components/cosmetics/ItemPicker';
 import { useOutfit } from '../components/cosmetics/useOutfit';
 import { usePet } from '../components/sprouty/usePet';
+import { useBlinking } from '../components/sprouty/PlayerSprouty';
 import { getCareState, fertilizerSources, BOND_STEP, FERTILIZER_PERCENT, LONELY_AFTER_DAYS, MAX_BOND } from '../utils/care';
 import { getSproutyStage } from '../utils/sprouty';
 import { getLevelFromXp } from '../utils/xp';
@@ -152,6 +153,49 @@ export function SproutyCare() {
   const pet = usePet();
   const [reaction, setReaction] = useState<Reaction>(null);
   const [hop, setHop] = useState(0);
+  // Sprouty says hello when you open the page, then shows how it's really doing.
+  const [greeting, setGreeting] = useState(true);
+  const [look, setLook] = useState({ x: 0, y: 0 });
+  const lookHold = useRef(0);
+  const stageRef = useRef<HTMLButtonElement>(null);
+  const blinking = useBlinking(!reduce);
+
+  useEffect(() => {
+    const hello = window.setTimeout(() => setHop((h) => h + 1), 350);
+    const done = window.setTimeout(() => setGreeting(false), 3000);
+    return () => {
+      window.clearTimeout(hello);
+      window.clearTimeout(done);
+    };
+  }, []);
+
+  // Glances around now and then, like it's looking at the scenery (unless following your finger).
+  useEffect(() => {
+    if (reduce) return;
+    let t: ReturnType<typeof setTimeout>;
+    const loop = () => {
+      t = setTimeout(() => {
+        if (Date.now() > lookHold.current) {
+          setLook({ x: Math.random() * 1.6 - 0.8, y: Math.random() * 0.7 - 0.3 });
+          t = setTimeout(() => {
+            if (Date.now() > lookHold.current) setLook({ x: 0, y: 0 });
+            loop();
+          }, 1300);
+        } else loop();
+      }, 2200 + Math.random() * 2200);
+    };
+    loop();
+    return () => clearTimeout(t);
+  }, [reduce]);
+
+  // Looks toward where you touch the scene.
+  const lookAtTouch = (clientX: number, clientY: number) => {
+    const r = stageRef.current?.getBoundingClientRect();
+    if (!r) return;
+    lookHold.current = Date.now() + 1600;
+    setLook({ x: Math.max(-1, Math.min(1, (clientX - (r.left + r.width / 2)) / (r.width / 2))), y: Math.max(-1, Math.min(1, (clientY - (r.top + r.height * 0.55)) / (r.height / 2))) });
+    window.setTimeout(() => Date.now() >= lookHold.current && setLook({ x: 0, y: 0 }), 1700);
+  };
 
   useEffect(() => {
     if (!reaction) return;
@@ -163,8 +207,19 @@ export function SproutyCare() {
   const today = getLocalDate();
   const care = getCareState(progress, today);
   const stage = getSproutyStage(getLevelFromXp(progress.totalXp)).stage;
-  const mood: SproutyMood = pet.shy ? 'shy' : reaction?.mood ?? care.mood;
-  const line = pet.shy ? pet.line : reaction?.line ?? care.line;
+  const greet = greeting
+    ? care.thirsty
+      ? { mood: 'pleading' as const, line: `${profile.displayName}! มาแล้วเหรอ… รอตั้งนานเลย 🥺` }
+      : { mood: 'cheer' as const, line: `สวัสดี ${profile.displayName}! 👋 ดีใจที่มาเยี่ยมนะ` }
+    : null;
+  const mood: SproutyMood = pet.shy ? 'shy' : reaction?.mood ?? greet?.mood ?? care.mood;
+  const line = pet.shy ? pet.line : reaction?.line ?? greet?.line ?? care.line;
+  // Idle life: a gentle bob and sway; when thirsty, a sad droop and a little pleading wiggle.
+  const idle = reduce
+    ? undefined
+    : mood === 'pleading'
+      ? { rotate: [0, -3, 3, -2, 2, 0], y: [0, 2, 0, 2, 0, 0], scaleY: [1, 0.97, 1, 0.97, 1, 1] }
+      : { y: [0, -5, 0], rotate: [0, 1.5, 0, -1.5, 0] };
 
   const water = () => {
     if (!waterSprouty()) return;
@@ -205,12 +260,20 @@ export function SproutyCare() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card padded={false} className="overflow-hidden">
           {/* Sprouty's corner: background, Sprouty (rub its head!), and what it says */}
-          <div className="relative h-80 overflow-hidden">
+          <div className="relative h-80 overflow-hidden" onPointerDown={(e) => lookAtTouch(e.clientX, e.clientY)}>
             <BackgroundArt id={outfit.background} className="absolute inset-0 h-full w-full" />
-            <p className="sprouty-bubble absolute top-3 left-1/2 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 rounded-2xl bg-surface/95 px-4 py-2 text-center text-caption font-medium text-forest shadow-card" aria-live="polite">
+            <motion.p
+              key={line}
+              initial={reduce ? false : { opacity: 0, y: -6, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: 'spring', damping: 18 }}
+              className="sprouty-bubble absolute top-3 left-1/2 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 rounded-2xl bg-surface/95 px-4 py-2 text-center text-caption font-medium text-forest shadow-card"
+              aria-live="polite"
+            >
               {line}
-            </p>
+            </motion.p>
             <button
+              ref={stageRef}
               type="button"
               {...pet.handlers}
               style={pet.touchStyle}
@@ -230,7 +293,23 @@ export function SproutyCare() {
                 }
                 transition={{ duration: 1.5, delay: 0.8 }}
               >
-                <SproutySeed size={224} className="h-auto w-full" mood={mood} stage={stage} hop={reduce ? 0 : hop} outfit={outfit} title="" />
+                <motion.span
+                  className="block origin-bottom"
+                  animate={idle}
+                  transition={mood === 'pleading' ? { duration: 2.4, repeat: Infinity, ease: 'easeInOut' } : { duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  <SproutySeed
+                    size={224}
+                    className="h-auto w-full"
+                    mood={mood}
+                    stage={stage}
+                    hop={reduce ? 0 : hop}
+                    outfit={outfit}
+                    look={look}
+                    blinking={blinking && mood !== 'cheer'}
+                    title=""
+                  />
+                </motion.span>
               </motion.span>
             </button>
             <AnimatePresence>{reaction?.kind === 'water' && !reduce && <WateringFx key={`w${hop}`} />}</AnimatePresence>

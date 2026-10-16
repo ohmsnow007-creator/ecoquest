@@ -4,7 +4,7 @@ import type { Outfit } from '../../data/cosmetics';
 import { SproutyCosmetics } from '../cosmetics/CosmeticArt';
 import { PotBack, PotFront } from '../cosmetics/SproutyScenery';
 
-export type SproutyMood = 'happy' | 'cheer' | 'sleepy' | 'worried' | 'angry' | 'shy';
+export type SproutyMood = 'happy' | 'cheer' | 'sleepy' | 'worried' | 'angry' | 'shy' | 'pleading';
 /** 1 seed with two leaves · 2 four leaves · 3 flowering · 4 small tree. */
 export type SproutyStage = 1 | 2 | 3 | 4;
 
@@ -80,7 +80,38 @@ function Leaves({ id, stage }: { id: string; stage: SproutyStage }) {
   );
 }
 
+/** Big shiny "puppy eyes", brows tilted up and a wobbly little frown: Sprouty begging for water. */
+function PleadingFace({ blinking, lx, ly }: { blinking: boolean; lx: number; ly: number }) {
+  return (
+    <>
+      <path d="M84 138 Q94 128 107 133" stroke={INK} strokeWidth={3} strokeLinecap="round" fill="none" />
+      <path d="M156 138 Q146 128 133 133" stroke={INK} strokeWidth={3} strokeLinecap="round" fill="none" />
+      <motion.g style={fill} animate={{ scaleY: blinking ? 0.1 : 1 }} transition={{ duration: 0.08 }}>
+        {[97, 143].map((cx) => (
+          <g key={cx}>
+            <ellipse cx={cx} cy={153} rx={11} ry={12.5} fill={INK} />
+            <ellipse cx={cx} cy={159} rx={8} ry={4} fill="#5B6B8C" opacity={0.55} />
+          </g>
+        ))}
+        <motion.g animate={{ x: lx * 2, y: ly * 1.5 }} transition={SPRING}>
+          {[97, 143].map((cx) => (
+            <g key={cx} fill="#FFFFFF">
+              <circle cx={cx + 3.5} cy={147.5} r={4.4} />
+              <circle cx={cx - 4} cy={158} r={2.1} />
+              <circle cx={cx + 5.5} cy={156} r={1.2} opacity={0.9} />
+            </g>
+          ))}
+        </motion.g>
+      </motion.g>
+      <ellipse cx="82" cy="170" rx="11" ry="6" fill="#F9939A" opacity={0.7} />
+      <ellipse cx="158" cy="170" rx="11" ry="6" fill="#F9939A" opacity={0.7} />
+      <path d="M112 180 Q116 175 120 178 Q124 175 128 180" stroke={INK} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </>
+  );
+}
+
 function Face({ mood, blinking, lx, ly }: { mood: SproutyMood; blinking: boolean; lx: number; ly: number }) {
+  if (mood === 'pleading') return <PleadingFace blinking={blinking} lx={lx} ly={ly} />;
   const closed = mood === 'sleepy' || (mood === 'cheer' && !blinking);
   return (
     <>
@@ -324,6 +355,18 @@ export function SproutySeed({
             </g>
           )}
           {mood === 'worried' && <path d="M176 120 q6 10 0 14 q-6 -4 0 -14Z" fill="#7DD3FC" />}
+          {mood === 'pleading' && (
+            // a tear welling up and rolling down the cheek
+            <motion.path
+              d="M0 -6 q4 6 0 9 q-4 -3 0 -9Z"
+              fill="#7DD3FC"
+              stroke="#38BDF8"
+              strokeWidth={0.8}
+              initial={{ x: 86, y: 164, opacity: 0 }}
+              animate={still ? { x: 86, y: 168, opacity: 1 } : { x: [86, 86, 84], y: [162, 166, 190], opacity: [0, 1, 0], scale: [0.6, 1, 1] }}
+              transition={{ duration: 2.4, repeat: still ? 0 : Infinity, repeatDelay: 1.2, times: [0, 0.35, 1] }}
+            />
+          )}
           {mood === 'angry' && (
             // little steam puffs and an anime anger mark
             <motion.g

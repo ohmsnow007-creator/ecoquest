@@ -10,7 +10,7 @@ import { useTantrum } from './useTantrum';
 import { usePet } from './usePet';
 
 /** Natural blinking for small Sprouties around the app. */
-function useBlinking(enabled: boolean) {
+export function useBlinking(enabled: boolean) {
   const [blinking, setBlinking] = useState(false);
   useEffect(() => {
     if (!enabled) return;
