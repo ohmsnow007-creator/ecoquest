@@ -218,47 +218,67 @@ function ChatSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** Floating 🤖 button (Home only) that opens a chat with Sprouty. */
+/** A cute round robot with a leaf antenna and rosy cheeks (the chat button's icon). */
+function LeafBot({ blink }: { blink: boolean }) {
+  return (
+    <svg viewBox="0 0 64 64" className="h-11 w-11 drop-shadow-sm">
+      {/* leaf antenna, swaying */}
+      <motion.g style={{ transformOrigin: '32px 18px' }} animate={blink ? { rotate: [-8, 8, -8] } : undefined} transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}>
+        <path d="M32 18 L32 9" stroke="#2F7A3E" strokeWidth={2.4} strokeLinecap="round" />
+        <path d="M32 10 C26 2 18 4 18 9 C23 13 29 12 32 10 Z" fill="#7CCB4F" />
+        <path d="M32 10 C38 1 47 3 46 9 C41 13 35 12 32 10 Z" fill="#A3E06F" />
+      </motion.g>
+      {/* ears */}
+      <rect x={6} y={30} width={7} height={13} rx={3.5} fill="#5FB8A0" />
+      <rect x={51} y={30} width={7} height={13} rx={3.5} fill="#5FB8A0" />
+      {/* head */}
+      <rect x={11} y={17} width={42} height={38} rx={16} fill="#BFF0DC" stroke="#5FB8A0" strokeWidth={2.4} />
+      <ellipse cx={22} cy={24} rx={6} ry={3} fill="#FFFFFF" opacity={0.7} />
+      {/* screen face */}
+      <rect x={17} y={28} width={30} height={19} rx={9} fill="#123C2E" />
+      <motion.g style={{ transformBox: 'fill-box', transformOrigin: 'center' }} animate={blink ? { scaleY: [1, 1, 0.1, 1, 1] } : undefined} transition={{ duration: 3.6, repeat: Infinity, times: [0, 0.9, 0.93, 0.96, 1] }}>
+        <ellipse cx={26} cy={36} rx={3} ry={3.6} fill="#C6F36B" />
+        <ellipse cx={38} cy={36} rx={3} ry={3.6} fill="#C6F36B" />
+      </motion.g>
+      <path d="M28.5 42 Q32 45 35.5 42" stroke="#C6F36B" strokeWidth={2} strokeLinecap="round" fill="none" />
+      <ellipse cx={19.5} cy={43} rx={3} ry={1.8} fill="#F9A8D4" opacity={0.9} />
+      <ellipse cx={44.5} cy={43} rx={3} ry={1.8} fill="#F9A8D4" opacity={0.9} />
+    </svg>
+  );
+}
+
+/** Floating chat button (Home only) that opens a chat with Sprouty. */
 export function SproutyChatButton() {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   const reduce = useReducedMotion();
   return (
     <>
-      {/* 48px tap area around a 40px themed button: your Sprouty peeking out of a green bubble */}
+      {/* 56px tap area around a 52px frosted-glass button with a cute leaf robot */}
       <motion.button
         type="button"
         onClick={() => setOpen(true)}
         aria-label="เปิดแชตถามความรู้กับ Sprouty"
-        className="fixed right-3 z-40 flex h-12 w-12 items-center justify-center lg:bottom-8"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 5.75rem)' }}
+        className="fixed right-3 z-40 flex h-14 w-14 items-center justify-center lg:bottom-8"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 5.5rem)' }}
         animate={reduce ? undefined : { y: [0, -4, 0] }}
         transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
         whileTap={{ scale: 0.88 }}
       >
         {!reduce && (
           <motion.span
-            className="absolute h-10 w-10 rounded-full bg-lime/50"
-            animate={{ scale: [1, 1.55], opacity: [0.55, 0] }}
-            transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 1.4, ease: 'easeOut' }}
+            className="absolute h-[3.25rem] w-[3.25rem] rounded-full bg-lime/40"
+            animate={{ scale: [1, 1.45], opacity: [0.5, 0] }}
+            transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 1.6, ease: 'easeOut' }}
             aria-hidden="true"
           />
         )}
-        <span className="bg-forest-hero relative flex h-10 w-10 items-end justify-center overflow-hidden rounded-full shadow-raised ring-2 ring-lime" aria-hidden="true">
-          <span className="block w-[3.1rem] translate-y-[0.55rem]">
-            <PlayerSprouty size={50} mood="happy" />
-          </span>
-        </span>
-        {/* little lime speech bubble with typing dots */}
-        <span className="absolute -top-0.5 -right-0.5 flex h-[1.05rem] items-center gap-[2px] rounded-full rounded-bl-sm bg-lime px-1 shadow-card ring-2 ring-surface" aria-hidden="true">
-          {[0, 1, 2].map((i) => (
-            <motion.span
-              key={i}
-              className="block h-[3px] w-[3px] rounded-full bg-forest"
-              animate={reduce ? undefined : { opacity: [0.35, 1, 0.35] }}
-              transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.18 }}
-            />
-          ))}
+        <span
+          className="relative flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-full bg-white/30 shadow-raised ring-1 ring-white/70 backdrop-blur-md"
+          style={{ boxShadow: '0 8px 24px rgb(14 127 89 / 0.28), inset 0 1px 0 rgb(255 255 255 / 0.7)' }}
+          aria-hidden="true"
+        >
+          <LeafBot blink={!reduce} />
         </span>
       </motion.button>
       {createPortal(<AnimatePresence>{open && <ChatSheet key="chat" onClose={close} />}</AnimatePresence>, document.body)}
