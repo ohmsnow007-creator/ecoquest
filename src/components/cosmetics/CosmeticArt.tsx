@@ -118,8 +118,8 @@ export function HatArt({ id }: { id: string }) {
     case 'hat-chef':
       return (
         <g>
-          <path d="M64 78 L64 56 C50 52 48 32 64 30 C66 16 86 12 96 22 C104 10 126 12 128 28 C146 28 150 50 136 56 L136 78 Z" fill="#FFFFFF" stroke="#D6DDE3" strokeWidth={2} />
-          <rect x={62} y={70} width={76} height={12} rx={4} fill="#F1F5F9" stroke="#D6DDE3" strokeWidth={2} />
+          <path d="M64 78 L64 56 C50 52 48 32 64 30 C66 16 86 12 96 22 C104 10 126 12 128 28 C146 28 150 50 136 56 L136 78 Z" fill="#FFFFFF" stroke="#9AA9B5" strokeWidth={2.6} />
+          <rect x={62} y={70} width={76} height={12} rx={4} fill="#E8EEF3" stroke="#9AA9B5" strokeWidth={2.6} />
           <path d="M120 70 C116 58 124 50 132 52 C132 62 126 68 120 70 Z" fill="#5DBB4A" />
           <circle cx={84} cy={74} r={4} fill="#EF4444" />
         </g>
@@ -305,7 +305,8 @@ export function AvatarCosmetics({ outfit, layer }: { outfit?: Outfit; layer: 'ba
  * Sprouty (240 × 240: body top 120,88; eyes 98/142,152). The hat sits tilted on the left of the stem so
  * the leaves stay visible; glasses scale to Sprouty's wider eyes; bags hang from the right side.
  */
-const SPROUTY_HAT = 'translate(90 100) rotate(-16) scale(0.62) translate(-100 -62)';
+// Hats sit centred on Sprouty's head (brim just inside the top of the body); the sprout grows through.
+const SPROUTY_HAT = 'translate(120 104) rotate(-4) scale(0.8) translate(-100 -80)';
 const SPROUTY_EYES = 'translate(120 152) scale(1.22) translate(-100 -105)';
 
 /** Sprouty's own bags: the strap hangs from the right "shoulder", away from the face. */
@@ -366,18 +367,15 @@ function SproutyBagFront({ id }: { id: string }) {
   }
 }
 
-export function SproutyCosmetics({ outfit, part }: { outfit?: Outfit; part: 'back' | 'body' | 'face' }) {
+export function SproutyCosmetics({ outfit, part }: { outfit?: Outfit; part: 'back' | 'body' | 'face' | 'hat' }) {
   if (!outfit) return null;
   if (part === 'back') return outfit.bag ? <SproutyBagBack id={outfit.bag} /> : null;
   if (part === 'face') return outfit.eyes ? <g transform={SPROUTY_EYES}><EyesArt id={outfit.eyes} /></g> : null;
-  return (
-    <>
-      {outfit.bag && <SproutyBagFront id={outfit.bag} />}
-      {outfit.hat && (
-        <g transform={SPROUTY_HAT}>
-          <HatArt id={outfit.hat} />
-        </g>
-      )}
-    </>
-  );
+  if (part === 'hat')
+    return outfit.hat ? (
+      <g transform={SPROUTY_HAT}>
+        <HatArt id={outfit.hat} />
+      </g>
+    ) : null;
+  return outfit.bag ? <SproutyBagFront id={outfit.bag} /> : null;
 }

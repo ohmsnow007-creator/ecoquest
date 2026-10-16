@@ -54,8 +54,9 @@ beforeEach(() => {
 describe('Eco Quiz flow', () => {
   it('landing shows count, time, max XP and a disabled start when nothing matches', () => {
     renderAt('/quiz');
-    expect(screen.getByText('10 ข้อ')).toBeInTheDocument();
-    expect(screen.getByText('10 นาที')).toBeInTheDocument();
+    const info = within(screen.getByRole('region', { name: 'ข้อมูลแบบทดสอบ' }));
+    expect(info.getByText('10 ข้อ')).toBeInTheDocument();
+    expect(info.getByText('10 นาที')).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /ทุกหมวด/ })).toHaveAttribute('aria-checked', 'true');
   });
 

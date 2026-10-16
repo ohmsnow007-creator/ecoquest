@@ -164,7 +164,7 @@ describe('mission cosmetics', () => {
       const a = render(<svg><AvatarCosmetics outfit={outfit} layer="front" /></svg>);
       expect(a.container.querySelector('svg')!.children.length).toBeGreaterThan(0);
       a.unmount();
-      const s = render(<svg><SproutyCosmetics outfit={outfit} part={c.slot === 'eyes' ? 'face' : 'body'} /></svg>);
+      const s = render(<svg><SproutyCosmetics outfit={outfit} part={c.slot === 'eyes' ? 'face' : c.slot === 'hat' ? 'hat' : 'body'} /></svg>);
       expect(s.container.querySelector('svg')!.children.length).toBeGreaterThan(0);
       s.unmount();
     }

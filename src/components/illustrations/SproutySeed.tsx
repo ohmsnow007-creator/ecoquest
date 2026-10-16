@@ -27,6 +27,9 @@ interface SproutySeedProps {
   outfit?: Outfit;
 }
 
+/** Headbands and crowns that look best drawn over the sprout. */
+const HAT_OVER_LEAVES = new Set(['hat-bee', 'hat-headband']);
+
 const SPRING = { type: 'spring', stiffness: 160, damping: 14 } as const;
 const fill = { transformBox: 'fill-box', transformOrigin: 'center' } as const;
 const INK = '#3A2A1E';
@@ -231,6 +234,27 @@ export function SproutySeed({
   const breathe = still ? undefined : { scaleY: [1, 1.03, 1], scaleX: [1, 0.985, 1] };
   const breeze = still ? undefined : { rotate: [0, 3.5, -2, 1.5, 0] };
 
+  // Tall hats sit under the sprout (it grows through them); low bands and crowns go on top of the leaves.
+  const hatOn = !!outfit?.hat && !HAT_OVER_LEAVES.has(outfit.hat);
+  const leaves = (
+    <>
+          {/* stem + leaves: lean against the look direction and sway in the breeze */}
+          <motion.g style={{ transformOrigin: '122px 92px' }} animate={{ rotate: -lx * 6 }} transition={SPRING}>
+            <motion.g style={{ transformOrigin: '122px 92px' }} animate={breeze} transition={{ duration: 4.6, repeat: Infinity, ease: 'easeInOut' }}>
+              <motion.g
+                style={{ transformOrigin: '122px 92px' }}
+                initial={playSprout ? { scale: 0, rotate: -25 } : false}
+                onAnimationComplete={() => setSprouted(true)}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: sproutDelay, type: 'spring', damping: 9, stiffness: 140 }}
+              >
+                <Leaves id={id} stage={stage} />
+              </motion.g>
+            </motion.g>
+          </motion.g>
+    </>
+  );
+
   return (
     <svg
       width={size}
@@ -324,20 +348,7 @@ export function SproutySeed({
             animate={mood === 'shy' && !still ? { rotate: [0, -6, 5, -4, 3, 0], scaleY: [1, 0.95, 1, 0.96, 1] } : { rotate: 0, scaleY: 1 }}
             transition={mood === 'shy' ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
           >
-          {/* stem + leaves: lean against the look direction and sway in the breeze */}
-          <motion.g style={{ transformOrigin: '122px 92px' }} animate={{ rotate: -lx * 6 }} transition={SPRING}>
-            <motion.g style={{ transformOrigin: '122px 92px' }} animate={breeze} transition={{ duration: 4.6, repeat: Infinity, ease: 'easeInOut' }}>
-              <motion.g
-                style={{ transformOrigin: '122px 92px' }}
-                initial={playSprout ? { scale: 0, rotate: -25 } : false}
-                onAnimationComplete={() => setSprouted(true)}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: sproutDelay, type: 'spring', damping: 9, stiffness: 140 }}
-              >
-                <Leaves id={id} stage={stage} />
-              </motion.g>
-            </motion.g>
-          </motion.g>
+          {!hatOn && leaves}
 
           {/* seed body breathes slowly */}
           <motion.g style={{ transformOrigin: '120px 206px' }} animate={breathe} transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}>
@@ -354,7 +365,11 @@ export function SproutySeed({
               <SproutyCosmetics outfit={outfit} part="face" />
             </motion.g>
             <SproutyCosmetics outfit={outfit} part="body" />
+            {!(outfit?.hat && HAT_OVER_LEAVES.has(outfit.hat)) && <SproutyCosmetics outfit={outfit} part="hat" />}
           </motion.g>
+          {outfit?.hat && HAT_OVER_LEAVES.has(outfit.hat) && <SproutyCosmetics outfit={outfit} part="hat" />}
+          {/* with a hat on, the sprout grows up through it (leaves drawn on top of the hat) */}
+          {hatOn && leaves}
 
           </motion.g>
 

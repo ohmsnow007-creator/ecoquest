@@ -98,6 +98,73 @@ function GoldenFrame({ gid }: { gid: string }) {
   );
 }
 
+/** A mint ring with a big pink bow at the bottom. */
+function RibbonFrame() {
+  const b = at(90, EDGE + 3);
+  return (
+    <>
+      <circle cx={50} cy={50} r={EDGE + 1.8} fill="none" stroke="#F9A8D4" strokeWidth={3.6} />
+      <circle cx={50} cy={50} r={EDGE + 1.8} fill="none" stroke="#FFFFFF" strokeWidth={0.8} strokeDasharray="2 4" opacity={0.9} />
+      <g transform={`translate(${b.x} ${b.y})`}>
+        <path d="M0 0 C-6 -6 -12 -4 -11 1 C-10 5 -5 4 0 0 Z" fill="#F472B6" />
+        <path d="M0 0 C6 -6 12 -4 11 1 C10 5 5 4 0 0 Z" fill="#F472B6" />
+        <path d="M-1 1 L-5 9 L-2 8 Z M1 1 L5 9 L2 8 Z" fill="#EC4899" />
+        <circle r={2.4} fill="#FBCFE8" stroke="#EC4899" strokeWidth={0.8} />
+      </g>
+    </>
+  );
+}
+
+/** A warm yellow ring with two sunflowers and leaves on the lower rim. */
+function SunflowerFrame() {
+  return (
+    <>
+      <circle cx={50} cy={50} r={EDGE + 1.8} fill="none" stroke="#FCD34D" strokeWidth={3.6} />
+      {[125, 55].map((deg, i) => {
+        const p = at(deg, EDGE + 5);
+        return (
+          <g key={deg} transform={`translate(${p.x} ${p.y})`} className="scene-twinkle" style={{ animationDuration: '4s', animationDelay: `${i}s` }}>
+            {Array.from({ length: 10 }, (_, k) => (
+              <ellipse key={k} cx={0} cy={-4.6} rx={1.7} ry={3.2} fill="#FBBF24" transform={`rotate(${k * 36})`} />
+            ))}
+            <circle r={2.8} fill="#92400E" />
+          </g>
+        );
+      })}
+      {[100, 80].map((deg) => {
+        const p = at(deg, EDGE + 4);
+        return <path key={deg} d={`M${p.x} ${p.y} q-4 -4 -1 -8 q4 3 1 8Z`} fill="#4FAF6A" />;
+      })}
+    </>
+  );
+}
+
+/** A rainbow ring with fluffy clouds and twinkling stars: the weekly champion. */
+function RainbowFrame() {
+  const colors = ['#F87171', '#FBBF24', '#4ADE80', '#60A5FA', '#A78BFA'];
+  return (
+    <>
+      {colors.map((c, i) => (
+        <circle key={c} cx={50} cy={50} r={EDGE + 0.6 + i * 1.05} fill="none" stroke={c} strokeWidth={1.15} />
+      ))}
+      {[140, 40].map((deg) => {
+        const p = at(deg, EDGE + 5.5);
+        return (
+          <g key={deg} transform={`translate(${p.x} ${p.y})`} fill="#FFFFFF">
+            <circle cx={-3} cy={0} r={3} />
+            <circle cx={1} cy={-1.5} r={3.6} />
+            <circle cx={4.5} cy={0.5} r={2.6} />
+          </g>
+        );
+      })}
+      {[-60, -120, -90].map((deg, i) => {
+        const p = at(deg, EDGE + 7);
+        return <path key={deg} d={`M${p.x} ${p.y - 2.6} l0.9 1.7 l1.7 0.9 l-1.7 0.9 l-0.9 1.7 l-0.9 -1.7 l-1.7 -0.9 l1.7 -0.9Z`} fill="#FDE68A" className="scene-twinkle" style={{ animationDelay: `${i * 0.6}s` }} />;
+      })}
+    </>
+  );
+}
+
 /** Draws the chosen frame around an avatar of any size (place inside a `relative` box the size of the avatar). */
 export function AvatarFrame({ id }: { id: string }) {
   const gid = `frame-${useId().replace(/:/g, '')}`;
@@ -115,6 +182,12 @@ export function AvatarFrame({ id }: { id: string }) {
         <FlowerFrame gid={gid} />
       ) : id === 'frame-golden' ? (
         <GoldenFrame gid={gid} />
+      ) : id === 'frame-ribbon' ? (
+        <RibbonFrame />
+      ) : id === 'frame-sunflower' ? (
+        <SunflowerFrame />
+      ) : id === 'frame-rainbow' ? (
+        <RainbowFrame />
       ) : null}
     </svg>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Droplets, Heart, Sparkles, Shirt, CalendarHeart, Info, Gift, CheckCircle2 } from 'lucide-react';
+import { Droplets, Heart, Sparkles, Shirt, CalendarHeart, Info, Gift, CheckCircle2, Palette } from 'lucide-react';
 import { useGame } from '../store/GameContext';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card, SectionTitle } from '../components/ui/Card';
@@ -9,6 +9,8 @@ import { ProgressBar } from '../components/ui/ProgressBar';
 import { SproutySeed, type SproutyMood } from '../components/illustrations/SproutySeed';
 import { BackgroundArt, SproutyScene } from '../components/cosmetics/SproutyScenery';
 import { ItemPicker } from '../components/cosmetics/ItemPicker';
+import { Modal } from '../components/ui/Modal';
+import { PrimaryButton } from '../components/ui/Button';
 import { useOutfit } from '../components/cosmetics/useOutfit';
 import { usePet } from '../components/sprouty/usePet';
 import { useBlinking } from '../components/sprouty/PlayerSprouty';
@@ -153,6 +155,7 @@ export function SproutyCare() {
   const pet = usePet();
   const [reaction, setReaction] = useState<Reaction>(null);
   const [hop, setHop] = useState(0);
+  const [decorating, setDecorating] = useState(false);
   // Sprouty says hello when you open the page, then shows how it's really doing.
   const [greeting, setGreeting] = useState(true);
   const [look, setLook] = useState({ x: 0, y: 0 });
@@ -346,25 +349,53 @@ export function SproutyCare() {
               <span className="text-[0.6875rem] leading-tight opacity-90">{care.fertilizer > 0 ? `มีปุ๋ย ${care.fertilizer} ถุง` : 'ทำภารกิจเพื่อลุ้นปุ๋ย'}</span>
             </button>
           </div>
-          {/* Decorate Sprouty's corner right here */}
-          <div className="space-y-3 border-t border-border px-5 pt-3 pb-1">
-            <ItemPicker
-              slot="background"
-              label="พื้นหลังของ Sprouty"
-              value={outfit.background}
-              onChange={(id) => wearCosmetic('background', id ?? null, 'sprouty')}
-              noneLabel="พื้นเรียบ"
-              thumb={(id) => <BackgroundArt id={id} className="h-full w-full" />}
-            />
-            <ItemPicker
-              slot="pot"
-              label="กระถาง"
-              value={outfit.pot}
-              onChange={(id) => wearCosmetic('pot', id ?? null, 'sprouty')}
-              noneLabel="ดินธรรมดา"
-              thumb={(id) => <SproutySeed size={64} className="h-auto w-16 translate-y-1" stage={stage} outfit={id ? { pot: id } : {}} title="" />}
-            />
+          {/* Decorating opens in its own sheet */}
+          <div className="grid grid-cols-1 gap-2 px-3 pt-1">
+            <button
+              type="button"
+              onClick={() => setDecorating(true)}
+              className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-forest font-semibold text-white shadow-card active:scale-[0.98]"
+            >
+              <Palette size={18} className="text-lime" aria-hidden="true" /> แต่งมุมของ Sprouty
+              <span className="text-caption font-normal text-mint">พื้นหลัง · กระถาง</span>
+            </button>
           </div>
+          <Modal
+            open={decorating}
+            onClose={() => setDecorating(false)}
+            title="แต่งมุมของ Sprouty"
+            footer={
+              <PrimaryButton onClick={() => setDecorating(false)} className="rounded-full">
+                เสร็จแล้ว
+              </PrimaryButton>
+            }
+          >
+            <SproutyScene
+              background={outfit.background}
+              aspect={1.5}
+              className="rounded-2xl ring-1 ring-border"
+              sprouty={<SproutySeed size={160} className="h-auto w-full" mood="cheer" stage={stage} outfit={outfit} title="ตัวอย่างมุมของ Sprouty" />}
+            />
+            <div className="mt-4 space-y-4">
+              <ItemPicker
+                slot="background"
+                label="พื้นหลังของ Sprouty"
+                value={outfit.background}
+                onChange={(id) => wearCosmetic('background', id ?? null, 'sprouty')}
+                noneLabel="พื้นเรียบ"
+                thumb={(id) => <BackgroundArt id={id} className="h-full w-full" />}
+              />
+              <ItemPicker
+                slot="pot"
+                label="กระถาง"
+                value={outfit.pot}
+                onChange={(id) => wearCosmetic('pot', id ?? null, 'sprouty')}
+                noneLabel="ดินธรรมดา"
+                thumb={(id) => <SproutySeed size={64} className="h-auto w-16 translate-y-1" stage={stage} outfit={id ? { pot: id } : {}} title="" />}
+              />
+            </div>
+            <p className="mt-3 text-[0.75rem] text-muted">แตะเพื่อเปลี่ยนได้ทันที ของที่มีกุญแจแตะเพื่อดูวิธีปลดล็อก</p>
+          </Modal>
           <Link to="/profile" className="mx-3 my-3 flex min-h-11 items-center justify-center gap-1.5 rounded-full text-caption font-semibold text-primary ring-1 ring-border">
             <Shirt size={15} aria-hidden="true" /> หมวก แว่น กระเป๋า ในตู้เสื้อผ้า
           </Link>

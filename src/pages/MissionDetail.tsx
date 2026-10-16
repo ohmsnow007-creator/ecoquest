@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { getSpecialMissionIds } from '../utils/challenges';
-import { SPECIAL_BONUS_XP } from '../config/challenges';
+import { getSpecialMissionIds, missionXpToday } from '../utils/challenges';
+import { DAILY_XP_MULTIPLIER } from '../config/challenges';
 import { SpecialMissionBanner } from '../components/challenges/SpecialMissionTag';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -89,6 +89,7 @@ export function MissionDetail() {
       </div>
     );
   }
+  const todayXp = missionXpToday(mission, profile?.id);
 
   const status = getMissionStatus(mission.id);
   const meta = STATUS_META[status];
@@ -245,7 +246,10 @@ export function MissionDetail() {
                 </div>
               )}
               <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-                <XPBadge amount={mission.xpReward + (special ? SPECIAL_BONUS_XP : 0)} plus className="text-body" />
+                <XPBadge amount={todayXp.xp} plus className="text-body" />
+                {todayXp.daily && getMissionStatus(mission.id) !== 'completed-today' && (
+                  <span className="rounded-full bg-[#DCFCE7] px-2 py-0.5 text-caption font-bold text-primary">ภารกิจประจำวัน XP ×{DAILY_XP_MULTIPLIER}</span>
+                )}
                 <span className="inline-flex items-center gap-1.5 text-body font-semibold">
                   <Clock size={17} className="text-primary" aria-hidden="true" /> {mission.estimatedMinutes} นาที
                 </span>
@@ -365,7 +369,7 @@ export function MissionDetail() {
         open={confirming}
         title="ยืนยันว่าทำภารกิจสำเร็จ?"
         description={[
-          `"${mission.title}" · รับ +${mission.xpReward} XP`,
+          `"${mission.title}" · รับ +${todayXp.xp} XP`,
           doneSteps.length < totalSteps ? `ยังติ๊กขั้นตอนไม่ครบ (${doneSteps.length}/${totalSteps})` : '',
           'ระบบบันทึกตามข้อมูลที่คุณยืนยัน และรับรางวัลซ้ำไม่ได้',
         ]

@@ -77,6 +77,10 @@ export const COSMETICS: Cosmetic[] = [
   { id: 'frame-leaf', slot: 'frame', name: 'กรอบใบไม้ต้นอ่อน', unlock: { type: 'level', level: 3 } },
   { id: 'frame-flower', slot: 'frame', name: 'กรอบดอกไม้บาน', unlock: { type: 'level', level: 8 } },
   { id: 'frame-golden', slot: 'frame', name: 'กรอบต้นไม้ทอง', unlock: { type: 'level', level: 15 } },
+  // Frames for finishing weekly challenges (1, 3 and 5 times).
+  { id: 'frame-ribbon', slot: 'frame', name: 'กรอบโบว์นักสู้', unlock: { type: 'weekly', count: 1 } },
+  { id: 'frame-sunflower', slot: 'frame', name: 'กรอบทานตะวันสดใส', unlock: { type: 'weekly', count: 3 } },
+  { id: 'frame-rainbow', slot: 'frame', name: 'กรอบสายรุ้งแชมป์', unlock: { type: 'weekly', count: 5 } },
   // Cute pots and extras, earned by playing in different ways.
   { id: 'pot-frog', slot: 'pot', name: 'กระถางกบน้อย', unlock: { type: 'bond', level: 4 } },
   { id: 'pot-bear', slot: 'pot', name: 'กระถางหมีน้อย', unlock: { type: 'missions', count: 15 } },

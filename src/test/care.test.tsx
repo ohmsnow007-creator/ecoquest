@@ -331,7 +331,7 @@ describe('choosing a frame and Sprouty’s background where you expect them', ()
     expect(storageService.getProfile()?.preferences.outfit?.frame).toBe('frame-sky');
   });
 
-  it('the care page changes Sprouty’s background and pot directly', () => {
+  it('the care page opens a decorate sheet that changes Sprouty’s background and pot', () => {
     render(
       <MotionConfig reducedMotion="always">
         <MemoryRouter>
@@ -341,6 +341,9 @@ describe('choosing a frame and Sprouty’s background where you expect them', ()
         </MemoryRouter>
       </MotionConfig>,
     );
+    expect(screen.queryByRole('radiogroup', { name: 'พื้นหลังของ Sprouty' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /แต่งมุมของ Sprouty/ }));
+    expect(screen.getByRole('dialog', { name: 'แต่งมุมของ Sprouty' })).toBeInTheDocument();
     fireEvent.click(within(screen.getByRole('radiogroup', { name: 'พื้นหลังของ Sprouty' })).getByRole('radio', { name: 'สวนหลังบ้าน' }));
     expect(storageService.getProfile()?.preferences.sproutyOutfit?.background).toBe('bg-backyard');
     // the character's outfit is untouched

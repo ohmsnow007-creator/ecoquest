@@ -16,6 +16,7 @@ import type { Mission, MissionProgressStatus } from '../types';
 import { CATEGORY_ICON } from '../data/icons';
 import { getDailyStatus, getSpecialMissionIds, getWeeklyStatus } from '../utils/challenges';
 import { SpecialMissionTag } from '../components/challenges/SpecialMissionTag';
+import { DAILY_XP_MULTIPLIER, SPECIAL_BONUS_XP } from '../config/challenges';
 import { ChallengeBonus, WeeklyChallengeCard } from '../components/challenges/ChallengeCards';
 import { SproutyHomeCard } from '../components/sprouty/SproutyHomeCard';
 import { SproutyChatButton } from '../components/sprouty/SproutyChat';
@@ -95,7 +96,8 @@ function DailyMissionRow({ mission, status, special }: { mission: Mission; statu
         </p>
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
           {special && <SpecialMissionTag compact />}
-          <XPBadge amount={mission.xpReward} />
+          <XPBadge amount={mission.xpReward * DAILY_XP_MULTIPLIER + (special ? SPECIAL_BONUS_XP : 0)} />
+          <span className="rounded-full bg-[#DCFCE7] px-1.5 py-0.5 text-[0.6875rem] font-bold text-primary">×{DAILY_XP_MULTIPLIER}</span>
           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-caption font-semibold ${meta.className}`}>
             <meta.icon size={12} aria-hidden="true" />
             {meta.label}

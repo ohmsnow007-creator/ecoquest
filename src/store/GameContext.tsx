@@ -5,8 +5,8 @@ import { MAX_LEVEL } from '../config/levels';
 import { getLevelFromXp, totalXpForLevel } from '../utils/xp';
 import { checkNewBadges } from '../utils/badges';
 import { AVATAR_SLOTS, getCosmetic, getCosmeticStatus, type CosmeticSlot, type OutfitTarget } from '../data/cosmetics';
-import { getSpecialMissionIds } from '../utils/challenges';
-import { SPECIAL_FERTILIZER } from '../config/challenges';
+import { getDailyMissions, getSpecialMissionIds } from '../utils/challenges';
+import { DAILY_XP_MULTIPLIER, SPECIAL_FERTILIZER } from '../config/challenges';
 import { BOND_STEP, EMPTY_CARE, MAX_BOND, getCareState } from '../utils/care';
 import { worldStages } from '../data/worldStages';
 import { worldMissionCount } from '../utils/admin';
@@ -498,7 +498,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (completingRef.current.has(missionId)) return { ok: false, reason: 'busy' };
     const now = new Date();
     const special = !!profile && getSpecialMissionIds(profile.id, now).includes(missionId);
-    const result = evaluateMissionCompletion(progress, missionId, now, note, special);
+    const daily = !!profile && getDailyMissions(profile.id, now).some((m) => m.id === missionId);
+    const result = evaluateMissionCompletion(progress, missionId, now, note, special, daily ? DAILY_XP_MULTIPLIER : 1);
     if (!result.ok) return result;
     completingRef.current.add(missionId);
     if (!applyReward(result)) {

@@ -140,22 +140,35 @@ const POTS: Record<string, { body: string; rim: string; dark: string; deco?: Rea
     body: '#C9774A',
     rim: '#D98A5C',
     dark: '#A65B35',
-    deco: <path d="M66 216 L174 216" stroke="#A65B35" strokeWidth={3} strokeLinecap="round" opacity={0.6} />,
+    deco: (
+      <g>
+        <path d="M60 231 L180 231" stroke="#A65B35" strokeWidth={2.5} strokeLinecap="round" opacity={0.5} />
+        {potFace('#F6A28C')}
+      </g>
+    ),
   },
   'pot-blue': {
     body: '#5BA8D9',
     rim: '#7DBEE6',
     dark: '#3C86B8',
-    deco: <path d="M64 220 Q76 212 88 220 T112 220 T136 220 T160 220 T178 218" stroke="#FFFFFF" strokeWidth={3} fill="none" strokeLinecap="round" opacity={0.85} />,
+    deco: (
+      <g>
+        <path d="M60 232 Q72 226 84 232 T108 232 T132 232 T156 232 T180 231" stroke="#FFFFFF" strokeWidth={2.6} fill="none" strokeLinecap="round" opacity={0.85} />
+        {potFace('#F9A8D4')}
+      </g>
+    ),
   },
   'pot-gold': {
     body: '#F2C23E',
     rim: '#F8D766',
     dark: '#C99A22',
     deco: (
-      <g fill="#FFF7D6">
-        <path d="M84 214 l3 -7 l3 7 l7 3 l-7 3 l-3 7 l-3 -7 l-7 -3Z" />
-        <path d="M150 220 l2 -5 l2 5 l5 2 l-5 2 l-2 5 l-2 -5 l-5 -2Z" />
+      <g>
+        <g fill="#FFF7D6">
+          <path d="M72 214 l2.5 -6 l2.5 6 l6 2.5 l-6 2.5 l-2.5 6 l-2.5 -6 l-6 -2.5Z" />
+          <path d="M166 222 l2 -5 l2 5 l5 2 l-5 2 l-2 5 l-2 -5 l-5 -2Z" />
+        </g>
+        {potFace('#F59E0B')}
       </g>
     ),
   },
@@ -170,10 +183,12 @@ const POTS: Record<string, { body: string; rim: string; dark: string; deco?: Rea
     rim: '#9AD889',
     dark: '#4E9A3A',
     deco: (
-      <g fill="#E8F8D8">
-        <path d="M84 226 C78 216 86 208 96 210 C96 220 90 226 84 226Z" />
-        <path d="M156 226 C162 216 154 208 144 210 C144 220 150 226 156 226Z" />
-        <path d="M120 232 C112 222 116 212 120 210 C124 212 128 222 120 232Z" />
+      <g>
+        <g fill="#E8F8D8">
+          <path d="M72 228 C66 218 74 210 84 212 C84 222 78 228 72 228Z" />
+          <path d="M168 228 C174 218 166 210 156 212 C156 222 162 228 168 228Z" />
+        </g>
+        {potFace('#F9A8D4')}
       </g>
     ),
   },
@@ -197,11 +212,14 @@ export function PotFront({ id }: { id: string }) {
   if (!pot) return null;
   return (
     <g>
-      <path d="M54 204 L186 204 L172 238 L68 238 Z" fill={pot.body} />
-      <path d="M150 206 L176 206 L166 236 L150 236 Z" fill="#000000" opacity={0.08} />
+      {/* a round, chubby tub */}
+      <path d="M50 202 L190 202 Q190 232 166 238 L74 238 Q50 232 50 202 Z" fill={pot.body} />
+      <path d="M158 204 L188 204 Q187 229 166 236 L158 236 Z" fill="#000000" opacity={0.08} />
+      <ellipse cx={70} cy={218} rx={4} ry={8} fill="#FFFFFF" opacity={0.28} />
       {pot.deco}
-      <rect x={44} y={194} width={152} height={16} rx={8} fill={pot.rim} />
-      <rect x={56} y={197} width={44} height={4} rx={2} fill="#FFFFFF" opacity={0.4} />
+      <rect x={42} y={192} width={156} height={17} rx={8.5} fill={pot.rim} />
+      <rect x={54} y={195} width={46} height={4.5} rx={2.25} fill="#FFFFFF" opacity={0.45} />
+      <circle cx={108} cy={197.2} r={2} fill="#FFFFFF" opacity={0.45} />
       {pot.top}
     </g>
   );

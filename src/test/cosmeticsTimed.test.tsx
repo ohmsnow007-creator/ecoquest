@@ -35,7 +35,7 @@ describe('cosmetic unlocks', () => {
       challengeRewards: [{ id: 'w1', kind: 'weekly', periodKey: '2026-10-05', challengeId: 'week-waste', xpAwarded: 40, awardedAt: '2026-10-08T00:00:00.000Z' }],
     };
     const unlocked = getAllCosmeticStatuses(p).filter((s) => s.unlocked).map((s) => s.cosmetic.id);
-    expect(unlocked.filter((id) => getCosmetic(id)?.unlock.type !== 'free').sort()).toEqual(['frame-flower', 'frame-leaf', 'hat-flower-crown', 'hat-leaf-cap', 'hat-straw']);
+    expect(unlocked.filter((id) => getCosmetic(id)?.unlock.type !== 'free').sort()).toEqual(['frame-flower', 'frame-leaf', 'frame-ribbon', 'hat-flower-crown', 'hat-leaf-cap', 'hat-straw']);
   });
 
   it('a locked or misplaced item is never worn', () => {

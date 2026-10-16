@@ -1,6 +1,6 @@
 import type { Mission, MissionCategory, PlayerProgress } from '../types';
 import { missions } from '../data/missions';
-import { DAILY_BONUS_XP, DAILY_MISSION_COUNT, SPECIAL_PER_DAY, WEEKLY_CHALLENGES, type WeeklyChallenge } from '../config/challenges';
+import { DAILY_BONUS_XP, DAILY_MISSION_COUNT, DAILY_XP_MULTIPLIER, SPECIAL_BONUS_XP, SPECIAL_PER_DAY, WEEKLY_CHALLENGES, type WeeklyChallenge } from '../config/challenges';
 import { getLocalDate } from './streak';
 
 /** Small deterministic PRNG so the same player sees the same picks all day (and on every device refresh). */
@@ -65,6 +65,14 @@ export function getSpecialMissionIds(playerId: string, date: Date = new Date()):
   return getDailyMissions(playerId, date)
     .slice(0, weekend ? SPECIAL_PER_DAY.weekend : SPECIAL_PER_DAY.weekday)
     .map((m) => m.id);
+}
+
+/** XP a mission pays if completed now: ×3 when it is one of today's daily missions, +bonus when special. */
+export function missionXpToday(mission: Mission, playerId: string | undefined, date: Date = new Date()): { xp: number; daily: boolean; special: boolean } {
+  if (!playerId) return { xp: mission.xpReward, daily: false, special: false };
+  const daily = getDailyMissions(playerId, date).some((m) => m.id === mission.id);
+  const special = getSpecialMissionIds(playerId, date).includes(mission.id);
+  return { xp: mission.xpReward * (daily ? DAILY_XP_MULTIPLIER : 1) + (special ? SPECIAL_BONUS_XP : 0), daily, special };
 }
 
 export function getWeeklyChallenge(playerId: string, date: Date = new Date()): WeeklyChallenge {
