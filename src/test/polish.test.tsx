@@ -103,3 +103,39 @@ describe('a page file removed by a newer deploy', () => {
     }
   });
 });
+
+describe('opening a page starts at the top', () => {
+  it('scrolls to the top on a new page, but not when going back', async () => {
+    const { MemoryRouter, Routes, Route, Link, useNavigate } = await import('react-router-dom');
+    const { GameProvider } = await import('../store/GameContext');
+    const { AppShell } = await import('../components/layout/AppShell');
+    const { fireEvent } = await import('@testing-library/react');
+    localStorage.setItem('ecoquest_profile', JSON.stringify({ id: 'p1', displayName: 'T', avatarId: 'avatar-leaf', createdAt: '2026-10-01T00:00:00.000Z', updatedAt: '', preferences: { reducedMotion: true, selectedGoalIds: [] } }));
+    const spy = vi.spyOn(window, 'scrollTo');
+    function Back() {
+      const nav = useNavigate();
+      return <button type="button" onClick={() => nav(-1)}>back</button>;
+    }
+    render(
+      <MemoryRouter initialEntries={['/a']}>
+        <GameProvider>
+          <Routes>
+            <Route element={<AppShell />}>
+              <Route path="/a" element={<Link to="/b">go-b</Link>} />
+              <Route path="/b" element={<Back />} />
+            </Route>
+          </Routes>
+        </GameProvider>
+      </MemoryRouter>,
+    );
+    spy.mockClear();
+    fireEvent.click(await screen.findByText('go-b'));
+    expect(spy).toHaveBeenCalledWith(0, 0);
+    spy.mockClear();
+    fireEvent.click(await screen.findByText('back'));
+    await screen.findByText('go-b');
+    expect(spy).not.toHaveBeenCalledWith(0, 0);
+    spy.mockRestore();
+    localStorage.clear();
+  });
+});

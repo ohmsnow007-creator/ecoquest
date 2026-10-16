@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Outlet, useLocation, useNavigationType } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BottomNavigation } from './BottomNavigation';
 import { DesktopSidebar } from './DesktopSidebar';
@@ -13,6 +14,13 @@ import { useGame } from '../../store/GameContext';
 export function AppShell() {
   const { profile } = useGame();
   const { pathname } = useLocation();
+  const navType = useNavigationType();
+
+  // Opening a page starts at its top, like a phone app. Going back (browser/phone back) keeps
+  // the browser's own scroll restore, so you return to where you were in a list.
+  useEffect(() => {
+    if (navType !== 'POP') window.scrollTo(0, 0);
+  }, [pathname, navType]);
 
   if (!profile) {
     return (

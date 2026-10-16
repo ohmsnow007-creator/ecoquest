@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BOTTOM_NAV } from './navItems';
 
@@ -6,6 +6,11 @@ import { BOTTOM_NAV } from './navItems';
 const CENTER = Math.floor(BOTTOM_NAV.length / 2);
 
 export function BottomNavigation() {
+  const { pathname } = useLocation();
+  // Tapping the tab you're already on scrolls back to the top (as in most phone apps).
+  const toTop = (to: string) => {
+    if (pathname === to) window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  };
   return (
     <nav
       aria-label="เมนูหลัก"
@@ -16,6 +21,7 @@ export function BottomNavigation() {
           <li key={to} className="flex-1">
             <NavLink
               to={to}
+              onClick={() => toTop(to)}
               className={({ isActive }) =>
                 `relative flex min-h-16 flex-col items-center justify-center gap-0.5 text-[0.75rem] transition-colors ${isActive ? 'font-semibold text-primary' : 'text-muted hover:text-forest'}`
               }
