@@ -8,6 +8,7 @@ import { Card, SectionTitle } from '../components/ui/Card';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { SproutySeed, type SproutyMood } from '../components/illustrations/SproutySeed';
 import { BackgroundArt } from '../components/cosmetics/SproutyScenery';
+import { ItemPicker } from '../components/cosmetics/ItemPicker';
 import { useOutfit } from '../components/cosmetics/useOutfit';
 import { usePet } from '../components/sprouty/usePet';
 import { getCareState, fertilizerSources, BOND_STEP, FERTILIZER_PERCENT, LONELY_AFTER_DAYS, MAX_BOND } from '../utils/care';
@@ -145,7 +146,7 @@ function FeedFx() {
 }
 
 export function SproutyCare() {
-  const { profile, progress, waterSprouty, feedSprouty, notify } = useGame();
+  const { profile, progress, waterSprouty, feedSprouty, wearCosmetic, notify } = useGame();
   const outfit = useOutfit('sprouty');
   const reduce = useReducedMotion();
   const pet = usePet();
@@ -260,8 +261,27 @@ export function SproutyCare() {
               <span className="text-[0.6875rem] leading-tight opacity-90">{care.fertilizer > 0 ? `มีปุ๋ย ${care.fertilizer} ถุง` : 'ทำภารกิจเพื่อลุ้นปุ๋ย'}</span>
             </button>
           </div>
-          <Link to="/profile" className="mx-3 mb-3 flex min-h-11 items-center justify-center gap-1.5 rounded-full text-caption font-semibold text-primary ring-1 ring-border">
-            <Shirt size={15} aria-hidden="true" /> แต่งตัว Sprouty ในตู้เสื้อผ้า
+          {/* Decorate Sprouty's corner right here */}
+          <div className="space-y-3 border-t border-border px-5 pt-3 pb-1">
+            <ItemPicker
+              slot="background"
+              label="พื้นหลังของ Sprouty"
+              value={outfit.background}
+              onChange={(id) => wearCosmetic('background', id ?? null, 'sprouty')}
+              noneLabel="พื้นเรียบ"
+              thumb={(id) => <BackgroundArt id={id} className="h-full w-full" />}
+            />
+            <ItemPicker
+              slot="pot"
+              label="กระถาง"
+              value={outfit.pot}
+              onChange={(id) => wearCosmetic('pot', id ?? null, 'sprouty')}
+              noneLabel="ดินธรรมดา"
+              thumb={(id) => <SproutySeed size={64} className="h-auto w-16 translate-y-1" stage={stage} outfit={id ? { pot: id } : {}} title="" />}
+            />
+          </div>
+          <Link to="/profile" className="mx-3 my-3 flex min-h-11 items-center justify-center gap-1.5 rounded-full text-caption font-semibold text-primary ring-1 ring-border">
+            <Shirt size={15} aria-hidden="true" /> หมวก แว่น กระเป๋า ในตู้เสื้อผ้า
           </Link>
         </Card>
 

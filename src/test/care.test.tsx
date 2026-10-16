@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, act } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, act, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { MotionConfig } from 'framer-motion';
 import { GameProvider } from '../store/GameContext';
@@ -300,4 +300,54 @@ describe('admin can grant world stage, water, fertilizer and bond', () => {
     expect(worldMissionCount(p)).toBe(60);
     expect(getCareState(p).bond.level).toBe(4);
   }, 20_000);
+});
+
+describe('choosing a frame and Sprouty’s background where you expect them', () => {
+  beforeEach(() => {
+    cleanup();
+    localStorage.clear();
+    localStorage.setItem('ecoquest_profile', JSON.stringify(profile));
+    localStorage.setItem('ecoquest_progress', JSON.stringify(progressWith([])));
+  });
+
+  it('the edit-profile sheet sets the profile frame on save; locked frames only explain how to unlock', async () => {
+    const { Profile } = await import('../pages/Profile');
+    render(
+      <MotionConfig reducedMotion="always">
+        <MemoryRouter>
+          <GameProvider>
+            <Profile />
+          </GameProvider>
+        </MemoryRouter>
+      </MotionConfig>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'แก้ไขชื่อและอวาตาร์' }));
+    const frames = screen.getByRole('radiogroup', { name: 'กรอบรูป' });
+    fireEvent.click(within(frames).getByRole('radio', { name: /^กรอบใบไม้ต้นอ่อน/ }));
+    expect(storageService.getProfile()?.preferences.outfit?.frame).toBeUndefined();
+    fireEvent.click(within(frames).getByRole('radio', { name: 'กรอบฟ้าใส' }));
+    fireEvent.click(screen.getByRole('button', { name: 'บันทึก' }));
+    expect(storageService.getProfile()?.preferences.outfit?.frame).toBe('frame-sky');
+  });
+
+  it('the care page changes Sprouty’s background and pot directly', () => {
+    render(
+      <MotionConfig reducedMotion="always">
+        <MemoryRouter>
+          <GameProvider>
+            <SproutyCare />
+          </GameProvider>
+        </MemoryRouter>
+      </MotionConfig>,
+    );
+    fireEvent.click(within(screen.getByRole('radiogroup', { name: 'พื้นหลังของ Sprouty' })).getByRole('radio', { name: 'สวนหลังบ้าน' }));
+    expect(storageService.getProfile()?.preferences.sproutyOutfit?.background).toBe('bg-backyard');
+    // the character's outfit is untouched
+    expect(storageService.getProfile()?.preferences.outfit).toEqual({ hat: 'hat-leaf-cap' });
+    fireEvent.click(within(screen.getByRole('radiogroup', { name: 'พื้นหลังของ Sprouty' })).getByRole('radio', { name: 'พื้นเรียบ' }));
+    expect(storageService.getProfile()?.preferences.sproutyOutfit?.background).toBeUndefined();
+    // pots are locked for a new player: tapping one changes nothing
+    fireEvent.click(within(screen.getByRole('radiogroup', { name: 'กระถาง' })).getByRole('radio', { name: /^กระถางดินเผา/ }));
+    expect(storageService.getProfile()?.preferences.sproutyOutfit?.pot).toBeUndefined();
+  });
 });

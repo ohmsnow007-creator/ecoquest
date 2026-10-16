@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useOutfit } from '../components/cosmetics/useOutfit';
 import { Wardrobe } from '../components/cosmetics/Wardrobe';
+import { ItemPicker } from '../components/cosmetics/ItemPicker';
 import { Link, useSearchParams } from 'react-router-dom';
 import { UserRoundPen, Settings, Target, Medal, Flame, Sparkles, Brain, ListChecks, ChevronRight, ShieldCheck, History, BarChart3, Trophy, CalendarDays, ArrowRight } from 'lucide-react';
 import { useGame } from '../store/GameContext';
@@ -23,18 +24,21 @@ import { BadgeMedal } from '../components/illustrations/BadgeMedal';
 const FAVORITE_MIN_COMPLETIONS = 3;
 
 function EditProfileDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { profile, updateProfile, notify } = useGame();
+  const { profile, updateProfile, wearCosmetic, notify } = useGame();
+  const currentFrame = useOutfit('avatar').frame;
   const [name, setName] = useState(profile?.displayName ?? '');
   const [avatar, setAvatar] = useState(profile?.avatarId ?? '');
+  const [frame, setFrame] = useState<string | undefined>(currentFrame);
   if (!profile) return null;
 
   const result = validateDisplayName(name);
-  const changed = (result.ok ? result.value : name) !== profile.displayName || avatar !== profile.avatarId;
+  const changed = (result.ok ? result.value : name) !== profile.displayName || avatar !== profile.avatarId || frame !== currentFrame;
   const color = profile.preferences.profileColor;
 
   const save = () => {
     if (!result.ok) return;
     updateProfile({ name: result.value, avatarId: avatar });
+    if (frame !== currentFrame) wearCosmetic('frame', frame ?? null, 'avatar');
     notify('บันทึกโปรไฟล์แล้ว', 'info');
     onClose();
   };
@@ -54,12 +58,16 @@ function EditProfileDialog({ open, onClose }: { open: boolean; onClose: () => vo
       <div className="grid grid-cols-2 gap-2" aria-label="เปรียบเทียบก่อนและหลังแก้ไข">
         <div className="rounded-control border border-border p-2 text-center">
           <p className="mb-1 text-caption text-muted">ปัจจุบัน</p>
-          <Avatar id={profile.avatarId} color={color} size="sm" />
+          <span className="m-1.5 inline-flex">
+            <Avatar id={profile.avatarId} color={color} size="md" outfit={{ frame: currentFrame }} framed />
+          </span>
           <p className="mt-1 truncate text-caption font-semibold">{profile.displayName}</p>
         </div>
         <div className={`rounded-control border p-2 text-center ${changed ? 'border-primary bg-pale-mint' : 'border-border'}`}>
           <p className="mb-1 text-caption text-muted">หลังบันทึก</p>
-          <Avatar id={avatar} color={color} size="sm" />
+          <span className="m-1.5 inline-flex">
+            <Avatar id={avatar} color={color} size="md" outfit={{ frame }} framed />
+          </span>
           <p className="mt-1 truncate text-caption font-semibold">{result.ok ? result.value : '—'}</p>
         </div>
       </div>
@@ -77,6 +85,21 @@ function EditProfileDialog({ open, onClose }: { open: boolean; onClose: () => vo
       <p id="profile-name-error" className="mt-1 text-caption text-danger" role={result.ok ? undefined : 'alert'}>
         {result.ok ? '' : result.error}
       </p>
+
+      <div className="mt-3">
+        <ItemPicker
+          slot="frame"
+          label="กรอบรูป"
+          value={frame}
+          onChange={setFrame}
+          noneLabel="กรอบพื้นฐาน"
+          thumb={(id) => (
+            <span className="inline-flex">
+              <Avatar id={avatar} color={color} size="sm" outfit={id ? { frame: id } : undefined} framed />
+            </span>
+          )}
+        />
+      </div>
 
       <p className="mt-3 mb-2 text-caption font-semibold">อวาตาร์</p>
       <AvatarSelector value={avatar} onChange={setAvatar} color={color} layout="grid" />
