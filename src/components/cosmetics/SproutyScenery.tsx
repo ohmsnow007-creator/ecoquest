@@ -5,7 +5,137 @@ import type { ReactNode } from 'react';
  * backgrounds shown behind Sprouty on the care page and in the wardrobe.
  */
 
-const POTS: Record<string, { body: string; rim: string; dark: string; deco?: ReactNode }> = {
+const INK = '#3A2A1E';
+/** Two little dot eyes and a smile on a pot's front. */
+const potFace = (blush = '#F49AB5') => (
+  <g>
+    <circle cx={106} cy={219} r={3} fill={INK} />
+    <circle cx={134} cy={219} r={3} fill={INK} />
+    <path d="M114 225 Q120 230 126 225" stroke={INK} strokeWidth={2.4} strokeLinecap="round" fill="none" />
+    <ellipse cx={96} cy={225} rx={5} ry={3} fill={blush} opacity={0.7} />
+    <ellipse cx={144} cy={225} rx={5} ry={3} fill={blush} opacity={0.7} />
+  </g>
+);
+
+/** Each pot: body/rim colours, decorations on the body (`deco`) and on top of the rim (`top`). */
+const POTS: Record<string, { body: string; rim: string; dark: string; deco?: ReactNode; top?: ReactNode }> = {
+  'pot-frog': {
+    body: '#7CCB4F',
+    rim: '#95D96A',
+    dark: '#4E9A3A',
+    deco: potFace('#F7A6B8'),
+    top: (
+      <g>
+        {[70, 170].map((x) => (
+          <g key={x}>
+            <circle cx={x} cy={192} r={11} fill="#95D96A" />
+            <circle cx={x} cy={191} r={7.5} fill="#FFFFFF" />
+            <circle cx={x + 1} cy={192} r={4} fill={INK} />
+            <circle cx={x + 2.4} cy={190.4} r={1.4} fill="#FFFFFF" />
+          </g>
+        ))}
+      </g>
+    ),
+  },
+  'pot-bear': {
+    body: '#C08552',
+    rim: '#D49A68',
+    dark: '#8B5E34',
+    deco: (
+      <g>
+        <ellipse cx={120} cy={226} rx={13} ry={9} fill="#EBCFAE" />
+        <circle cx={106} cy={216} r={3} fill={INK} />
+        <circle cx={134} cy={216} r={3} fill={INK} />
+        <ellipse cx={120} cy={223} rx={4} ry={3} fill={INK} />
+        <path d="M116 229 Q120 232 124 229" stroke={INK} strokeWidth={2} strokeLinecap="round" fill="none" />
+      </g>
+    ),
+    top: (
+      <g>
+        {[54, 186].map((x) => (
+          <g key={x}>
+            <circle cx={x} cy={192} r={11} fill="#C08552" />
+            <circle cx={x} cy={192} r={6} fill="#F2B8A2" />
+          </g>
+        ))}
+      </g>
+    ),
+  },
+  'pot-cat': {
+    body: '#FFD9A8',
+    rim: '#FFE4C2',
+    dark: '#E2B27E',
+    deco: (
+      <g>
+        <path d="M101 218 Q106 213 111 218 M129 218 Q134 213 139 218" stroke={INK} strokeWidth={2.4} strokeLinecap="round" fill="none" />
+        <path d="M117 222 L123 222 L120 225 Z" fill="#F49AB5" />
+        <path d="M120 225 Q116 230 112 227 M120 225 Q124 230 128 227" stroke={INK} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+        <path d="M86 222 L100 224 M86 228 L100 227 M154 222 L140 224 M154 228 L140 227" stroke={INK} strokeWidth={1.2} strokeLinecap="round" opacity={0.7} />
+      </g>
+    ),
+    top: (
+      <g>
+        <path d="M50 198 L58 176 L74 196 Z" fill="#FFD9A8" />
+        <path d="M56 194 L60 184 L67 194 Z" fill="#F49AB5" />
+        <path d="M190 198 L182 176 L166 196 Z" fill="#FFD9A8" />
+        <path d="M184 194 L180 184 L173 194 Z" fill="#F49AB5" />
+      </g>
+    ),
+  },
+  'pot-strawberry': {
+    body: '#F25C6E',
+    rim: '#5DBB4A',
+    dark: '#C93A4D',
+    deco: (
+      <g fill="#FDE68A">
+        {[[78, 214], [98, 228], [124, 214], [146, 230], [164, 214], [110, 236], [136, 222], [88, 236]].map(([x, y]) => (
+          <ellipse key={`${x}-${y}`} cx={x} cy={y} rx={1.8} ry={2.6} />
+        ))}
+      </g>
+    ),
+    top: (
+      <g fill="#4FAF6A">
+        {[56, 80, 104, 128, 152, 176].map((x) => (
+          <path key={x} d={`M${x - 10} 196 Q${x} 186 ${x + 10} 196 Q${x} 202 ${x - 10} 196Z`} />
+        ))}
+      </g>
+    ),
+  },
+  'pot-cloud': {
+    body: '#F4F8FD',
+    rim: '#FFFFFF',
+    dark: '#C9D6E6',
+    deco: (
+      <g>
+        {potFace('#F9B8C8')}
+        {[[76, 214], [160, 216], [84, 230]].map(([x, y]) => (
+          <path key={`${x}`} d={`M${x} ${y} q3 5 0 7 q-3 -2 0 -7Z`} fill="#7DD3FC" />
+        ))}
+      </g>
+    ),
+    top: (
+      <g fill="#FFFFFF">
+        {[52, 74, 98, 122, 146, 170, 190].map((x, i) => (
+          <circle key={x} cx={x} cy={196 - (i % 2) * 3} r={9} />
+        ))}
+      </g>
+    ),
+  },
+  'pot-recycle': {
+    body: '#3FA7A0',
+    rim: '#5CC3BB',
+    dark: '#2C7F79',
+    deco: (
+      <g fill="none" stroke="#FFFFFF" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M112 226 L106 216 L112 208" />
+        <path d="M109 208 L112 208 L113 211" />
+        <path d="M122 206 L132 212 L128 222" />
+        <path d="M131 220 L128 222 L125 220" />
+        <path d="M126 230 L114 230 L108 222" />
+        <path d="M110 224 L108 222 L110 220" />
+      </g>
+    ),
+  },
   'pot-clay': {
     body: '#C9774A',
     rim: '#D98A5C',
@@ -72,6 +202,7 @@ export function PotFront({ id }: { id: string }) {
       {pot.deco}
       <rect x={44} y={194} width={152} height={16} rx={8} fill={pot.rim} />
       <rect x={56} y={197} width={44} height={4} rx={2} fill="#FFFFFF" opacity={0.4} />
+      {pot.top}
     </g>
   );
 }

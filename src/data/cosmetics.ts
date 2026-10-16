@@ -77,6 +77,18 @@ export const COSMETICS: Cosmetic[] = [
   { id: 'frame-leaf', slot: 'frame', name: 'กรอบใบไม้ต้นอ่อน', unlock: { type: 'level', level: 3 } },
   { id: 'frame-flower', slot: 'frame', name: 'กรอบดอกไม้บาน', unlock: { type: 'level', level: 8 } },
   { id: 'frame-golden', slot: 'frame', name: 'กรอบต้นไม้ทอง', unlock: { type: 'level', level: 15 } },
+  // Cute pots and extras, earned by playing in different ways.
+  { id: 'pot-frog', slot: 'pot', name: 'กระถางกบน้อย', unlock: { type: 'bond', level: 4 } },
+  { id: 'pot-bear', slot: 'pot', name: 'กระถางหมีน้อย', unlock: { type: 'missions', count: 15 } },
+  { id: 'pot-cat', slot: 'pot', name: 'กระถางแมวเหมียว', unlock: { type: 'streak', days: 10 } },
+  { id: 'pot-strawberry', slot: 'pot', name: 'กระถางสตรอว์เบอร์รี', unlock: { type: 'missions', count: 5, category: 'consumption' } },
+  { id: 'pot-cloud', slot: 'pot', name: 'กระถางก้อนเมฆ', unlock: { type: 'missions', count: 5, category: 'water' } },
+  { id: 'pot-recycle', slot: 'pot', name: 'กระถางรีไซเคิล', unlock: { type: 'missions', count: 5, category: 'waste' } },
+  { id: 'hat-frog', slot: 'hat', name: 'หมวกกบน้อย', unlock: { type: 'bond', level: 6 } },
+  { id: 'hat-bee', slot: 'hat', name: 'ที่คาดผมผึ้งน้อย', unlock: { type: 'missions', count: 5, category: 'nature' } },
+  { id: 'hat-acorn', slot: 'hat', name: 'หมวกลูกโอ๊ก', unlock: { type: 'missions', count: 30 } },
+  { id: 'eyes-leaf', slot: 'eyes', name: 'แว่นใบไม้', unlock: { type: 'missions', count: 5, category: 'energy' } },
+  { id: 'bag-watering', slot: 'bag', name: 'บัวรดน้ำจิ๋ว', unlock: { type: 'streak', days: 4 } },
   // Free backgrounds to choose from right away.
   { id: 'bg-trees', slot: 'background', name: 'ลานต้นไม้ร่มรื่น', unlock: { type: 'free' } },
   { id: 'bg-woods', slot: 'background', name: 'ป่าสนเขียวชอุ่ม', unlock: { type: 'free' } },
