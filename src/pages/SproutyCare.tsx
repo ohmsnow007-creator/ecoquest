@@ -7,7 +7,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { Card, SectionTitle } from '../components/ui/Card';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { SproutySeed, type SproutyMood } from '../components/illustrations/SproutySeed';
-import { BackgroundArt } from '../components/cosmetics/SproutyScenery';
+import { BackgroundArt, SproutyScene } from '../components/cosmetics/SproutyScenery';
 import { ItemPicker } from '../components/cosmetics/ItemPicker';
 import { useOutfit } from '../components/cosmetics/useOutfit';
 import { usePet } from '../components/sprouty/usePet';
@@ -260,18 +260,11 @@ export function SproutyCare() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card padded={false} className="overflow-hidden">
           {/* Sprouty's corner: background, Sprouty (rub its head!), and what it says */}
-          <div className="relative h-80 overflow-hidden" onPointerDown={(e) => lookAtTouch(e.clientX, e.clientY)}>
-            <BackgroundArt id={outfit.background} className="absolute inset-0 h-full w-full" />
-            <motion.p
-              key={line}
-              initial={reduce ? false : { opacity: 0, y: -6, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ type: 'spring', damping: 18 }}
-              className="sprouty-bubble absolute top-3 left-1/2 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 rounded-2xl bg-surface/95 px-4 py-2 text-center text-caption font-medium text-forest shadow-card"
-              aria-live="polite"
-            >
-              {line}
-            </motion.p>
+          <div onPointerDown={(e) => lookAtTouch(e.clientX, e.clientY)}>
+          <SproutyScene
+            background={outfit.background}
+            aspect={1.2}
+            sprouty={
             <button
               ref={stageRef}
               type="button"
@@ -279,7 +272,7 @@ export function SproutyCare() {
               style={pet.touchStyle}
               onClick={() => !pet.consumeTap() && setHop((h) => h + 1)}
               aria-label="แตะหรือลูบหัว Sprouty"
-              className="absolute bottom-0 left-1/2 block w-56 -translate-x-1/2 rounded-full"
+              className="block w-full rounded-full"
             >
               <motion.span
                 key={reaction ? `${reaction.kind}-${hop}` : 'idle'}
@@ -312,8 +305,21 @@ export function SproutyCare() {
                 </motion.span>
               </motion.span>
             </button>
+            }
+          >
+            <motion.p
+              key={line}
+              initial={reduce ? false : { opacity: 0, y: -6, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: 'spring', damping: 18 }}
+              className="sprouty-bubble pointer-events-none absolute top-3 left-1/2 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 rounded-2xl bg-surface/95 px-4 py-2 text-center text-caption font-medium text-forest shadow-card"
+              aria-live="polite"
+            >
+              {line}
+            </motion.p>
             <AnimatePresence>{reaction?.kind === 'water' && !reduce && <WateringFx key={`w${hop}`} />}</AnimatePresence>
             <AnimatePresence>{reaction?.kind === 'feed' && !reduce && <FeedFx key={`f${hop}`} />}</AnimatePresence>
+          </SproutyScene>
           </div>
 
           <div className="grid grid-cols-2 gap-2 p-3">

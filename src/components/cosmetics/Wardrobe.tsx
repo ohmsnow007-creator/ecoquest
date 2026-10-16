@@ -9,7 +9,7 @@ import { SproutySeed } from '../illustrations/SproutySeed';
 import { getSproutyStage } from '../../utils/sprouty';
 import { getLevelFromXp } from '../../utils/xp';
 import { useOutfit } from './useOutfit';
-import { BackgroundArt } from './SproutyScenery';
+import { SproutyScene } from './SproutyScenery';
 
 const TARGETS: { id: OutfitTarget; label: string; icon: typeof Shirt }[] = [
   { id: 'avatar', label: 'แต่งตัวละครของฉัน', icon: UserRound },
@@ -61,7 +61,10 @@ export function Wardrobe() {
       </div>
 
       {/* live preview of the one being dressed */}
-      <div className="relative mt-3 flex h-44 items-end justify-center overflow-hidden rounded-2xl bg-pale-mint/70">
+      <div
+        className={`relative mt-3 flex items-end justify-center overflow-hidden rounded-2xl bg-pale-mint/70 ${target === 'sprouty' ? '' : 'h-44'}`}
+        style={target === 'sprouty' ? { aspectRatio: 1.2 } : undefined}
+      >
         {target === 'avatar' ? (
           activeSlot === 'frame' ? (
             <span className="mb-8 flex">
@@ -71,12 +74,12 @@ export function Wardrobe() {
             <CharacterAvatar look={look} outfit={avatarOutfit} className="h-40 w-auto" title="ตัวอย่างตัวละครของคุณ" />
           )
         ) : (
-          <>
-            <BackgroundArt id={sproutyOutfit.background} className="absolute inset-0 h-full w-full" />
-            <span className="relative mb-1 block w-36">
-              <SproutySeed size={144} className="h-auto w-full" mood="happy" stage={stage} outfit={sproutyOutfit} title="ตัวอย่าง Sprouty ของคุณ" />
-            </span>
-          </>
+          <SproutyScene
+            background={sproutyOutfit.background}
+            aspect={1.2}
+            className="absolute inset-0 h-full w-full"
+            sprouty={<SproutySeed size={144} className="h-auto w-full" mood="happy" stage={stage} outfit={sproutyOutfit} title="ตัวอย่าง Sprouty ของคุณ" />}
+          />
         )}
       </div>
 
@@ -119,10 +122,7 @@ export function Wardrobe() {
                     ) : target === 'avatar' ? (
                       <CharacterAvatar look={look} outfit={{ [activeSlot]: cosmetic.id }} className="h-20 w-auto" title="" />
                     ) : activeSlot === 'background' ? (
-                      <>
-                        <BackgroundArt id={cosmetic.id} className="absolute inset-0 h-full w-full" />
-                        <SproutySeed size={56} className="absolute bottom-0 left-1/2 h-auto w-14 -translate-x-1/2" stage={stage} title="" />
-                      </>
+                      <SproutyScene background={cosmetic.id} className="h-full w-full" sprouty={<SproutySeed size={56} className="h-auto w-full" stage={stage} outfit={{ pot: sproutyOutfit.pot }} title="" />} />
                     ) : (
                       <SproutySeed size={80} className="h-auto w-full" stage={stage} outfit={{ [activeSlot]: cosmetic.id }} title="" />
                     )}

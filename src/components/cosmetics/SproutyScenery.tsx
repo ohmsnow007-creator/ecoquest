@@ -76,12 +76,53 @@ export function PotFront({ id }: { id: string }) {
   );
 }
 
-/** Square scene behind Sprouty (240 × 240). With no id, a soft mint backdrop. */
+/** Square scene behind Sprouty (240 × 240), anchored at the bottom so the ground always shows. */
 export function BackgroundArt({ id, className = '' }: { id?: string; className?: string }) {
   return (
-    <svg viewBox="0 0 240 240" preserveAspectRatio="xMidYMid slice" className={className} aria-hidden="true">
+    <svg viewBox="0 0 240 240" preserveAspectRatio="xMidYMax slice" className={className} aria-hidden="true">
       <BackgroundShapes id={id} />
     </svg>
+  );
+}
+
+/*
+ * Where Sprouty stands in a scene, in the background's 240-unit space: a 150-unit Sprouty whose soil
+ * line (y 214 of its own 240) sits on the ground at y 208. Every scene uses this, so the preview, the
+ * thumbnails and the care page always match and Sprouty never floats.
+ */
+const SPROUTY_SIZE = 150;
+const GROUND_Y = 208;
+const SPROUTY_TOP = GROUND_Y - (214 * SPROUTY_SIZE) / 240;
+const BELOW_SPROUTY = 240 - SPROUTY_TOP - SPROUTY_SIZE;
+
+interface SproutySceneProps {
+  background?: string;
+  /** Width ÷ height of the scene box (wider than 1 crops a little sky; the ground is kept). */
+  aspect?: number;
+  className?: string;
+  /** Sprouty (render it full width: className="h-auto w-full"). */
+  sprouty: ReactNode;
+  /** Anything laid over the scene (speech bubble, effects). */
+  children?: ReactNode;
+}
+
+export function SproutyScene({ background, aspect = 1, className = '', sprouty, children }: SproutySceneProps) {
+  return (
+    <div className={`relative overflow-hidden ${className}`} style={{ aspectRatio: aspect }}>
+      <BackgroundArt id={background} className="absolute inset-0 h-full w-full" />
+      <div
+        className="absolute"
+        style={{
+          left: `${((240 - SPROUTY_SIZE) / 2 / 240) * 100}%`,
+          width: `${(SPROUTY_SIZE / 240) * 100}%`,
+          // bottom is a share of the box's height; the art scales with its width
+          bottom: `${(BELOW_SPROUTY / 240) * aspect * 100}%`,
+        }}
+      >
+        {sprouty}
+      </div>
+      {children}
+    </div>
   );
 }
 

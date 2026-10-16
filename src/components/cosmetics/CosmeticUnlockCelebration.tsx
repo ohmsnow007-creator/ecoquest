@@ -6,7 +6,7 @@ import { Sparkles, Shirt } from 'lucide-react';
 import { useGame } from '../../store/GameContext';
 import { getAllCosmeticStatuses, SLOT_LABELS, type Cosmetic } from '../../data/cosmetics';
 import { Avatar } from '../ui/AvatarPicker';
-import { BackgroundArt } from './SproutyScenery';
+import { SproutyScene } from './SproutyScenery';
 import { SproutySeed } from '../illustrations/SproutySeed';
 import { getSproutyStage } from '../../utils/sprouty';
 import { getLevelFromXp } from '../../utils/xp';
@@ -139,18 +139,24 @@ export function CosmeticUnlockCelebration() {
                     <Avatar id={profile.avatarId} color={profile.preferences.profileColor} size="xl" outfit={{ frame: current.id }} />
                   </span>
                 ) : (
-                  <span className="relative block overflow-hidden rounded-[2rem]">
-                    {current.slot === 'background' && <BackgroundArt id={current.id} className="absolute inset-0 h-full w-full" />}
-                    <SproutySeed
-                      size={224}
-                      className="relative h-auto w-full"
-                      mood="cheer"
-                      stage={stage}
-                      outfit={{ ...outfit, [current.slot]: current.id }}
-                      hop={reduce ? 0 : 1}
-                      title={`Sprouty ใส่${current.name}`}
-                    />
-                  </span>
+                  (() => {
+                    const seed = (
+                      <SproutySeed
+                        size={224}
+                        className="relative h-auto w-full"
+                        mood="cheer"
+                        stage={stage}
+                        outfit={{ ...outfit, [current.slot]: current.id }}
+                        hop={reduce ? 0 : 1}
+                        title={`Sprouty ใส่${current.name}`}
+                      />
+                    );
+                    return current.slot === 'background' ? (
+                      <SproutyScene background={current.id} className="w-full rounded-[2rem]" sprouty={seed} />
+                    ) : (
+                      <span className="relative block">{seed}</span>
+                    );
+                  })()
                 )}
               </motion.div>
             </div>
