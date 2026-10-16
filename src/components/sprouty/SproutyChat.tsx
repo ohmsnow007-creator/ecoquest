@@ -225,19 +225,40 @@ export function SproutyChatButton() {
   const reduce = useReducedMotion();
   return (
     <>
+      {/* 48px tap area around a 40px themed button: your Sprouty peeking out of a green bubble */}
       <motion.button
         type="button"
         onClick={() => setOpen(true)}
         aria-label="เปิดแชตถามความรู้กับ Sprouty"
-        className="fixed right-4 z-40 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-lime to-primary text-[2rem] shadow-raised ring-4 ring-surface lg:bottom-8"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 6.25rem)' }}
-        animate={reduce ? undefined : { y: [0, -6, 0] }}
-        transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
-        whileTap={{ scale: 0.9 }}
+        className="fixed right-3 z-40 flex h-12 w-12 items-center justify-center lg:bottom-8"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 5.75rem)' }}
+        animate={reduce ? undefined : { y: [0, -4, 0] }}
+        transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+        whileTap={{ scale: 0.88 }}
       >
-        <span aria-hidden="true">🤖</span>
-        <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-surface text-sm shadow-card" aria-hidden="true">
-          🌱
+        {!reduce && (
+          <motion.span
+            className="absolute h-10 w-10 rounded-full bg-lime/50"
+            animate={{ scale: [1, 1.55], opacity: [0.55, 0] }}
+            transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 1.4, ease: 'easeOut' }}
+            aria-hidden="true"
+          />
+        )}
+        <span className="bg-forest-hero relative flex h-10 w-10 items-end justify-center overflow-hidden rounded-full shadow-raised ring-2 ring-lime" aria-hidden="true">
+          <span className="block w-[3.1rem] translate-y-[0.55rem]">
+            <PlayerSprouty size={50} mood="happy" />
+          </span>
+        </span>
+        {/* little lime speech bubble with typing dots */}
+        <span className="absolute -top-0.5 -right-0.5 flex h-[1.05rem] items-center gap-[2px] rounded-full rounded-bl-sm bg-lime px-1 shadow-card ring-2 ring-surface" aria-hidden="true">
+          {[0, 1, 2].map((i) => (
+            <motion.span
+              key={i}
+              className="block h-[3px] w-[3px] rounded-full bg-forest"
+              animate={reduce ? undefined : { opacity: [0.35, 1, 0.35] }}
+              transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.18 }}
+            />
+          ))}
         </span>
       </motion.button>
       {createPortal(<AnimatePresence>{open && <ChatSheet key="chat" onClose={close} />}</AnimatePresence>, document.body)}
