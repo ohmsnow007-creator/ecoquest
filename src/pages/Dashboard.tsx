@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useOutfit } from '../components/cosmetics/useOutfit';
 import { motion } from 'framer-motion';
 import { Recycle,
-  Settings, Sprout, Flame, Target, ListChecks, Leaf, ChevronRight, Brain, Medal, TrendingUp, Sparkles, Timer, CheckCircle2, Circle, Trophy, ShieldCheck,
+  Settings, Flame, Target, ListChecks, Leaf, ChevronRight, Brain, Medal, TrendingUp, Sparkles, Timer, CheckCircle2, Circle, Trophy, ShieldCheck,
   type LucideIcon,
 } from 'lucide-react';
 import { useGame } from '../store/GameContext';
@@ -24,14 +24,12 @@ import { getCareState } from '../utils/care';
 import { getActiveEvent } from '../data/events';
 import { EVENT_REWARDS, getCosmeticStatus } from '../data/cosmetics';
 import { getLocalDate } from '../utils/streak';
-import { GreenWorldScene } from '../components/world/GreenWorldScene';
 import { NotificationBell } from '../components/feedback/NotificationBell';
 import { Avatar } from '../components/ui/AvatarPicker';
 import { LevelBadge, XPBadge } from '../components/ui/Badges';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { SectionTitle } from '../components/ui/Card';
-import { WorldBuddy } from '../components/world/WorldBuddy';
-import { worldStages } from '../data/worldStages';
+import { WorldStageView } from '../components/world/WorldStageView';
 import { EmptyState } from '../components/ui/States';
 import { buttonClasses } from '../components/ui/Button';
 
@@ -270,37 +268,13 @@ export function Dashboard() {
 
         {/* 2. Virtual world hero */}
         <section aria-labelledby="world-title" className="bg-forest-hero overflow-hidden rounded-hero text-white shadow-raised lg:col-span-2">
-          <div className="relative h-60 overflow-hidden rounded-b-[1.5rem] sm:h-72 lg:h-80">
-            <GreenWorldScene key={world.current.stage} stage={world.current.stage} />
-            {/* a soft lime rim and leafy vines hanging from the top corners */}
-            <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-b-[1.5rem] ring-2 ring-lime/25 ring-inset" />
-            <WorldVine className="absolute top-0 left-0" />
-            <WorldVine className="absolute top-0 right-0 -scale-x-100" delay={1.2} />
-            <motion.p
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute top-3 left-1/2 flex w-[calc(100%-84px)] max-w-sm -translate-x-1/2 items-center gap-2 rounded-2xl border-2 border-mint/70 bg-surface/95 px-3 py-2 text-left text-caption font-medium text-forest shadow-card"
-            >
-              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#DCFCE7] text-primary">
-                <Leaf size={15} aria-hidden="true" />
-              </span>
-              <span className="min-w-0">{explainWorld(stats.missionsCompleted, stats.byCategory)}</span>
-            </motion.p>
-            <span className="absolute bottom-3 left-3 rounded-2xl bg-forest/90 px-3 py-1.5 text-white shadow-card ring-1 ring-lime/30 backdrop-blur">
-              <span className="flex items-center gap-1 text-[0.75rem] leading-tight text-mint">
-                <Sprout size={12} aria-hidden="true" /> ระดับ {world.current.stage}
-              </span>
-              <span id="world-title" className="block text-caption leading-tight font-semibold">{world.current.title}</span>
-              <span className="mt-1 flex gap-0.5" aria-label={`ระดับโลก ${world.current.stage} จาก ${worldStages.length - 1}`}>
-                {worldStages.slice(1).map((s) => (
-                  <span key={s.stage} className={`h-1.5 w-2.5 rounded-full ${s.stage <= world.current.stage ? 'bg-lime' : 'bg-white/20'}`} />
-                ))}
-              </span>
-            </span>
-            <span className="absolute right-2 bottom-1">
-              <WorldBuddy />
-            </span>
-          </div>
+          <WorldStageView
+            stage={world.current.stage}
+            title={world.current.title}
+            titleId="world-title"
+            caption={explainWorld(stats.missionsCompleted, stats.byCategory)}
+            className="h-60 rounded-b-[1.5rem] sm:h-72 lg:h-80"
+          />
           <div className="flex items-center gap-4 px-4 py-3.5 sm:px-5">
             <div className="min-w-0 flex-1">
               <p className="mb-1.5 text-caption text-white/85">
@@ -387,17 +361,3 @@ export function Dashboard() {
   );
 }
 
-/** A small leafy vine hanging from a corner of the world card, swaying gently. */
-function WorldVine({ className = '', delay = 0 }: { className?: string; delay?: number }) {
-  return (
-    <svg viewBox="0 0 60 60" width={60} height={60} aria-hidden="true" className={`pointer-events-none ${className}`}>
-      <g className="scene-sway" style={{ transformOrigin: '6px 0px', animationDelay: `${delay}s` }}>
-        <path d="M4 0 C10 16 18 26 30 34" stroke="#5DAA43" strokeWidth={2.5} fill="none" strokeLinecap="round" />
-        <path d="M10 12 C2 12 0 20 4 22 C10 22 12 16 10 12Z" fill="#7CCB4F" />
-        <path d="M18 22 C20 14 28 14 28 18 C28 24 22 26 18 22Z" fill="#4FAF6A" />
-        <path d="M26 32 C20 34 20 42 24 42 C30 42 30 36 26 32Z" fill="#9BE15D" />
-        <circle cx="31" cy="35" r="3" fill="#FDE68A" />
-      </g>
-    </svg>
-  );
-}

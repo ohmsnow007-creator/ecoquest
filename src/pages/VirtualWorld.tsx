@@ -4,11 +4,10 @@ import { worldMissionCount } from '../utils/admin';
 import { getWorldState, explainWorld } from '../utils/world';
 import { getPlayerStats } from '../utils/playerStats';
 import { worldStages } from '../data/worldStages';
-import { GreenWorldScene } from '../components/world/GreenWorldScene';
+import { WorldStageView } from '../components/world/WorldStageView';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card, SectionTitle } from '../components/ui/Card';
 import { ProgressRing } from '../components/ui/ProgressBar';
-import { EcoMascot } from '../components/ui/EcoMascot';
 import { SproutyTalk } from '../components/sprouty/PlayerSprouty';
 import { useTimeOfDay } from '../components/sprouty/useTimeOfDay';
 import { worldLine } from '../utils/sprouty';
@@ -27,12 +26,7 @@ export function VirtualWorld() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card padded={false} className="overflow-hidden lg:col-span-2">
-          <div className="relative h-60 sm:h-80">
-            <GreenWorldScene key={current.stage} stage={current.stage} />
-            <span className="absolute right-2 bottom-1">
-              <EcoMascot size={72} mood={current.stage >= 3 ? 'cheer' : 'happy'} title="" />
-            </span>
-          </div>
+          <WorldStageView stage={current.stage} title={current.title} caption={explainWorld(stats.missionsCompleted, stats.byCategory)} className="h-60 sm:h-80" />
           <div className="flex items-center gap-4 p-4 sm:p-5">
             <ProgressRing value={world.progress} size={72} stroke={7} label="ความคืบหน้าสู่ระดับถัดไป">
               <span className="text-body font-bold">{Math.round(world.progress * 100)}%</span>
@@ -50,8 +44,7 @@ export function VirtualWorld() {
         <div className="space-y-4">
           <Card tone="mint">
             <p className="text-body font-semibold">ทำไมโลกถึงเป็นแบบนี้</p>
-            <p className="mt-1 text-body">{explainWorld(stats.missionsCompleted, stats.byCategory)}</p>
-            <p className="mt-2 text-caption text-muted">{current.description}</p>
+            <p className="mt-1 text-body">{current.description}</p>
           </Card>
           <p className="flex items-start gap-2 px-1 text-caption text-muted">
             <Info size={15} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
