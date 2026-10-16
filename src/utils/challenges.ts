@@ -1,6 +1,6 @@
 import type { Mission, MissionCategory, PlayerProgress } from '../types';
 import { missions } from '../data/missions';
-import { DAILY_BONUS_XP, DAILY_MISSION_COUNT, DAILY_XP_MULTIPLIER, SPECIAL_BONUS_XP, SPECIAL_PER_DAY, WEEKLY_CHALLENGES, type WeeklyChallenge } from '../config/challenges';
+import { DAILY_BONUS_MAX_XP, DAILY_BONUS_PER_DIFFICULTY, DAILY_BONUS_XP, DAILY_MISSION_COUNT, DAILY_XP_MULTIPLIER, SPECIAL_BONUS_XP, SPECIAL_PER_DAY, WEEKLY_CHALLENGES, type WeeklyChallenge } from '../config/challenges';
 import { getLocalDate } from './streak';
 
 /** Small deterministic PRNG so the same player sees the same picks all day (and on every device refresh). */
@@ -82,6 +82,12 @@ export function getWeeklyChallenge(playerId: string, date: Date = new Date()): W
 
 const rewards = (p: PlayerProgress) => p.challengeRewards ?? [];
 
+/** The bonus for finishing a day's daily missions: 50 XP, more when the set is harder (max 60). */
+export function dailyBonusXp(list: Mission[]): number {
+  const extra = list.reduce((n, m) => n + DAILY_BONUS_PER_DIFFICULTY[m.difficulty], 0);
+  return Math.min(DAILY_BONUS_MAX_XP, DAILY_BONUS_XP + extra);
+}
+
 export interface DailyStatus {
   periodKey: string;
   missions: { mission: Mission; done: boolean }[];
@@ -102,7 +108,7 @@ export function getDailyStatus(progress: PlayerProgress, playerId: string, date:
     doneCount,
     complete: doneCount === list.length,
     claimed: rewards(progress).some((r) => r.kind === 'daily' && r.periodKey === today),
-    bonusXp: DAILY_BONUS_XP,
+    bonusXp: dailyBonusXp(list.map((x) => x.mission)),
   };
 }
 

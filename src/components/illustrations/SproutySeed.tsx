@@ -216,6 +216,54 @@ function Face({ mood, blinking, lx, ly }: { mood: SproutyMood; blinking: boolean
   );
 }
 
+/** A little sleep bubble that swells and shrinks at the corner of the mouth with each breath. */
+function SleepBubble() {
+  return (
+    <motion.g style={{ transformOrigin: '131px 176px' }} animate={{ scale: [0.25, 1, 0.25] }} transition={{ duration: 4.6, repeat: Infinity, ease: 'easeInOut' }}>
+      <circle cx="137" cy="174" r="8" fill="#DDF3FF" fillOpacity={0.75} stroke="#8FD0F5" strokeWidth={1.5} />
+      <circle cx="134" cy="171" r="2.2" fill="#FFFFFF" />
+    </motion.g>
+  );
+}
+
+/** Z's that drift up from Sprouty's head, grow and fade, with a couple of twinkling stars. */
+function SleepZs() {
+  return (
+    <g fontFamily="'Mali', 'Prompt', sans-serif" fontWeight={800} pointerEvents="none">
+      {[0, 1, 2].map((i) => (
+        <motion.text
+          key={i}
+          x="168"
+          y="120"
+          fontSize={14 + i * 4}
+          fill="#7C8CF0"
+          stroke="#FFFFFF"
+          strokeWidth={2.5}
+          paintOrder="stroke"
+          initial={{ opacity: 0 }}
+          animate={{ x: [0, 12, 26], y: [0, -26, -54], opacity: [0, 1, 0], scale: [0.6, 1, 1.15] }}
+          transition={{ duration: 3.3, repeat: Infinity, delay: i * 1.1, ease: 'easeOut' }}
+        >
+          Z
+        </motion.text>
+      ))}
+      {[
+        [58, 96, 0],
+        [204, 150, 1.3],
+      ].map(([x, y, d]) => (
+        <motion.path
+          key={x}
+          d={`M${x} ${y - 6} l1.6 4.4 l4.4 1.6 l-4.4 1.6 l-1.6 4.4 l-1.6 -4.4 l-4.4 -1.6 l4.4 -1.6Z`}
+          fill="#FDE68A"
+          animate={{ opacity: [0, 1, 0], scale: [0.6, 1, 0.6] }}
+          style={{ transformOrigin: `${x}px ${y}px` }}
+          transition={{ duration: 2.4, repeat: Infinity, delay: d }}
+        />
+      ))}
+    </g>
+  );
+}
+
 /** Sprouty: a glossy seed in soil that grows with the player's level and shows a mood. */
 export function SproutySeed({
   size = 220,
@@ -240,7 +288,9 @@ export function SproutySeed({
   // made the leaves shrink to nothing (and sometimes stay hidden on phones).
   const [sprouted, setSprouted] = useState(false);
   const playSprout = sprout && !still && !sprouted && hop === 0;
-  const breathe = still ? undefined : { scaleY: [1, 1.03, 1], scaleX: [1, 0.985, 1] };
+  const asleep = mood === 'sleepy';
+  // Asleep: slower, deeper breaths.
+  const breathe = still ? undefined : asleep ? { scaleY: [1, 1.05, 1], scaleX: [1, 0.975, 1] } : { scaleY: [1, 1.03, 1], scaleX: [1, 0.985, 1] };
   const breeze = still ? undefined : { rotate: [0, 3.5, -2, 1.5, 0] };
 
   // With a hat on, the sprout is tucked away under it so the hat is never covered by leaves.
@@ -354,13 +404,21 @@ export function SproutySeed({
           {/* shy: squirm side to side and squish a little, pivoting at the soil */}
           <motion.g
             style={{ transformOrigin: '120px 206px' }}
-            animate={mood === 'shy' && !still ? { rotate: [0, -6, 5, -4, 3, 0], scaleY: [1, 0.95, 1, 0.96, 1] } : { rotate: 0, scaleY: 1 }}
-            transition={mood === 'shy' ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
+            animate={
+              still
+                ? { rotate: 0, scaleY: 1 }
+                : mood === 'shy'
+                  ? { rotate: [0, -6, 5, -4, 3, 0], scaleY: [1, 0.95, 1, 0.96, 1] }
+                  : asleep
+                    ? { rotate: [3, 6, 3], scaleY: 1 }
+                    : { rotate: 0, scaleY: 1 }
+            }
+            transition={mood === 'shy' ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : asleep ? { duration: 4.6, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
           >
           {!hatOn && leaves}
 
           {/* seed body breathes slowly */}
-          <motion.g style={{ transformOrigin: '120px 206px' }} animate={breathe} transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}>
+          <motion.g style={{ transformOrigin: '120px 206px' }} animate={breathe} transition={{ duration: asleep ? 4.6 : 3.4, repeat: Infinity, ease: 'easeInOut' }}>
             <SproutyCosmetics outfit={outfit} part="back" />
             <path d="M120 88 C164 88 186 128 184 160 C182 192 154 208 120 208 C86 208 58 192 56 160 C54 128 76 88 120 88Z" fill={`url(#${id}-body)`} />
             <path d="M120 88 C164 88 186 128 184 160 C182 192 154 208 120 208 C86 208 58 192 56 160 C54 128 76 88 120 88Z" fill={`url(#${id}-warm)`} />
@@ -371,6 +429,7 @@ export function SproutySeed({
             {/* face slides toward the look direction */}
             <motion.g animate={{ x: lx * 9, y: ly * 6 }} transition={SPRING}>
               <Face mood={mood} blinking={blinking} lx={lx} ly={ly} />
+              {asleep && !still && <SleepBubble />}
               <SproutyCosmetics outfit={outfit} part="face" />
             </motion.g>
             <SproutyCosmetics outfit={outfit} part="body" />
@@ -379,12 +438,14 @@ export function SproutySeed({
 
           </motion.g>
 
-          {mood === 'sleepy' && (
+          {asleep && (still ? (
             <g fill={INK} opacity={0.55} fontFamily="sans-serif" fontWeight={700}>
               <text x="176" y="112" fontSize="18">z</text>
               <text x="190" y="94" fontSize="13">z</text>
             </g>
-          )}
+          ) : (
+            <SleepZs />
+          ))}
           {mood === 'cheer' && (
             <g fill="#FBBF24">
               <path d="M44 118 l4 -10 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4Z" />

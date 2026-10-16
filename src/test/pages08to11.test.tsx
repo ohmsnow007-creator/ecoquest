@@ -149,9 +149,11 @@ describe('Settings page', () => {
   it('toggles persist to storage', () => {
     renderAt('/settings');
     const sound = screen.getByRole('switch', { name: 'เสียงเอฟเฟกต์' });
-    expect(sound).toHaveAttribute('aria-checked', 'false');
+    // on by default; turning it off is remembered as the player's own choice
+    expect(sound).toHaveAttribute('aria-checked', 'true');
     fireEvent.click(sound);
-    expect(storageService.getProfile()?.preferences.soundEffects).toBe(true);
+    expect(storageService.getProfile()?.preferences.soundEffects).toBe(false);
+    expect(storageService.getProfile()?.preferences.soundChosen).toBe(true);
     fireEvent.click(screen.getByRole('switch', { name: 'หน้าต่างฉลองรางวัล' }));
     expect(storageService.getProfile()?.preferences.celebrations).toBe(false);
   });

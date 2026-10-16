@@ -14,6 +14,7 @@ import { PrimaryButton } from '../components/ui/Button';
 import { useOutfit } from '../components/cosmetics/useOutfit';
 import { usePet } from '../components/sprouty/usePet';
 import { useBlinking } from '../components/sprouty/PlayerSprouty';
+import { SLEEP_LINE, useIdleSleep } from '../components/sprouty/useIdleSleep';
 import { getCareState, fertilizerSources, BOND_STEP, FERTILIZER_PERCENT, LONELY_AFTER_DAYS, MAX_BOND } from '../utils/care';
 import { getSproutyStage } from '../utils/sprouty';
 import { getLevelFromXp } from '../utils/xp';
@@ -162,6 +163,8 @@ export function SproutyCare() {
   const lookHold = useRef(0);
   const stageRef = useRef<HTMLButtonElement>(null);
   const blinking = useBlinking(!reduce);
+  // Left alone for a while, Sprouty dozes off; any touch wakes it up.
+  const sleep = useIdleSleep(!reaction && !greeting && !decorating);
 
   useEffect(() => {
     const hello = window.setTimeout(() => setHop((h) => h + 1), 350);
@@ -215,16 +218,19 @@ export function SproutyCare() {
       ? { mood: 'pleading' as const, line: `${profile.displayName}! มาแล้วเหรอ… รอตั้งนานเลย 🥺` }
       : { mood: 'cheer' as const, line: `สวัสดี ${profile.displayName}! 👋 ดีใจที่มาเยี่ยมนะ` }
     : null;
-  const mood: SproutyMood = pet.shy ? 'shy' : reaction?.mood ?? greet?.mood ?? care.mood;
-  const line = pet.shy ? pet.line : reaction?.line ?? greet?.line ?? care.line;
+  const mood: SproutyMood = pet.shy ? 'shy' : reaction?.mood ?? greet?.mood ?? (sleep.asleep ? 'sleepy' : sleep.waking ? 'cheer' : care.mood);
+  const line = pet.shy ? pet.line : reaction?.line ?? greet?.line ?? (sleep.asleep ? SLEEP_LINE : sleep.waking ? sleep.wakeLine : care.line);
   // Idle life: a gentle bob and sway; when thirsty, a sad droop and a little pleading wiggle.
   const idle = reduce
     ? undefined
-    : mood === 'pleading'
+    : sleep.asleep
+      ? { y: [0, 1.5, 0] }
+      : mood === 'pleading'
       ? { rotate: [0, -3, 3, -2, 2, 0], y: [0, 2, 0, 2, 0, 0], scaleY: [1, 0.97, 1, 0.97, 1, 1] }
       : { y: [0, -5, 0], rotate: [0, 1.5, 0, -1.5, 0] };
 
   const water = () => {
+    sleep.poke();
     if (!waterSprouty()) return;
     navigator.vibrate?.(20);
     setHop((h) => h + 1);
@@ -232,6 +238,7 @@ export function SproutyCare() {
     notify('รดน้ำให้ Sprouty แล้ว · ความผูกพัน +10', 'info');
   };
   const feed = () => {
+    sleep.poke();
     if (!feedSprouty()) return;
     navigator.vibrate?.([15, 40, 15]);
     setHop((h) => h + 1);
@@ -263,7 +270,12 @@ export function SproutyCare() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card padded={false} className="overflow-hidden">
           {/* Sprouty's corner: background, Sprouty (rub its head!), and what it says */}
-          <div onPointerDown={(e) => lookAtTouch(e.clientX, e.clientY)}>
+          <div
+            onPointerDown={(e) => {
+              if (sleep.poke()) setHop((h) => h + 1);
+              lookAtTouch(e.clientX, e.clientY);
+            }}
+          >
           <SproutyScene
             background={outfit.background}
             aspect={1.2}
@@ -273,7 +285,10 @@ export function SproutyCare() {
               type="button"
               {...pet.handlers}
               style={pet.touchStyle}
-              onClick={() => !pet.consumeTap() && setHop((h) => h + 1)}
+              onClick={() => {
+                sleep.poke();
+                if (!pet.consumeTap()) setHop((h) => h + 1);
+              }}
               aria-label="แตะหรือลูบหัว Sprouty"
               className="block w-full rounded-full"
             >
@@ -301,7 +316,7 @@ export function SproutyCare() {
                     stage={stage}
                     hop={reduce ? 0 : hop}
                     outfit={outfit}
-                    look={look}
+                    look={sleep.asleep ? { x: 0, y: 0 } : look}
                     blinking={blinking && mood !== 'cheer'}
                     title=""
                   />

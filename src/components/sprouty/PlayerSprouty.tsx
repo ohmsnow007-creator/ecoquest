@@ -25,7 +25,11 @@ export function useBlinking(enabled: boolean) {
       }, 2400 + Math.random() * 3000);
     };
     loop();
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(t);
+      // never leave the eyes shut if blinking stops mid-blink
+      setBlinking(false);
+    };
   }, [enabled]);
   return blinking;
 }

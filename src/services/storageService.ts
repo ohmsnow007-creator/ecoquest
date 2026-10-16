@@ -47,7 +47,10 @@ export function sanitizeProfile(data: unknown): PlayerProfile | null {
       reducedMotion: prefs.reducedMotion === true,
       selectedGoalIds: goals,
       profileColor: isKnownProfileColor(prefs.profileColor) ? prefs.profileColor : DEFAULT_PROFILE_COLOR,
-      soundEffects: prefs.soundEffects === true,
+      // Sound is on by default. Older saves stored `false` without the player choosing it, so only a
+      // choice made in Settings (soundChosen) can turn it off.
+      soundEffects: prefs.soundChosen === true ? prefs.soundEffects !== false : true,
+      ...(prefs.soundChosen === true ? { soundChosen: true } : {}),
       inAppToasts: prefs.inAppToasts !== false,
       celebrations: prefs.celebrations !== false,
       ...sanitizeOutfit(prefs.outfit),

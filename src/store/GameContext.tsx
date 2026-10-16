@@ -174,7 +174,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const applyReward = useCallback((outcome: RewardOutcome): boolean => {
     if (!storageService.saveProgress(outcome.next)) return false;
     setProgress(outcome.next);
-    if (prefsRef.current?.soundEffects) playSound(outcome.levelTo > outcome.levelFrom || outcome.newBadges.length > 0 ? 'reward' : 'success');
+    if (prefsRef.current && prefsRef.current.soundEffects !== false) playSound(outcome.levelTo > outcome.levelFrom || outcome.newBadges.length > 0 ? 'reward' : 'success');
     if (prefsRef.current?.celebrations === false) return true;
     const queued: Celebration[] = [];
     if (outcome.levelTo > outcome.levelFrom) queued.push({ id: newId(), type: 'level', level: outcome.levelTo, from: outcome.levelFrom });
@@ -417,7 +417,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const setPreference = useCallback((key: BooleanPreference, value: boolean) => {
     setProfile((prev) =>
-      prev ? { ...prev, preferences: { ...prev.preferences, [key]: value }, updatedAt: new Date().toISOString() } : prev,
+      prev ? { ...prev, preferences: { ...prev.preferences, [key]: value, ...(key === 'soundEffects' ? { soundChosen: true } : {}) }, updatedAt: new Date().toISOString() } : prev,
     );
   }, []);
 

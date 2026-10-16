@@ -2,8 +2,11 @@ import type { MissionCategory } from '../types';
 
 /** Daily missions: picked fresh each local day for each player. */
 export const DAILY_MISSION_COUNT = 3;
-/** Bonus for finishing all of today's daily missions, claimable once per day. */
-export const DAILY_BONUS_XP = 30;
+/** Bonus for finishing all of today's daily missions, claimable once per day:
+ *  50 XP, plus a little more for each harder mission in today's set, up to 60. */
+export const DAILY_BONUS_XP = 50;
+export const DAILY_BONUS_MAX_XP = 60;
+export const DAILY_BONUS_PER_DIFFICULTY = { easy: 0, medium: 3, hard: 5 } as const;
 /** Today's daily missions (special ones included) pay this many times their usual XP. */
 export const DAILY_XP_MULTIPLIER = 3;
 /** Special daily missions: 1 on weekdays, 2 at the weekend, picked from today's daily missions. */

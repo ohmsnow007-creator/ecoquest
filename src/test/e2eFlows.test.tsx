@@ -281,7 +281,7 @@ describe('Flow H — persistence and broken data', () => {
     });
 
     refresh('#/settings');
-    expect(await screen.findByRole('switch', { name: 'เสียงเอฟเฟกต์' })).toHaveAttribute('aria-checked', 'true');
+    expect(await screen.findByRole('switch', { name: 'เสียงเอฟเฟกต์' })).toHaveAttribute('aria-checked', 'false');
     const p = storageService.getProgress();
     expect(p.totalXp).toBe(m.xpReward);
     expect(p.completions).toHaveLength(1);

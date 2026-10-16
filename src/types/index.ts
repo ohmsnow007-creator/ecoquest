@@ -101,6 +101,8 @@ export interface PlayerProfile {
     selectedGoalIds: string[];
     profileColor?: string;
     soundEffects?: boolean;
+    /** Set once the player flips the sound switch themself; until then sound effects are on by default. */
+    soundChosen?: boolean;
     inAppToasts?: boolean;
     celebrations?: boolean;
     /** The character's equipped cosmetics (hat, eyes, bag); only unlocked items are worn. */

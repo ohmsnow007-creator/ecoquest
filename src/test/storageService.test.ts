@@ -15,7 +15,7 @@ describe('storageService.getProfile', () => {
     localStorage.setItem('ecoquest_profile', JSON.stringify({ id: 'p1', displayName: 'Test', avatarId: 'avatar-sun', createdAt }));
     const p = storageService.getProfile()!;
     expect(p).toMatchObject({ id: 'p1', displayName: 'Test', avatarId: 'avatar-sun', createdAt });
-    expect(p.preferences).toEqual({ reducedMotion: false, selectedGoalIds: [], profileColor: 'mint', soundEffects: false, inAppToasts: true, celebrations: true });
+    expect(p.preferences).toEqual({ reducedMotion: false, selectedGoalIds: [], profileColor: 'mint', soundEffects: true, inAppToasts: true, celebrations: true });
   });
 
   it('returns null for invalid JSON', () => {
@@ -38,7 +38,7 @@ describe('storageService.getProfile', () => {
     );
     const p = storageService.getProfile()!;
     expect(p.avatarId).toBe('avatar-leaf');
-    expect(p.preferences).toEqual({ reducedMotion: false, selectedGoalIds: ['goal-waste'], profileColor: 'mint', soundEffects: false, inAppToasts: true, celebrations: true });
+    expect(p.preferences).toEqual({ reducedMotion: false, selectedGoalIds: ['goal-waste'], profileColor: 'mint', soundEffects: true, inAppToasts: true, celebrations: true });
   });
 });
 

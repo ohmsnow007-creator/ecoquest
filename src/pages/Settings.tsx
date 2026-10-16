@@ -203,7 +203,7 @@ export function Settings() {
                 id="pref-sound"
                 label="เสียงเอฟเฟกต์"
                 hint="เล่นเสียงสั้น ๆ เมื่อทำภารกิจสำเร็จหรือได้รับรางวัล"
-                checked={pref('soundEffects', false)}
+                checked={pref('soundEffects', true)}
                 onChange={(v) => setPreference('soundEffects', v)}
               />
               <ToggleRow

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import App from '../App';
 import { SKIP_INTRO_TEST_KEY } from '../components/layout/launcherContext';
-import { DAILY_POOL, getDailyMissions, getDailyStatus, getWeeklyChallenge, getWeeklyStatus, weekStart, daysLeftInWeek } from '../utils/challenges';
+import { DAILY_POOL, dailyBonusXp, getDailyMissions, getDailyStatus, getWeeklyChallenge, getWeeklyStatus, weekStart, daysLeftInWeek } from '../utils/challenges';
 import { DAILY_BONUS_XP, DAILY_MISSION_COUNT, WEEKLY_CHALLENGES } from '../config/challenges';
 import { evaluateChallengeClaim } from '../services/rewardService';
 import { storageService, sanitizeProgress } from '../services/storageService';
@@ -70,6 +70,14 @@ describe('weekly challenge', () => {
 });
 
 describe('challenge rewards', () => {
+  it('the daily bonus is 50 XP for an easy set and grows with harder missions, up to 60', () => {
+    const m = (difficulty: 'easy' | 'medium' | 'hard') => ({ ...DAILY_POOL[0], difficulty });
+    expect(dailyBonusXp([m('easy'), m('easy'), m('easy')])).toBe(50);
+    expect(dailyBonusXp([m('easy'), m('medium'), m('medium')])).toBe(56);
+    expect(dailyBonusXp([m('medium'), m('medium'), m('medium')])).toBe(59);
+    expect(dailyBonusXp([m('hard'), m('medium'), m('hard')])).toBe(60);
+  });
+
   const day = new Date(2026, 9, 15, 10);
 
   it('pays the daily bonus once, only when all three are done', () => {
@@ -80,7 +88,7 @@ describe('challenge rewards', () => {
     const all = { ...fresh(), completions: picks.map((m, i) => done(m.id, new Date(day.getTime() + i * 1000))), totalXp: 60 };
     const r = evaluateChallengeClaim(all, 'daily', ID, day);
     if (!r.ok) throw new Error(r.reason);
-    expect(r.next.totalXp).toBe(60 + DAILY_BONUS_XP);
+    expect(r.next.totalXp).toBe(60 + dailyBonusXp(picks));
     expect(evaluateChallengeClaim(r.next, 'daily', ID, day)).toEqual({ ok: false, reason: 'already-claimed' });
   });
 
@@ -115,15 +123,18 @@ describe('home page', () => {
     for (const m of picks) expect(screen.getAllByText(m.title).length).toBeGreaterThan(0);
     expect(screen.getByText('ชาเลนจ์ประจำสัปดาห์')).toBeInTheDocument();
 
+    const bonus = dailyBonusXp(picks);
+    expect(bonus).toBeGreaterThanOrEqual(DAILY_BONUS_XP);
+    expect(bonus).toBeLessThanOrEqual(60);
     const before = storageService.getProgress().totalXp;
-    fireEvent.click(screen.getByRole('button', { name: `รับ +${DAILY_BONUS_XP} XP` }));
-    expect(storageService.getProgress().totalXp).toBe(before + DAILY_BONUS_XP);
+    fireEvent.click(screen.getByRole('button', { name: `รับ +${bonus} XP` }));
+    expect(storageService.getProgress().totalXp).toBe(before + bonus);
     expect(screen.getByText('รับแล้ว')).toBeInTheDocument();
 
     cleanup();
     render(<App />);
     expect(await screen.findByText('รับแล้ว', undefined, { timeout: 5000 })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: `รับ +${DAILY_BONUS_XP} XP` })).not.toBeInTheDocument();
-    expect(storageService.getProgress().totalXp).toBe(before + DAILY_BONUS_XP);
+    expect(screen.queryByRole('button', { name: `รับ +${bonus} XP` })).not.toBeInTheDocument();
+    expect(storageService.getProgress().totalXp).toBe(before + bonus);
   }, 20_000);
 });

@@ -60,7 +60,7 @@ export function CosmeticUnlockCelebration() {
   const reduce = useReducedMotion();
   const outfit = useOutfit('sprouty');
   const seen = profile?.preferences.seenCosmetics;
-  const soundOn = profile?.preferences.soundEffects === true;
+  const soundOn = profile?.preferences.soundEffects !== false;
 
   const unlocked = useMemo(() => getAllCosmeticStatuses(progress).filter((s) => s.unlocked).map((s) => s.cosmetic), [progress]);
 

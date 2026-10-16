@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 
-export type MascotMood = 'happy' | 'cheer' | 'calm';
+export type MascotMood = 'happy' | 'cheer' | 'calm' | 'sleepy';
 
 interface EcoMascotProps {
   size?: number;
@@ -8,6 +8,8 @@ interface EcoMascotProps {
   float?: boolean;
   className?: string;
   title?: string;
+  /** Eyes shut for a moment (a blink). */
+  blinking?: boolean;
 }
 
 function Sparkle({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
@@ -21,7 +23,7 @@ function Sparkle({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
   );
 }
 
-export function EcoMascot({ size = 160, mood = 'happy', float = false, className = '', title = 'Sprouty มาสคอตของ EcoQuest' }: EcoMascotProps) {
+export function EcoMascot({ size = 160, mood = 'happy', float = false, className = '', title = 'Sprouty มาสคอตของ EcoQuest', blinking = false }: EcoMascotProps) {
   return (
     <motion.svg
       width={size}
@@ -56,7 +58,12 @@ export function EcoMascot({ size = 160, mood = 'happy', float = false, className
       <ellipse cx="132" cy="134" rx="9" ry="5.5" className="fill-warning" opacity={0.35} />
 
       {/* eyes */}
-      {mood === 'calm' ? (
+      {mood === 'sleepy' ? (
+        <>
+          <path d="M74 118 Q82 125 90 118" className="stroke-forest" strokeWidth={4} strokeLinecap="round" fill="none" />
+          <path d="M110 118 Q118 125 126 118" className="stroke-forest" strokeWidth={4} strokeLinecap="round" fill="none" />
+        </>
+      ) : mood === 'calm' || (blinking && mood !== 'cheer') ? (
         <>
           <path d="M74 120 Q82 112 90 120" className="stroke-forest" strokeWidth={4} strokeLinecap="round" fill="none" />
           <path d="M110 120 Q118 112 126 120" className="stroke-forest" strokeWidth={4} strokeLinecap="round" fill="none" />
@@ -73,6 +80,8 @@ export function EcoMascot({ size = 160, mood = 'happy', float = false, className
       {/* mouth */}
       {mood === 'cheer' ? (
         <path d="M86 134 Q100 154 114 134 Z" className="fill-forest stroke-forest" strokeWidth={3} strokeLinejoin="round" />
+      ) : mood === 'sleepy' ? (
+        <ellipse cx="100" cy="140" rx="5" ry="4" className="fill-forest" />
       ) : mood === 'calm' ? (
         <path d="M92 138 Q100 144 108 138" className="stroke-forest" strokeWidth={3.5} strokeLinecap="round" fill="none" />
       ) : (
