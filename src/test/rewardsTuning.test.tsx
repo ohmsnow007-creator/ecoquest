@@ -70,3 +70,17 @@ describe('frames from weekly challenges', () => {
     }
   });
 });
+
+describe('levels go up to 50', () => {
+  it('has 50 levels with titles, and existing XP keeps the same level up to 30', async () => {
+    const { LEVELS, MAX_LEVEL } = await import('../config/levels');
+    const { getLevelFromXp } = await import('../utils/xp');
+    expect(MAX_LEVEL).toBe(50);
+    expect(LEVELS).toHaveLength(50);
+    expect(LEVELS[49].title).toBe('ตำนานแห่งโลกสีเขียว');
+    // the step formula is unchanged, so a player's level for the same XP doesn't move
+    expect(getLevelFromXp(7131)).toBe(11);
+    expect(getLevelFromXp(94504)).toBe(30);
+    expect(getLevelFromXp(10_000_000)).toBe(50);
+  });
+});

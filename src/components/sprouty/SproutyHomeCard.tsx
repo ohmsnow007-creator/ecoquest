@@ -85,7 +85,7 @@ export function SproutyHomeCard({ name, level, todayCount, streak, dailyComplete
           <span className="font-semibold text-forest">Sprouty: {growth.name}</span>
           <span className="text-muted">{growth.nextAt ? `โตเป็น${growth.nextName}ที่เลเวล ${growth.nextAt}` : 'โตเต็มที่แล้ว'}</span>
         </div>
-        <ol className="mt-2 grid grid-cols-4 gap-1.5" aria-label="ขั้นการเติบโตของ Sprouty">
+        <ol className="mt-2 grid grid-cols-5 gap-1.5" aria-label="ขั้นการเติบโตของ Sprouty">
           {SPROUTY_STAGES.map((s) => {
             const reached = growth.stage >= s.stage;
             return (

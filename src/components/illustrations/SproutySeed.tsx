@@ -6,7 +6,7 @@ import { PotBack, PotFront } from '../cosmetics/SproutyScenery';
 
 export type SproutyMood = 'happy' | 'cheer' | 'sleepy' | 'worried' | 'angry' | 'shy' | 'pleading' | 'thinking';
 /** 1 seed with two leaves · 2 four leaves · 3 flowering · 4 small tree. */
-export type SproutyStage = 1 | 2 | 3 | 4;
+export type SproutyStage = 0 | 1 | 2 | 3 | 4;
 
 interface SproutySeedProps {
   size?: number;
@@ -34,7 +34,7 @@ const SPRING = { type: 'spring', stiffness: 160, damping: 14 } as const;
 const fill = { transformBox: 'fill-box', transformOrigin: 'center' } as const;
 const INK = '#3A2A1E';
 
-const STAGE_LABEL: Record<SproutyStage, string> = { 1: 'เมล็ดพันธุ์', 2: 'ต้นอ่อน 4 ใบ', 3: 'ต้นผลิดอก', 4: 'ต้นไม้น้อย' };
+const STAGE_LABEL: Record<SproutyStage, string> = { 0: 'เมล็ดพันธุ์', 1: 'ต้นอ่อนเล็ก', 2: 'ต้นอ่อน 4 ใบ', 3: 'ต้นผลิดอก', 4: 'ต้นไม้น้อย' };
 
 function Leaves({ id, stage }: { id: string; stage: SproutyStage }) {
   if (stage === 4) {
@@ -54,8 +54,19 @@ function Leaves({ id, stage }: { id: string; stage: SproutyStage }) {
       </>
     );
   }
+  if (stage === 0) {
+    // Just a seed: a tiny green bud peeking out of the top, still curled up.
+    return (
+      <>
+        <path d="M120 92 C120 86 121 82 123 78" stroke="#6FB64E" strokeWidth={5} strokeLinecap="round" fill="none" />
+        <path d="M123 79 C116 72 112 74 113 79 C117 82 121 81 123 79Z" fill={`url(#${id}-leafL)`} />
+        <path d="M123 78 C127 70 133 70 133 75 C130 79 126 80 123 78Z" fill={`url(#${id}-leafR)`} />
+      </>
+    );
+  }
   return (
-    <>
+    // a young sprout (stage 1) has smaller leaves that grow to full size from stage 2
+    <g transform={stage === 1 ? 'translate(122 92) scale(0.72) translate(-122 -92)' : undefined}>
       <path d="M120 92 C121 78 122 70 124 60" stroke="#6FB64E" strokeWidth={6} strokeLinecap="round" fill="none" />
       {stage >= 2 && (
         <>
@@ -79,7 +90,7 @@ function Leaves({ id, stage }: { id: string; stage: SproutyStage }) {
           <circle cx="122" cy="50" r="2" fill="#FFFFFF" opacity={0.7} />
         </g>
       )}
-    </>
+    </g>
   );
 }
 

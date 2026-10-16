@@ -3,10 +3,11 @@ import type { TimeOfDay } from './timeOfDay';
 
 /** Sprouty grows with the player's level. `from` is the first level of each stage. */
 export const SPROUTY_STAGES: { stage: SproutyStage; from: number; name: string }[] = [
-  { stage: 1, from: 1, name: 'เมล็ดพันธุ์' },
-  { stage: 2, from: 3, name: 'ต้นอ่อน 4 ใบ' },
-  { stage: 3, from: 8, name: 'ต้นผลิดอก' },
-  { stage: 4, from: 15, name: 'ต้นไม้น้อย' },
+  { stage: 0, from: 1, name: 'เมล็ดพันธุ์' },
+  { stage: 1, from: 3, name: 'ต้นอ่อนเล็ก' },
+  { stage: 2, from: 6, name: 'ต้นอ่อน 4 ใบ' },
+  { stage: 3, from: 12, name: 'ต้นผลิดอก' },
+  { stage: 4, from: 20, name: 'ต้นไม้น้อย' },
 ];
 
 export function getSproutyStage(level: number): { stage: SproutyStage; name: string; nextAt: number | null; nextName: string | null } {

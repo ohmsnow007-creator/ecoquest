@@ -10,17 +10,19 @@ import { SproutyHomeCard } from '../components/sprouty/SproutyHomeCard';
 import { SproutySeed } from '../components/illustrations/SproutySeed';
 
 describe('Sprouty growth', () => {
-  it('grows seed → four leaves → flower → small tree by level', () => {
-    expect(getSproutyStage(1)).toMatchObject({ stage: 1, nextAt: 3 });
-    expect(getSproutyStage(2).stage).toBe(1);
-    expect(getSproutyStage(3)).toMatchObject({ stage: 2, nextAt: 8 });
-    expect(getSproutyStage(8)).toMatchObject({ stage: 3, nextAt: 15 });
-    expect(getSproutyStage(15)).toMatchObject({ stage: 4, nextAt: null });
-    expect(getSproutyStage(30).stage).toBe(4);
+  it('grows seed → young sprout → four leaves → flower → small tree, fully grown at level 20', () => {
+    expect(getSproutyStage(1)).toMatchObject({ stage: 0, name: 'เมล็ดพันธุ์', nextAt: 3 });
+    expect(getSproutyStage(2).stage).toBe(0);
+    expect(getSproutyStage(3)).toMatchObject({ stage: 1, nextAt: 6 });
+    expect(getSproutyStage(6)).toMatchObject({ stage: 2, nextAt: 12 });
+    expect(getSproutyStage(12)).toMatchObject({ stage: 3, nextAt: 20 });
+    expect(getSproutyStage(19).stage).toBe(3);
+    expect(getSproutyStage(20)).toMatchObject({ stage: 4, nextAt: null });
+    expect(getSproutyStage(50).stage).toBe(4);
   });
 
   it('every stage and mood renders', () => {
-    for (const stage of [1, 2, 3, 4] as const) {
+    for (const stage of [0, 1, 2, 3, 4] as const) {
       for (const mood of ['happy', 'cheer', 'sleepy', 'worried'] as const) {
         const { container, unmount } = render(<SproutySeed stage={stage} mood={mood} />);
         expect(container.querySelector('svg')).not.toBeNull();
@@ -50,11 +52,11 @@ describe('Sprouty greeting', () => {
   });
 
   it('the Home card shows the greeting and growth stage', () => {
-    render(<SproutyHomeCard name="มินท์" level={9} todayCount={0} streak={3} dailyComplete={false} now={new Date(2026, 9, 15, 9)} />);
+    render(<SproutyHomeCard name="มินท์" level={13} todayCount={0} streak={3} dailyComplete={false} now={new Date(2026, 9, 15, 9)} />);
     expect(screen.getByText('อรุณสวัสดิ์ มินท์!')).toBeInTheDocument();
     expect(screen.getByText(/Streak 3 วัน/)).toBeInTheDocument();
     expect(screen.getByText('Sprouty: ต้นผลิดอก')).toBeInTheDocument();
-    expect(screen.getByText('โตเป็นต้นไม้น้อยที่เลเวล 15')).toBeInTheDocument();
+    expect(screen.getByText('โตเป็นต้นไม้น้อยที่เลเวล 20')).toBeInTheDocument();
   });
 });
 
