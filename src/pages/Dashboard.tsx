@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useOutfit } from '../components/cosmetics/useOutfit';
 import { motion } from 'framer-motion';
-import {
+import { Recycle,
   Settings, Flame, Target, ListChecks, Leaf, ChevronRight, Brain, Medal, TrendingUp, Sparkles, Timer, CheckCircle2, Circle, Trophy, ShieldCheck,
   type LucideIcon,
 } from 'lucide-react';
@@ -18,6 +18,7 @@ import { getDailyStatus, getSpecialMissionIds, getWeeklyStatus } from '../utils/
 import { SpecialMissionTag } from '../components/challenges/SpecialMissionTag';
 import { ChallengeBonus, WeeklyChallengeCard } from '../components/challenges/ChallengeCards';
 import { SproutyHomeCard } from '../components/sprouty/SproutyHomeCard';
+import { SproutyChatButton } from '../components/sprouty/SproutyChat';
 import { getCareState } from '../utils/care';
 import { getActiveEvent } from '../data/events';
 import { EVENT_REWARDS, getCosmeticStatus } from '../data/cosmetics';
@@ -46,6 +47,7 @@ const QUICK_ACTIONS: { to: string; label: string; aria: string; icon: LucideIcon
   { to: '/quiz', label: 'แบบทดสอบ', aria: 'ทำแบบทดสอบ', icon: Brain, tone: 'bg-tag-sky text-forest' },
   { to: '/achievements', label: 'รางวัล', aria: 'ดูรางวัลและเหรียญตรา', icon: Medal, tone: 'bg-tag-yellow text-forest' },
   { to: '/impact', label: 'ผลกระทบ', aria: 'ดู Green Impact', icon: Leaf, tone: 'bg-tag-lavender text-forest' },
+  { to: '/sort', label: 'แยกขยะ', aria: 'แยกขยะกับ Sprouty', icon: Recycle, tone: 'bg-[#FDE7C8] text-forest' },
 ];
 
 function ViewAll({ to }: { to: string }) {
@@ -330,14 +332,14 @@ export function Dashboard() {
         {/* 6. Quick actions */}
         <section aria-labelledby="quick-title">
           <SectionTitle id="quick-title" title="ทางลัด" />
-          <ul className="grid grid-cols-4 gap-2">
+          <ul className="grid grid-cols-5 gap-1">
             {QUICK_ACTIONS.map(({ to, label, aria, icon: Icon, tone }) => (
               <li key={to}>
-                <Link to={to} aria-label={aria} className="group flex flex-col items-center gap-1.5 rounded-2xl p-1 text-center">
-                  <span className={`flex h-14 w-14 items-center justify-center rounded-[1.125rem] shadow-card ring-1 ring-forest/5 transition-transform group-hover:-translate-y-0.5 ${tone}`} aria-hidden="true">
-                    <Icon size={24} />
+                <Link to={to} aria-label={aria} className="group flex flex-col items-center gap-1.5 rounded-2xl p-0.5 text-center active:scale-95">
+                  <span className={`flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-[1.1rem] shadow-card ring-1 ring-forest/5 transition-transform group-hover:-translate-y-0.5 ${tone}`} aria-hidden="true">
+                    <Icon size={23} />
                   </span>
-                  <span className="text-caption font-medium text-forest">{label}</span>
+                  <span className="text-[0.75rem] leading-tight font-medium text-forest">{label}</span>
                 </Link>
               </li>
             ))}
@@ -363,6 +365,7 @@ export function Dashboard() {
           )}
         </section>
       </div>
+      <SproutyChatButton />
     </>
   );
 }

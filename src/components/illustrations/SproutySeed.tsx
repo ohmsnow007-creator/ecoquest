@@ -4,7 +4,7 @@ import type { Outfit } from '../../data/cosmetics';
 import { SproutyCosmetics } from '../cosmetics/CosmeticArt';
 import { PotBack, PotFront } from '../cosmetics/SproutyScenery';
 
-export type SproutyMood = 'happy' | 'cheer' | 'sleepy' | 'worried' | 'angry' | 'shy' | 'pleading';
+export type SproutyMood = 'happy' | 'cheer' | 'sleepy' | 'worried' | 'angry' | 'shy' | 'pleading' | 'thinking';
 /** 1 seed with two leaves · 2 four leaves · 3 flowering · 4 small tree. */
 export type SproutyStage = 1 | 2 | 3 | 4;
 
@@ -110,8 +110,28 @@ function PleadingFace({ blinking, lx, ly }: { blinking: boolean; lx: number; ly:
   );
 }
 
+/** Looking up to one side, one brow raised, a little sideways mouth: Sprouty thinking it over. */
+function ThinkingFace({ blinking }: { blinking: boolean }) {
+  return (
+    <>
+      <path d="M86 136 Q96 128 106 133" stroke={INK} strokeWidth={3} strokeLinecap="round" fill="none" />
+      <path d="M135 139 L153 137" stroke={INK} strokeWidth={3} strokeLinecap="round" />
+      <motion.g style={fill} animate={{ scaleY: blinking ? 0.1 : 1 }} transition={{ duration: 0.08 }}>
+        <ellipse cx="98" cy="152" rx="7.5" ry="9" fill={INK} />
+        <ellipse cx="142" cy="152" rx="7.5" ry="9" fill={INK} />
+        <circle cx="102" cy="146" r="2.8" fill="#FFFFFF" />
+        <circle cx="146" cy="146" r="2.8" fill="#FFFFFF" />
+      </motion.g>
+      <ellipse cx="84" cy="168" rx="10" ry="6" fill="#F9939A" opacity={0.5} />
+      <ellipse cx="156" cy="168" rx="10" ry="6" fill="#F9939A" opacity={0.5} />
+      <path d="M114 175 Q121 172 128 176" stroke={INK} strokeWidth={3} strokeLinecap="round" fill="none" />
+    </>
+  );
+}
+
 function Face({ mood, blinking, lx, ly }: { mood: SproutyMood; blinking: boolean; lx: number; ly: number }) {
   if (mood === 'pleading') return <PleadingFace blinking={blinking} lx={lx} ly={ly} />;
+  if (mood === 'thinking') return <ThinkingFace blinking={blinking} />;
   const closed = mood === 'sleepy' || (mood === 'cheer' && !blinking);
   return (
     <>
@@ -368,6 +388,26 @@ export function SproutySeed({
             </g>
           )}
           {mood === 'worried' && <path d="M176 120 q6 10 0 14 q-6 -4 0 -14Z" fill="#7DD3FC" />}
+          {mood === 'thinking' && (
+            // a thought bubble of three dots popping in turn
+            <g fill="#FFFFFF" stroke="#CFE7DA" strokeWidth={1.5}>
+              {[
+                [170, 112, 4],
+                [184, 98, 6],
+                [202, 80, 9],
+              ].map(([x, y, r], i) => (
+                <motion.circle
+                  key={x}
+                  cx={x}
+                  cy={y}
+                  r={r}
+                  animate={still ? undefined : { opacity: [0.3, 1, 0.3], scale: [0.85, 1.1, 0.85] }}
+                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.25 }}
+                  style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+                />
+              ))}
+            </g>
+          )}
           {mood === 'pleading' && (
             // a tear welling up and rolling down the cheek
             <motion.path
