@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useOutfit } from '../components/cosmetics/useOutfit';
 import { Wardrobe } from '../components/cosmetics/Wardrobe';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Pencil, Settings, Target, Medal, Flame, Sparkles, Brain, ListChecks, ChevronRight, ShieldCheck, History, BarChart3, Trophy, CalendarDays, ArrowRight } from 'lucide-react';
+import { UserRoundPen, Settings, Target, Medal, Flame, Sparkles, Brain, ListChecks, ChevronRight, ShieldCheck, History, BarChart3, Trophy, CalendarDays, ArrowRight } from 'lucide-react';
 import { useGame } from '../store/GameContext';
 import { getPlayerStats } from '../utils/playerStats';
 import { getLevelConfig } from '../utils/xp';
@@ -19,7 +19,6 @@ import { ProgressBar } from '../components/ui/ProgressBar';
 import { Modal } from '../components/ui/Modal';
 import { PrimaryButton, SecondaryButton } from '../components/ui/Button';
 import { BadgeMedal } from '../components/illustrations/BadgeMedal';
-import { IconButton } from '../components/ui/Button';
 
 const FAVORITE_MIN_COMPLETIONS = 3;
 
@@ -53,14 +52,14 @@ function EditProfileDialog({ open, onClose }: { open: boolean; onClose: () => vo
       }
     >
       <div className="grid grid-cols-2 gap-2" aria-label="เปรียบเทียบก่อนและหลังแก้ไข">
-        <div className="rounded-control border border-border p-3 text-center">
-          <p className="mb-2 text-caption text-muted">ปัจจุบัน</p>
-          <Avatar id={profile.avatarId} color={color} size="md" />
+        <div className="rounded-control border border-border p-2 text-center">
+          <p className="mb-1 text-caption text-muted">ปัจจุบัน</p>
+          <Avatar id={profile.avatarId} color={color} size="sm" />
           <p className="mt-1 truncate text-caption font-semibold">{profile.displayName}</p>
         </div>
-        <div className={`rounded-control border p-3 text-center ${changed ? 'border-primary bg-pale-mint' : 'border-border'}`}>
-          <p className="mb-2 text-caption text-muted">หลังบันทึก</p>
-          <Avatar id={avatar} color={color} size="md" />
+        <div className={`rounded-control border p-2 text-center ${changed ? 'border-primary bg-pale-mint' : 'border-border'}`}>
+          <p className="mb-1 text-caption text-muted">หลังบันทึก</p>
+          <Avatar id={avatar} color={color} size="sm" />
           <p className="mt-1 truncate text-caption font-semibold">{result.ok ? result.value : '—'}</p>
         </div>
       </div>
@@ -131,12 +130,7 @@ export function Profile() {
                 <Avatar id={profile.avatarId} color={profile.preferences.profileColor} size="lg" outfit={outfit} />
               </span>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1">
-                  <p className="truncate text-section font-bold text-white">{profile.displayName}</p>
-                  <IconButton aria-label="แก้ไขโปรไฟล์" variant="onDark" onClick={openEdit} className="-my-2">
-                    <Pencil size={17} />
-                  </IconButton>
-                </div>
+                <p className="truncate text-section font-bold text-white">{profile.displayName}</p>
                 <div className="flex flex-wrap items-center gap-2">
                   <LevelBadge level={level.level} variant="onDark" />
                   <span className="text-caption font-medium text-mint">{level.title}</span>
@@ -147,6 +141,13 @@ export function Profile() {
                 </p>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={openEdit}
+              className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-white/12 text-caption font-semibold text-white ring-1 ring-white/25 backdrop-blur transition hover:bg-white/20 active:scale-[0.98]"
+            >
+              <UserRoundPen size={17} className="text-lime" aria-hidden="true" /> แก้ไขชื่อและอวาตาร์
+            </button>
             <div className="mt-4">
               <ProgressBar
                 value={stats.levelProgress}

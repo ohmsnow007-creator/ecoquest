@@ -59,7 +59,8 @@ export function Modal({ open, onClose, title, hideTitle = false, children, foote
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            className="safe-bottom relative w-full max-w-md rounded-t-card bg-surface p-5 shadow-raised sm:rounded-card"
+            // Never taller than the screen: the title and buttons stay put, the content scrolls between them.
+            className="safe-bottom relative flex max-h-[92dvh] w-full max-w-md flex-col rounded-t-card bg-surface p-5 shadow-raised sm:max-h-[85dvh] sm:rounded-card"
             initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
@@ -74,8 +75,8 @@ export function Modal({ open, onClose, title, hideTitle = false, children, foote
                 </IconButton>
               )}
             </div>
-            {children}
-            {footer && <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">{footer}</div>}
+            <div className="-mx-5 min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-1">{children}</div>
+            {footer && <div className="mt-4 flex shrink-0 gap-2 border-t border-border pt-4 *:flex-1 sm:justify-end sm:*:flex-none">{footer}</div>}
           </motion.div>
         </div>
       )}

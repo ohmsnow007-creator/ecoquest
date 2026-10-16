@@ -122,7 +122,7 @@ describe('Leaderboard page', () => {
 describe('Profile page', () => {
   it('edits the name with preview, persists it and updates everywhere', () => {
     renderAt('/profile');
-    fireEvent.click(screen.getByRole('button', { name: 'แก้ไขโปรไฟล์' }));
+    fireEvent.click(screen.getByRole('button', { name: 'แก้ไขชื่อและอวาตาร์' }));
     fireEvent.change(screen.getByLabelText('ชื่อผู้เล่น'), { target: { value: 'ใบเตย' } });
     expect(within(screen.getByLabelText('เปรียบเทียบก่อนและหลังแก้ไข')).getByText('ใบเตย')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'บันทึก' }));
