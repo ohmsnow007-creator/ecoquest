@@ -19,6 +19,19 @@ export function earnedXp(progress: PlayerProgress): number {
   return Math.max(0, progress.totalXp - adminXp(progress));
 }
 
+/** Sum of an admin grant kind's amounts (world missions, water, fertilizer, bond points). */
+export function adminTotal(progress: PlayerProgress, kind: 'world' | 'water' | 'fertilizer' | 'bond'): number {
+  return adminGrants(progress).reduce((s, g) => {
+    if (g.kind !== kind) return s;
+    return s + (g.kind === 'world' ? g.missions : g.kind === 'bond' ? g.points : g.kind === 'water' || g.kind === 'fertilizer' ? g.amount : 0);
+  }, 0);
+}
+
+/** Missions that count toward the virtual world: the player's own, plus any admin world grant. */
+export function worldMissionCount(progress: PlayerProgress): number {
+  return progress.completions.length + adminTotal(progress, 'world');
+}
+
 export function hasAdminGrants(progress: PlayerProgress): boolean {
   return adminGrants(progress).length > 0;
 }

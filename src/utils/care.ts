@@ -2,6 +2,7 @@ import type { MissionCompletion, PlayerProgress } from '../types';
 import type { SproutyMood } from '../components/illustrations/SproutySeed';
 import { getLocalDate } from './streak';
 import { SPECIAL_FERTILIZER } from '../config/challenges';
+import { adminTotal } from './admin';
 
 /*
  * Caring for Sprouty. Everything here comes from records the game already keeps, plus the player's own
@@ -22,9 +23,11 @@ const FERTILIZER_POINTS = 15;
 export const LONELY_AFTER_DAYS = 3;
 
 export interface CareRecord {
-  /** Local dates (YYYY-MM-DD) the player watered Sprouty. */
+  /** Local dates (YYYY-MM-DD) the player watered Sprouty with the day's water. */
   wateredDays: string[];
   fertilizerUsed: number;
+  /** Extra waterings poured from admin-given water. */
+  bonusWaterUsed?: number;
 }
 
 export const EMPTY_CARE: CareRecord = { wateredDays: [], fertilizerUsed: 0 };
@@ -52,8 +55,8 @@ function daysBetween(from: string, to: string): number {
   return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
 }
 
-export function bondFromCare(care: CareRecord): { points: number; level: number; intoLevel: number; nextAt: number | null } {
-  const points = care.wateredDays.length * WATER_POINTS + care.fertilizerUsed * FERTILIZER_POINTS;
+export function bondFromCare(care: CareRecord, extraPoints = 0): { points: number; level: number; intoLevel: number; nextAt: number | null } {
+  const points = (care.wateredDays.length + (care.bonusWaterUsed ?? 0)) * WATER_POINTS + care.fertilizerUsed * FERTILIZER_POINTS + extraPoints;
   const level = Math.min(MAX_BOND, Math.floor(points / BOND_STEP) + 1);
   return { points, level, intoLevel: level === MAX_BOND ? BOND_STEP : points % BOND_STEP, nextAt: level === MAX_BOND ? null : level * BOND_STEP };
 }
@@ -63,6 +66,10 @@ export interface CareState {
   /** A mission was recorded today, so there is water to pour. */
   hasWaterToday: boolean;
   wateredToday: boolean;
+  /** Extra water from the admin, not yet poured. */
+  bonusWater: number;
+  /** Waterings available right now (today's water if not poured yet, plus extra water). */
+  waterLeft: number;
   fertilizerEarned: number;
   fertilizer: number;
   /** Days since the last recorded mission (null if none yet). */
@@ -74,21 +81,23 @@ export interface CareState {
 
 export function getCareState(progress: PlayerProgress, today: string = getLocalDate()): CareState {
   const care = progress.care ?? EMPTY_CARE;
-  const fertilizerEarned = progress.completions.reduce((n, c) => n + fertilizerFrom(c), 0);
+  const fertilizerEarned = progress.completions.reduce((n, c) => n + fertilizerFrom(c), 0) + adminTotal(progress, 'fertilizer');
   const fertilizer = Math.max(0, fertilizerEarned - care.fertilizerUsed);
   const hasWaterToday = progress.completions.some((c) => c.localDate === today);
   const wateredToday = care.wateredDays.includes(today);
   const last = progress.completions.reduce<string | null>((m, c) => (m === null || c.localDate > m ? c.localDate : m), null);
   const daysAway = last ? Math.max(0, daysBetween(last, today)) : null;
-  const bond = bondFromCare(care);
+  const bond = bondFromCare(care, adminTotal(progress, 'bond'));
+  const bonusWater = Math.max(0, adminTotal(progress, 'water') - (care.bonusWaterUsed ?? 0));
+  const waterLeft = (hasWaterToday && !wateredToday ? 1 : 0) + bonusWater;
 
   let mood: SproutyMood = 'happy';
   let line: string;
   if (wateredToday) {
     mood = 'cheer';
     line = fertilizer > 0 ? 'สดชื่นจัง! ขอบคุณที่รดน้ำนะ มีปุ๋ยเหลืออยู่ด้วย อยากกินจัง~' : 'สดชื่นจัง! ขอบคุณที่รดน้ำให้นะ พรุ่งนี้มาเจอกันอีก';
-  } else if (hasWaterToday) {
-    line = 'ทำภารกิจวันนี้แล้ว ได้น้ำมาด้วย รดให้หน่อยนะ~';
+  } else if (hasWaterToday || bonusWater > 0) {
+    line = hasWaterToday ? 'ทำภารกิจวันนี้แล้ว ได้น้ำมาด้วย รดให้หน่อยนะ~' : 'มีน้ำพิเศษอยู่ รดให้หน่อยนะ~';
   } else if (daysAway === null) {
     mood = 'sleepy';
     line = 'ทำภารกิจแรกเพื่อเอาน้ำมารดให้ฉันหน่อยนะ';
@@ -99,7 +108,7 @@ export function getCareState(progress: PlayerProgress, today: string = getLocalD
     mood = 'sleepy';
     line = 'คอแห้งนิดหน่อย ทำภารกิจสักข้อเพื่อได้น้ำมารดนะ';
   }
-  return { care, hasWaterToday, wateredToday, fertilizerEarned, fertilizer, daysAway, bond, mood, line };
+  return { care, hasWaterToday, wateredToday, bonusWater, waterLeft, fertilizerEarned, fertilizer, daysAway, bond, mood, line };
 }
 
 /** Completions that dropped fertilizer, newest first (for "where did my fertilizer come from"). */

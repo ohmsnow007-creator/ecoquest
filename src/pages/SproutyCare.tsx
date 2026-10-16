@@ -190,7 +190,12 @@ export function SproutyCare() {
   const eventReward = EVENT_REWARDS.find((r) => r.event.id === shownEvent.id)?.cosmetic;
   const eventDone = eventReward ? getCosmeticStatus(eventReward, progress).unlocked : false;
 
-  const waterHint = care.wateredToday ? 'รดน้ำวันนี้แล้ว พรุ่งนี้มารดใหม่นะ' : care.hasWaterToday ? 'มีน้ำจากภารกิจวันนี้ 1 ครั้ง' : 'ทำภารกิจวันนี้สักข้อเพื่อได้น้ำ';
+  const waterHint =
+    care.waterLeft > 1
+      ? `มีน้ำรด ${care.waterLeft} ครั้ง`
+      : care.waterLeft === 1
+        ? care.hasWaterToday && !care.wateredToday ? 'มีน้ำจากภารกิจวันนี้ 1 ครั้ง' : 'มีน้ำพิเศษ 1 ครั้ง'
+        : care.wateredToday ? 'รดน้ำวันนี้แล้ว พรุ่งนี้มารดใหม่นะ' : 'ทำภารกิจวันนี้สักข้อเพื่อได้น้ำ';
 
   return (
     <>
@@ -235,7 +240,7 @@ export function SproutyCare() {
             <button
               type="button"
               onClick={water}
-              disabled={!care.hasWaterToday || care.wateredToday}
+              disabled={care.waterLeft <= 0}
               className="flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-2xl bg-[#0EA5E9] px-2 py-2 text-white shadow-card transition active:scale-95 disabled:bg-background disabled:text-muted disabled:shadow-none disabled:ring-1 disabled:ring-border"
             >
               <span className="flex items-center gap-1.5 font-semibold">

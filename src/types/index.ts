@@ -63,7 +63,13 @@ export interface BadgeRecord {
 export type AdminGrant =
   | { id: string; at: string; kind: 'xp'; amount: number }
   | { id: string; at: string; kind: 'badge'; badgeId: string }
-  | { id: string; at: string; kind: 'cosmetic'; cosmeticId: string };
+  | { id: string; at: string; kind: 'cosmetic'; cosmeticId: string }
+  /** Counts toward the virtual world's growth (as if that many missions were done), nothing else. */
+  | { id: string; at: string; kind: 'world'; missions: number }
+  /** Extra waterings / fertilizer bags for Sprouty, and direct bond points. */
+  | { id: string; at: string; kind: 'water'; amount: number }
+  | { id: string; at: string; kind: 'fertilizer'; amount: number }
+  | { id: string; at: string; kind: 'bond'; points: number };
 
 /** One 60-second timed quiz run. Timed mode gives no XP; it only keeps the player's best. */
 export interface TimedQuizRun {
@@ -171,7 +177,7 @@ export interface PlayerProgress {
   /** Demo admin grants (separate from the player's own records). */
   adminGrants?: AdminGrant[];
   /** Caring for Sprouty: days the player poured water, and fertilizer bags used. */
-  care?: { wateredDays: string[]; fertilizerUsed: number };
+  care?: { wateredDays: string[]; fertilizerUsed: number; bonusWaterUsed?: number };
   schemaVersion: number;
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { MotionConfig } from 'framer-motion';
 import { GameProvider } from '../store/GameContext';
@@ -233,4 +233,71 @@ describe('profile frames and free backgrounds', () => {
     expect(clean?.preferences.outfit).toEqual({ frame: 'frame-sky' });
     expect(clean?.preferences.sproutyOutfit).toEqual({});
   });
+});
+
+describe('admin can grant world stage, water, fertilizer and bond', () => {
+  it('extra water and fertilizer are usable on the care page; world and bond grow; all revocable', async () => {
+    const { adminTotal, worldMissionCount } = await import('../utils/admin');
+    const { getWorldState } = await import('../utils/world');
+    const base = progressWith([], { wateredDays: [], fertilizerUsed: 0 });
+    const granted: PlayerProgress = {
+      ...base,
+      adminGrants: [
+        { id: 'w', at: 'x', kind: 'world', missions: 90 },
+        { id: 'a', at: 'x', kind: 'water', amount: 2 },
+        { id: 'f', at: 'x', kind: 'fertilizer', amount: 2 },
+        { id: 'b', at: 'x', kind: 'bond', points: 160 },
+      ],
+    };
+    const clean = sanitizeProgress(granted);
+    expect(clean.adminGrants).toHaveLength(4);
+    expect(adminTotal(clean, 'water')).toBe(2);
+    expect(getWorldState(worldMissionCount(clean)).current.stage).toBe(7);
+    const st = getCareState(clean, '2026-10-17');
+    expect(st).toMatchObject({ waterLeft: 2, fertilizer: 2 });
+    expect(st.bond.level).toBe(5);
+    // after pouring both extra waters there is none left
+    const used = getCareState({ ...clean, care: { wateredDays: [], fertilizerUsed: 2, bonusWaterUsed: 2 } }, '2026-10-17');
+    expect(used).toMatchObject({ waterLeft: 0, fertilizer: 0 });
+    // tampered grants are dropped
+    expect(sanitizeProgress({ adminGrants: [{ id: 'z', at: 'x', kind: 'water', amount: -3 }, { id: 'y', at: 'x', kind: 'world', missions: 1.5 }] }).adminGrants).toBeUndefined();
+  });
+
+  it('the admin panel buttons give water and fertilizer together, and set world and bond levels', async () => {
+    const { Admin } = await import('../pages/Admin');
+    localStorage.clear();
+    localStorage.setItem('ecoquest_profile', JSON.stringify(profile));
+    localStorage.setItem('ecoquest_progress', JSON.stringify(progressWith([])));
+    render(
+      <MotionConfig reducedMotion="always">
+        <MemoryRouter>
+          <GameProvider>
+            <Admin />
+          </GameProvider>
+        </MemoryRouter>
+      </MotionConfig>,
+    );
+    for (const pin of ['654321', '031069']) {
+      for (const d of pin) fireEvent.click(screen.getByRole('button', { name: d }));
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 400));
+      });
+    }
+    await screen.findByText('น้ำและปุ๋ยสำหรับ Sprouty');
+    fireEvent.click(screen.getByRole('button', { name: 'เพิ่มจำนวน' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ยืนยัน' }));
+    let p = storageService.getProgress();
+    expect(getCareState(p)).toMatchObject({ fertilizer: 2 });
+    expect(getCareState(p).waterLeft).toBe(2);
+
+    const [worldSelect, bondSelect] = screen.getAllByRole('combobox').slice(1);
+    fireEvent.change(worldSelect, { target: { value: '6' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'ตั้งระดับ' })[0]);
+    fireEvent.change(bondSelect, { target: { value: '4' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'ตั้งระดับ' })[1]);
+    p = storageService.getProgress();
+    const { worldMissionCount } = await import('../utils/admin');
+    expect(worldMissionCount(p)).toBe(60);
+    expect(getCareState(p).bond.level).toBe(4);
+  }, 20_000);
 });

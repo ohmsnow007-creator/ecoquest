@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, Sparkles, Medal, Shirt, TrendingUp, Undo2, Trash2, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Sparkles, Medal, Shirt, TrendingUp, Undo2, Trash2, AlertTriangle, Globe2, Droplets, Heart, Minus, Plus } from 'lucide-react';
 import { useGame } from '../store/GameContext';
 import { PinPad } from '../components/admin/PinPad';
 import { badges } from '../data/badges';
 import { COSMETICS, getCosmeticStatus, SLOT_LABELS } from '../data/cosmetics';
 import { MAX_LEVEL } from '../config/levels';
 import { getLevelFromXp } from '../utils/xp';
-import { adminGrants, adminXp, earnedXp } from '../utils/admin';
+import { adminGrants, adminXp, earnedXp, worldMissionCount } from '../utils/admin';
+import { getWorldState } from '../utils/world';
+import { worldStages } from '../data/worldStages';
+import { getCareState, MAX_BOND } from '../utils/care';
 import { PageHeader } from '../components/ui/PageHeader';
 import { PrimaryButton, SecondaryButton } from '../components/ui/Button';
 import { ConfirmationDialog } from '../components/ui/Modal';
@@ -31,6 +34,9 @@ export function Admin() {
   const { profile, progress, admin, notify, markCosmeticsSeen } = useGame();
   const [unlocked, setUnlocked] = useState(unlockedThisSession);
   const [level, setLevel] = useState(10);
+  const [worldStage, setWorldStage] = useState(7);
+  const [careAmount, setCareAmount] = useState(1);
+  const [bondLevel, setBondLevel] = useState(5);
   const [confirmRevokeAll, setConfirmRevokeAll] = useState(false);
   if (!profile) return null;
 
@@ -47,6 +53,9 @@ export function Admin() {
   const grants = adminGrants(progress);
   const currentLevel = getLevelFromXp(progress.totalXp);
   const owned = new Set(progress.unlockedBadges.map((b) => b.badgeId));
+  const world = getWorldState(worldMissionCount(progress)).current;
+  const care = getCareState(progress);
+  const selectCls = 'mt-1 min-h-11 w-full rounded-control border border-border bg-surface px-3 text-body';
 
   return (
     <>
@@ -108,6 +117,75 @@ export function Admin() {
               </div>
             </Section>
 
+            <Section icon={Globe2} title="ระดับโลกของฉัน">
+              <p className="text-caption text-muted">
+                ตอนนี้: ระดับ {world.stage} · {world.title}
+              </p>
+              <div className="mt-2 flex items-end gap-2">
+                <label className="flex-1 text-caption font-semibold">
+                  ตั้งระดับเป็น
+                  <select value={worldStage} onChange={(e) => setWorldStage(Number(e.target.value))} className={selectCls}>
+                    {worldStages.slice(1).map((s) => (
+                      <option key={s.stage} value={s.stage} disabled={s.stage <= world.stage}>
+                        ระดับ {s.stage} · {s.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <PrimaryButton className="rounded-full" disabled={worldStage <= world.stage} onClick={() => done(admin.grantWorldStage(worldStage), `โลกของฉันถึงระดับ ${worldStage} แล้ว`)}>
+                  ตั้งระดับ
+                </PrimaryButton>
+              </div>
+            </Section>
+
+            <Section icon={Droplets} title="น้ำและปุ๋ยสำหรับ Sprouty">
+              <p className="text-caption text-muted">
+                ตอนนี้: น้ำพร้อมรด {care.waterLeft} ครั้ง · ปุ๋ย {care.fertilizer} ถุง
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <button type="button" aria-label="ลดจำนวน" onClick={() => setCareAmount((n) => Math.max(1, n - 1))} className="flex h-11 w-11 items-center justify-center rounded-full bg-background ring-1 ring-border">
+                  <Minus size={18} />
+                </button>
+                <label className="sr-only" htmlFor="care-amount">จำนวน</label>
+                <input
+                  id="care-amount"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={99}
+                  value={careAmount}
+                  onChange={(e) => setCareAmount(Math.min(99, Math.max(1, Math.floor(Number(e.target.value) || 1))))}
+                  className="min-h-11 w-16 rounded-control border border-border bg-surface text-center text-section font-bold"
+                />
+                <button type="button" aria-label="เพิ่มจำนวน" onClick={() => setCareAmount((n) => Math.min(99, n + 1))} className="flex h-11 w-11 items-center justify-center rounded-full bg-background ring-1 ring-border">
+                  <Plus size={18} />
+                </button>
+                <PrimaryButton className="flex-1 rounded-full" onClick={() => done(admin.grantCare(careAmount), `มอบน้ำ ${careAmount} และปุ๋ย ${careAmount} ถุงแล้ว`)}>
+                  ยืนยัน
+                </PrimaryButton>
+              </div>
+              <p className="mt-1.5 text-[0.75rem] text-muted">ได้น้ำ 💧 และปุ๋ย ✨ อย่างละ {careAmount} ไปรด/ใส่ได้ที่หน้าดูแล Sprouty</p>
+            </Section>
+
+            <Section icon={Heart} title="ความผูกพันกับ Sprouty">
+              <p className="text-caption text-muted">ตอนนี้: ระดับ {care.bond.level} จาก {MAX_BOND}</p>
+              <div className="mt-2 flex items-end gap-2">
+                <label className="flex-1 text-caption font-semibold">
+                  ตั้งเป็นระดับ
+                  <select value={bondLevel} onChange={(e) => setBondLevel(Number(e.target.value))} className={selectCls}>
+                    {Array.from({ length: MAX_BOND - 1 }, (_, i) => i + 2).map((l) => (
+                      <option key={l} value={l} disabled={l <= care.bond.level}>
+                        ระดับ {l}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <PrimaryButton className="rounded-full" disabled={bondLevel <= care.bond.level} onClick={() => done(admin.grantBond(bondLevel), `ความผูกพันถึงระดับ ${bondLevel} แล้ว`)}>
+                  ตั้งระดับ
+                </PrimaryButton>
+              </div>
+            </Section>
+
             <PrimaryButton
               fullWidth
               size="lg"
@@ -120,7 +198,7 @@ export function Admin() {
                 done(ok, 'ปลดล็อกทุกอย่างแล้ว (สาธิต)');
               }}
             >
-              ปลดล็อกทุกอย่าง (เลเวล 15 + เหรียญ + ของแต่ง)
+              ปลดล็อกทุกอย่าง (เลเวล 15 + โลกระดับ 7 + เหรียญ + ของแต่ง)
             </PrimaryButton>
           </div>
 
@@ -204,7 +282,13 @@ export function Admin() {
                             ? `+${g.amount.toLocaleString('th-TH')} XP`
                             : g.kind === 'badge'
                               ? `เหรียญ ${badges.find((b) => b.id === g.badgeId)?.name ?? g.badgeId}`
-                              : `ของแต่ง ${COSMETICS.find((c) => c.id === g.cosmeticId)?.name ?? g.cosmeticId}`}
+                              : g.kind === 'cosmetic'
+                                ? `ของแต่ง ${COSMETICS.find((c) => c.id === g.cosmeticId)?.name ?? g.cosmeticId}`
+                                : g.kind === 'world'
+                                  ? `โลกของฉัน +${g.missions} ภารกิจ`
+                                  : g.kind === 'bond'
+                                    ? `ความผูกพัน +${g.points} แต้ม`
+                                    : `${g.kind === 'water' ? 'น้ำ 💧' : 'ปุ๋ย ✨'} +${g.amount}`}
                         </span>
                         <button type="button" onClick={() => done(admin.revoke(g.id), 'ย้อนคืนแล้ว')} className="min-h-9 shrink-0 rounded-full px-3 font-semibold text-danger hover:bg-danger/10">
                           ย้อนคืน

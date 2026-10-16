@@ -1,5 +1,6 @@
 import { Lock, CheckCircle2, Info } from 'lucide-react';
 import { useGame } from '../store/GameContext';
+import { worldMissionCount } from '../utils/admin';
 import { getWorldState, explainWorld } from '../utils/world';
 import { getPlayerStats } from '../utils/playerStats';
 import { worldStages } from '../data/worldStages';
@@ -15,7 +16,7 @@ import { worldLine } from '../utils/sprouty';
 export function VirtualWorld() {
   const { progress } = useGame();
   const stats = getPlayerStats(progress);
-  const world = getWorldState(stats.missionsCompleted);
+  const world = getWorldState(worldMissionCount(progress));
   const { current, next } = world;
   const line = worldLine(useTimeOfDay());
 

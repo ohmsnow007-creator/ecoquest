@@ -4,6 +4,7 @@ import { badges } from '../data/badges';
 import { missions } from '../data/missions';
 import { calculateStreak, getLongestStreak } from './streak';
 import { getWorldState } from './world';
+import { worldMissionCount } from './admin';
 
 function currentValue(badge: Badge, progress: PlayerProgress): number {
   switch (badge.ruleType) {
@@ -18,7 +19,7 @@ function currentValue(badge: Badge, progress: PlayerProgress): number {
     case 'quiz-correct':
       return new Set(progress.quizAttempts.flatMap((a) => a.results.filter((r) => r.correct).map((r) => r.questionId))).size;
     case 'world-stage':
-      return getWorldState(progress.completions.length).current.stage;
+      return getWorldState(worldMissionCount(progress)).current.stage;
     case 'timed-best':
       return Math.max(0, ...(progress.timedRuns ?? []).map((r) => r.correct));
   }

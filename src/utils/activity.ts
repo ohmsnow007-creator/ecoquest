@@ -50,7 +50,13 @@ export function buildActivityFeed(progress: PlayerProgress): ActivityEvent[] {
           ? `ผู้ดูแลเพิ่ม XP`
           : g.kind === 'badge'
             ? `ผู้ดูแลมอบเหรียญ “${badges.find((b) => b.id === g.badgeId)?.name ?? g.badgeId}” (สาธิต)`
-            : `ผู้ดูแลมอบของแต่ง (สาธิต)`,
+            : g.kind === 'cosmetic'
+              ? `ผู้ดูแลมอบของแต่ง (สาธิต)`
+              : g.kind === 'world'
+                ? `ผู้ดูแลเพิ่มระดับโลกของฉัน (สาธิต)`
+                : g.kind === 'bond'
+                  ? `ผู้ดูแลเพิ่มความผูกพันกับ Sprouty (สาธิต)`
+                  : `ผู้ดูแลมอบ${g.kind === 'water' ? 'น้ำ' : 'ปุ๋ย'} ${g.amount} ให้ Sprouty (สาธิต)`,
       xp: g.kind === 'xp' ? g.amount : 0,
     })),
     ...(progress.challengeRewards ?? []).map((r): ActivityEvent => ({

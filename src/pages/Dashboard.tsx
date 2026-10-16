@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useGame } from '../store/GameContext';
 import { getPlayerStats } from '../utils/playerStats';
+import { worldMissionCount } from '../utils/admin';
 import { getWorldState, explainWorld } from '../utils/world';
 import { buildActivityFeed, formatRelativeTime, type ActivityEvent } from '../utils/activity';
 import { missions } from '../data/missions';
@@ -166,7 +167,7 @@ export function Dashboard() {
   if (!profile) return null;
 
   const stats = getPlayerStats(progress);
-  const world = getWorldState(stats.missionsCompleted);
+  const world = getWorldState(worldMissionCount(progress));
   const feed = buildActivityFeed(progress).slice(0, 5);
 
   // Today's three daily missions are fixed for the day; the order shows what is still open first.
@@ -235,8 +236,8 @@ export function Dashboard() {
           {(() => {
             // Way into the care page, with what is waiting there (from today's real records).
             const care = getCareState(progress);
-            const waiting = care.hasWaterToday && !care.wateredToday ? 'มีน้ำรออยู่' : care.fertilizer > 0 ? `มีปุ๋ย ${care.fertilizer} ถุง` : `ความผูกพันระดับ ${care.bond.level}`;
-            const ready = (care.hasWaterToday && !care.wateredToday) || care.fertilizer > 0;
+            const waiting = care.waterLeft > 0 ? 'มีน้ำรออยู่' : care.fertilizer > 0 ? `มีปุ๋ย ${care.fertilizer} ถุง` : `ความผูกพันระดับ ${care.bond.level}`;
+            const ready = care.waterLeft > 0 || care.fertilizer > 0;
             const event = getActiveEvent(getLocalDate());
             const reward = event && EVENT_REWARDS.find((r) => r.event.id === event.id)?.cosmetic;
             const rewardDone = reward ? getCosmeticStatus(reward, progress).unlocked : true;

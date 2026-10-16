@@ -84,13 +84,15 @@ function sanitizeSproutyOutfit(v: unknown): { sproutyOutfit?: Partial<Record<'ha
 
 const MAX_WATERED_DAYS = 1000;
 
-function sanitizeCare(v: unknown): { wateredDays: string[]; fertilizerUsed: number } | null {
+function sanitizeCare(v: unknown): { wateredDays: string[]; fertilizerUsed: number; bonusWaterUsed?: number } | null {
   if (!isObj(v)) return null;
   const wateredDays = Array.isArray(v.wateredDays)
     ? [...new Set(v.wateredDays.filter((d): d is string => typeof d === 'string' && DATE_RE.test(d)))].sort().slice(-MAX_WATERED_DAYS)
     : [];
-  const used = typeof v.fertilizerUsed === 'number' && Number.isFinite(v.fertilizerUsed) ? Math.max(0, Math.floor(v.fertilizerUsed)) : 0;
-  return wateredDays.length || used ? { wateredDays, fertilizerUsed: used } : null;
+  const nonNeg = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0);
+  const used = nonNeg(v.fertilizerUsed);
+  const bonusWaterUsed = nonNeg(v.bonusWaterUsed);
+  return wateredDays.length || used || bonusWaterUsed ? { wateredDays, fertilizerUsed: used, ...(bonusWaterUsed ? { bonusWaterUsed } : {}) } : null;
 }
 
 function sanitizeCompletion(v: unknown): MissionCompletion | null {
@@ -138,6 +140,11 @@ function sanitizeAdminGrant(v: unknown): AdminGrant | null {
   if (v.kind === 'cosmetic' && isStr(v.cosmeticId) && COSMETICS.some((c) => c.id === v.cosmeticId)) {
     return { id: v.id, at: v.at, kind: 'cosmetic', cosmeticId: v.cosmeticId };
   }
+  const count = (n: unknown, max: number) => typeof n === 'number' && Number.isInteger(n) && n > 0 && n <= max;
+  if (v.kind === 'world' && count(v.missions, 1000)) return { id: v.id, at: v.at, kind: 'world', missions: v.missions as number };
+  if (v.kind === 'water' && count(v.amount, 999)) return { id: v.id, at: v.at, kind: 'water', amount: v.amount as number };
+  if (v.kind === 'fertilizer' && count(v.amount, 999)) return { id: v.id, at: v.at, kind: 'fertilizer', amount: v.amount as number };
+  if (v.kind === 'bond' && count(v.points, 10000)) return { id: v.id, at: v.at, kind: 'bond', points: v.points as number };
   return null;
 }
 

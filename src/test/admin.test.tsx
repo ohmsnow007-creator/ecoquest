@@ -79,7 +79,7 @@ describe('demo admin', { timeout: 20_000 }, () => {
 
   it('level grants become the real level (leaderboard too); items are labelled; all revocable', () => {
     renderAdmin(); // still unlocked in this session
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: '10' } });
+    fireEvent.change(screen.getAllByRole('combobox')[0], { target: { value: '10' } });
     fireEvent.click(screen.getByRole('button', { name: 'ตั้งเลเวล' }));
 
     let p = storageService.getProgress();

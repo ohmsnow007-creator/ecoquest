@@ -7,7 +7,9 @@ import { checkNewBadges } from '../utils/badges';
 import { AVATAR_SLOTS, getCosmetic, getCosmeticStatus, type CosmeticSlot, type OutfitTarget } from '../data/cosmetics';
 import { getSpecialMissionIds } from '../utils/challenges';
 import { SPECIAL_FERTILIZER } from '../config/challenges';
-import { EMPTY_CARE, getCareState } from '../utils/care';
+import { BOND_STEP, EMPTY_CARE, MAX_BOND, getCareState } from '../utils/care';
+import { worldStages } from '../data/worldStages';
+import { worldMissionCount } from '../utils/admin';
 import type { PlayerProfile, PlayerProgress, MissionCategory, MissionProgressStatus, ImpactRecord, AdminGrant, BadgeRecord } from '../types';
 import { getFactorFor } from '../data/emissionFactors';
 import { CALCULATION_VERSION } from '../services/impactCalculator';
@@ -66,6 +68,12 @@ export interface AdminActions {
   grantAllBadges: () => boolean;
   grantAllCosmetics: () => boolean;
   grantEverything: () => boolean;
+  /** Grow the virtual world to a stage (0–7). */
+  grantWorldStage: (stage: number) => boolean;
+  /** Give Sprouty `amount` waterings and `amount` bags of fertilizer. */
+  grantCare: (amount: number) => boolean;
+  /** Raise the bond with Sprouty to a level (1–10). */
+  grantBond: (level: number) => boolean;
   revoke: (grantId: string) => boolean;
   revokeAll: () => boolean;
 }
@@ -258,13 +266,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
   );
 
   const waterSprouty = useCallback((): boolean => {
-    const st = getCareState(progress);
-    if (!st.hasWaterToday || st.wateredToday) return false;
+    if (getCareState(progress).waterLeft <= 0) return false;
     const today = getLocalDate();
     setProgress((prev) => {
+      const st = getCareState(prev, today);
       const care = prev.care ?? EMPTY_CARE;
-      if (care.wateredDays.includes(today)) return prev;
-      return { ...prev, care: { ...care, wateredDays: [...care.wateredDays, today].sort() } };
+      // Today's water (from a mission) first, then extra water given by the admin.
+      if (st.hasWaterToday && !st.wateredToday) return { ...prev, care: { ...care, wateredDays: [...care.wateredDays, today].sort() } };
+      if (st.bonusWater > 0) return { ...prev, care: { ...care, bonusWaterUsed: (care.bonusWaterUsed ?? 0) + 1 } };
+      return prev;
     });
     return true;
   }, [progress]);
@@ -359,7 +369,25 @@ export function GameProvider({ children }: { children: ReactNode }) {
         for (const c of COSMETICS) {
           if (!grants.some((g) => g.kind === 'cosmetic' && g.cosmeticId === c.id)) extra.push({ ...stamp(), kind: 'cosmetic', cosmeticId: c.id });
         }
+        const worldNeed = worldStages[worldStages.length - 1].requiredMissions - worldMissionCount(progress);
+        if (worldNeed > 0) extra.push({ ...stamp(), kind: 'world', missions: worldNeed });
+        extra.push({ ...stamp(), kind: 'water', amount: 5 }, { ...stamp(), kind: 'fertilizer', amount: 5 });
         return extra.length ? commitAdmin(withGrants(extra, records)) : false;
+      },
+      grantWorldStage: (stage) => {
+        const target = worldStages.find((s) => s.stage === stage);
+        const need = target ? target.requiredMissions - worldMissionCount(progress) : 0;
+        return need > 0 ? commitAdmin(withGrants([{ ...stamp(), kind: 'world', missions: need }])) : false;
+      },
+      grantCare: (amount) => {
+        const n = Math.floor(amount);
+        if (!(n > 0 && n <= 999)) return false;
+        return commitAdmin(withGrants([{ ...stamp(), kind: 'water', amount: n }, { ...stamp(), kind: 'fertilizer', amount: n }]));
+      },
+      grantBond: (level) => {
+        const target = Math.min(MAX_BOND, Math.max(1, Math.floor(level)));
+        const need = (target - 1) * BOND_STEP - getCareState(progress).bond.points;
+        return need > 0 ? commitAdmin(withGrants([{ ...stamp(), kind: 'bond', points: need }])) : false;
       },
       revoke: (grantId) => {
         const g = grants.find((x) => x.id === grantId);
