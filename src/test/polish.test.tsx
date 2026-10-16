@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { Suspense } from 'react';
 import { render, screen } from '@testing-library/react';
 import { getSproutyGreeting } from '../utils/sprouty';
@@ -80,5 +80,26 @@ describe('Sprouty follows the clock on other pages', () => {
     expect(worldLine('night').text).toContain('พระจันทร์');
     expect(worldLine('day').text).toContain('พระอาทิตย์');
     expect(timeOpener('day')).toBe('');
+  });
+});
+
+describe('a page file removed by a newer deploy', () => {
+  it('reloads once onto the new version instead of showing the error, and never loops', async () => {
+    const { reloadForNewVersion, RESUME_AFTER_UPDATE_KEY } = await import('../utils/lazyRetry');
+    const reload = vi.fn();
+    const original = window.location;
+    Object.defineProperty(window, 'location', { configurable: true, value: { ...original, reload } });
+    try {
+      sessionStorage.clear();
+      expect(reloadForNewVersion()).toBe(true);
+      expect(reload).toHaveBeenCalledTimes(1);
+      expect(sessionStorage.getItem(RESUME_AFTER_UPDATE_KEY)).toBe('1');
+      // a second failure right after: show the error screen rather than reloading forever
+      expect(reloadForNewVersion()).toBe(false);
+      expect(reload).toHaveBeenCalledTimes(1);
+    } finally {
+      Object.defineProperty(window, 'location', { configurable: true, value: original });
+      sessionStorage.clear();
+    }
   });
 });

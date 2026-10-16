@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { RESUME_AFTER_UPDATE_KEY } from '../../utils/lazyRetry';
 import { LauncherContext, SKIP_INTRO_TEST_KEY } from './launcherContext';
 import { useOutfit } from '../cosmetics/useOutfit';
 import { AnimatePresence, motion, useMotionValue, useTransform, animate, useReducedMotion, type PanInfo } from 'framer-motion';
@@ -20,11 +21,14 @@ const KNOB = 48;
 const UNLOCK_AT = 0.85;
 
 
-/** The intro shows on every page load. Only the test suite may skip it, to test the app behind it. */
+/**
+ * The intro shows on every page load, except right after the app reloaded itself to pick up a new
+ * version mid-session (the player was already inside). The test suite may also skip it.
+ */
 function startOpen(): boolean {
-  if (import.meta.env.MODE !== 'test') return false;
   try {
-    return sessionStorage.getItem(SKIP_INTRO_TEST_KEY) === '1';
+    if (sessionStorage.getItem(RESUME_AFTER_UPDATE_KEY) === '1') return true; // cleared after mount
+    return import.meta.env.MODE === 'test' && sessionStorage.getItem(SKIP_INTRO_TEST_KEY) === '1';
   } catch {
     return false;
   }
@@ -448,6 +452,13 @@ export function Launcher({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(startOpen);
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem(RESUME_AFTER_UPDATE_KEY);
+    } catch {
+      /* storage blocked: nothing to clear */
+    }
+  }, []);
 
   const open = () => {
     markSplashSeen();

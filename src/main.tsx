@@ -4,8 +4,14 @@ import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App.tsx'
 import { initPwaListeners, swCallbacks } from './services/pwaService'
+import { reloadForNewVersion } from './utils/lazyRetry'
 
 initPwaListeners()
+
+// A file of the running version disappeared after a new deploy: reload once onto the new version.
+window.addEventListener('vite:preloadError', (e) => {
+  if (reloadForNewVersion()) e.preventDefault()
+})
 
 // Service workers need HTTPS (or localhost); over a plain-HTTP LAN address the app still runs, just without offline cache.
 if (!('serviceWorker' in navigator)) {
