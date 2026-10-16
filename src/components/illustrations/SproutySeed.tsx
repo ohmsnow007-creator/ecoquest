@@ -27,8 +27,6 @@ interface SproutySeedProps {
   outfit?: Outfit;
 }
 
-/** Headbands and crowns that look best drawn over the sprout. */
-const HAT_OVER_LEAVES = new Set(['hat-bee', 'hat-headband']);
 
 const SPRING = { type: 'spring', stiffness: 160, damping: 14 } as const;
 const fill = { transformBox: 'fill-box', transformOrigin: 'center' } as const;
@@ -245,8 +243,8 @@ export function SproutySeed({
   const breathe = still ? undefined : { scaleY: [1, 1.03, 1], scaleX: [1, 0.985, 1] };
   const breeze = still ? undefined : { rotate: [0, 3.5, -2, 1.5, 0] };
 
-  // Tall hats sit under the sprout (it grows through them); low bands and crowns go on top of the leaves.
-  const hatOn = !!outfit?.hat && !HAT_OVER_LEAVES.has(outfit.hat);
+  // With a hat on, the sprout is tucked away under it so the hat is never covered by leaves.
+  const hatOn = !!outfit?.hat;
   const leaves = (
     <>
           {/* stem + leaves: lean against the look direction and sway in the breeze */}
@@ -376,11 +374,8 @@ export function SproutySeed({
               <SproutyCosmetics outfit={outfit} part="face" />
             </motion.g>
             <SproutyCosmetics outfit={outfit} part="body" />
-            {!(outfit?.hat && HAT_OVER_LEAVES.has(outfit.hat)) && <SproutyCosmetics outfit={outfit} part="hat" />}
+            <SproutyCosmetics outfit={outfit} part="hat" />
           </motion.g>
-          {outfit?.hat && HAT_OVER_LEAVES.has(outfit.hat) && <SproutyCosmetics outfit={outfit} part="hat" />}
-          {/* with a hat on, the sprout grows up through it (leaves drawn on top of the hat) */}
-          {hatOn && leaves}
 
           </motion.g>
 

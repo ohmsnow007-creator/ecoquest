@@ -10,6 +10,20 @@ import { SproutyHomeCard } from '../components/sprouty/SproutyHomeCard';
 import { SproutySeed } from '../components/illustrations/SproutySeed';
 
 describe('Sprouty growth', () => {
+  it('with a hat on, the sprout on its head is hidden so the hat is never covered', () => {
+    const leafy = (el: Element) => el.querySelectorAll('[fill*="-leafL"], [fill*="-leafR"]').length;
+    for (const stage of [1, 2, 3, 4] as const) {
+      for (const hat of ['hat-bee', 'hat-headband', 'hat-chef']) {
+        const bare = render(<SproutySeed stage={stage} />);
+        expect(leafy(bare.container), `stage ${stage}`).toBeGreaterThan(0);
+        bare.unmount();
+        const hatted = render(<SproutySeed stage={stage} outfit={{ hat }} />);
+        expect(leafy(hatted.container), `stage ${stage} ${hat}`).toBe(0);
+        hatted.unmount();
+      }
+    }
+  });
+
   it('grows seed → young sprout → four leaves → flower → small tree, fully grown at level 20', () => {
     expect(getSproutyStage(1)).toMatchObject({ stage: 0, name: 'เมล็ดพันธุ์', nextAt: 3 });
     expect(getSproutyStage(2).stage).toBe(0);
