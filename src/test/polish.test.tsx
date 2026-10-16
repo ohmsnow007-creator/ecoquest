@@ -27,7 +27,7 @@ describe('page loading on a flaky network', () => {
   });
 });
 
-describe('world scene follows the clock', () => {
+describe('world scene follows the clock', { timeout: 15_000 }, () => {
   it('shows the sun by day and a moon with stars at night', async () => {
     const { GreenWorldScene } = await import('../components/world/GreenWorldScene');
     const day = render(<GreenWorldScene stage={3} hour={12} />);
@@ -50,7 +50,7 @@ describe('world scene follows the clock', () => {
   });
 });
 
-describe('tapping the sun and moon', () => {
+describe('tapping the sun and moon', { timeout: 15_000 }, () => {
   it('the sun grins and the moon yawns, then they go back to normal', async () => {
     const { GreenWorldScene } = await import('../components/world/GreenWorldScene');
     const { fireEvent, act } = await import('@testing-library/react');

@@ -38,6 +38,12 @@ function howUnlocked(c: Cosmetic): string {
       return 'ได้รับจากชาเลนจ์ประจำสัปดาห์';
     case 'missions':
       return 'ได้รับจากการทำภารกิจ';
+    case 'streak':
+      return `ได้รับจากการทำภารกิจต่อเนื่อง ${c.unlock.days} วัน`;
+    case 'bond':
+      return `ได้รับจากความผูกพันกับ Sprouty ระดับ ${c.unlock.level}`;
+    case 'event':
+      return 'ของพิเศษจากกิจกรรมวันสิ่งแวดล้อม';
   }
 }
 
@@ -48,7 +54,7 @@ function howUnlocked(c: Cosmetic): string {
 export function CosmeticUnlockCelebration() {
   const { profile, progress, celebrations, wearCosmetic, markCosmeticsSeen } = useGame();
   const reduce = useReducedMotion();
-  const outfit = useOutfit();
+  const outfit = useOutfit('sprouty');
   const seen = profile?.preferences.seenCosmetics;
   const soundOn = profile?.preferences.soundEffects === true;
 
@@ -71,7 +77,7 @@ export function CosmeticUnlockCelebration() {
   const done = () => current && markCosmeticsSeen([current.id]);
   const wear = () => {
     if (!current) return;
-    wearCosmetic(current.slot, current.id);
+    wearCosmetic(current.slot, current.id, 'both');
     markCosmeticsSeen([current.id]);
   };
 

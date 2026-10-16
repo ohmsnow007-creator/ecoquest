@@ -84,7 +84,7 @@ describe('wardrobe', () => {
         </MemoryRouter>
       </MotionConfig>,
     );
-    expect(screen.getByText('ปลดล็อกแล้ว 1/17')).toBeInTheDocument();
+    expect(screen.getByText(`ปลดล็อกแล้ว 1/${COSMETICS.length}`)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /หมวกใบไม้/ }));
     expect(screen.getByTestId('outfit')).toHaveTextContent('"hat":"hat-leaf-cap"');
     expect(storageService.getProfile()?.preferences.outfit).toEqual({ hat: 'hat-leaf-cap' });

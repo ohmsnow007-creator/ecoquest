@@ -159,6 +159,7 @@ describe('mission cosmetics', () => {
 
   it('every item has artwork for the avatar and for Sprouty', () => {
     for (const c of COSMETICS) {
+      if (c.slot === 'pot' || c.slot === 'background') continue; // drawn by SproutyScenery (care tests)
       const outfit = { [c.slot]: c.id };
       const a = render(<svg><AvatarCosmetics outfit={outfit} layer="front" /></svg>);
       expect(a.container.querySelector('svg')!.children.length).toBeGreaterThan(0);

@@ -1,4 +1,4 @@
-import { Home, Target, Brain, Trophy, BarChart3, Globe2, Medal, Leaf, UserRound, type LucideIcon } from 'lucide-react';
+import { Home, Target, Brain, Trophy, BarChart3, Globe2, Medal, Leaf, UserRound, Sprout, type LucideIcon } from 'lucide-react';
 
 export interface NavItem {
   to: string;
@@ -19,6 +19,7 @@ export const SIDEBAR_NAV: NavItem[] = [
   { to: '/missions', label: 'ภารกิจ', icon: Target },
   { to: '/quiz', label: 'ควิซ', icon: Brain },
   { to: '/world', label: 'โลกสีเขียวของฉัน', icon: Globe2 },
+  { to: '/sprouty', label: 'ดูแล Sprouty', icon: Sprout },
   { to: '/achievements', label: 'เหรียญตรา', icon: Medal },
   { to: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   { to: '/progress', label: 'สถิติ', icon: BarChart3 },

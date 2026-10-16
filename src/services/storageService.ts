@@ -51,6 +51,7 @@ export function sanitizeProfile(data: unknown): PlayerProfile | null {
       inAppToasts: prefs.inAppToasts !== false,
       celebrations: prefs.celebrations !== false,
       ...sanitizeOutfit(prefs.outfit),
+      ...sanitizeSproutyOutfit(prefs.sproutyOutfit),
       ...(Array.isArray(prefs.seenCosmetics)
         ? { seenCosmetics: prefs.seenCosmetics.filter((id): id is string => isStr(id) && COSMETICS.some((c) => c.id === id)) }
         : {}),
@@ -59,14 +60,37 @@ export function sanitizeProfile(data: unknown): PlayerProfile | null {
 }
 
 // Keeps known cosmetic ids in their own slot; whether they are unlocked is checked when worn.
+function pickSlots<S extends string>(v: Obj, slots: readonly S[]): Partial<Record<S, string>> {
+  const out: Partial<Record<S, string>> = {};
+  for (const slot of slots) {
+    const id = v[slot];
+    if (isStr(id) && COSMETICS.some((c) => c.id === id && c.slot === slot)) out[slot] = id;
+  }
+  return out;
+}
+
 function sanitizeOutfit(v: unknown): { outfit?: Partial<Record<'hat' | 'eyes' | 'bag', string>> } {
   if (!isObj(v)) return {};
-  const outfit: Partial<Record<'hat' | 'eyes' | 'bag', string>> = {};
-  for (const slot of ['hat', 'eyes', 'bag'] as const) {
-    const id = v[slot];
-    if (isStr(id) && COSMETICS.some((c) => c.id === id && c.slot === slot)) outfit[slot] = id;
-  }
+  const outfit = pickSlots(v, ['hat', 'eyes', 'bag'] as const);
   return Object.keys(outfit).length ? { outfit } : {};
+}
+
+// Sprouty's outfit is kept even when empty: {} means "dressed separately, wearing nothing", while a
+// missing value means Sprouty still mirrors the character's outfit.
+function sanitizeSproutyOutfit(v: unknown): { sproutyOutfit?: Partial<Record<'hat' | 'eyes' | 'bag' | 'pot' | 'background', string>> } {
+  if (!isObj(v)) return {};
+  return { sproutyOutfit: pickSlots(v, ['hat', 'eyes', 'bag', 'pot', 'background'] as const) };
+}
+
+const MAX_WATERED_DAYS = 1000;
+
+function sanitizeCare(v: unknown): { wateredDays: string[]; fertilizerUsed: number } | null {
+  if (!isObj(v)) return null;
+  const wateredDays = Array.isArray(v.wateredDays)
+    ? [...new Set(v.wateredDays.filter((d): d is string => typeof d === 'string' && DATE_RE.test(d)))].sort().slice(-MAX_WATERED_DAYS)
+    : [];
+  const used = typeof v.fertilizerUsed === 'number' && Number.isFinite(v.fertilizerUsed) ? Math.max(0, Math.floor(v.fertilizerUsed)) : 0;
+  return wateredDays.length || used ? { wateredDays, fertilizerUsed: used } : null;
 }
 
 function sanitizeCompletion(v: unknown): MissionCompletion | null {
@@ -217,6 +241,7 @@ export function sanitizeProgress(data: unknown): PlayerProgress {
   const inProgress = cleanList(data.inProgress, sanitizeStart).filter((s) => !seenStarts.has(s.missionId) && seenStarts.add(s.missionId));
   const impactRecords = cleanList(data.impactRecords, sanitizeImpact);
   const timedRuns = cleanList(data.timedRuns, sanitizeTimedRun).slice(-TIMED_RUNS_KEPT);
+  const care = sanitizeCare(data.care);
   return {
     totalXp,
     impactRecords,
@@ -227,6 +252,8 @@ export function sanitizeProgress(data: unknown): PlayerProgress {
     challengeRewards,
     ...(timedRuns.length ? { timedRuns } : {}),
     ...(adminGrants.length ? { adminGrants } : {}),
+    // Fertilizer can't be used beyond what recorded missions gave (checked again in the store).
+    ...(care ? { care } : {}),
     schemaVersion: CURRENT_SCHEMA_VERSION,
   };
 }

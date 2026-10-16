@@ -95,8 +95,10 @@ export interface PlayerProfile {
     soundEffects?: boolean;
     inAppToasts?: boolean;
     celebrations?: boolean;
-    /** Equipped cosmetics by slot (hat, eyes, bag); only unlocked items are worn. */
+    /** The character's equipped cosmetics (hat, eyes, bag); only unlocked items are worn. */
     outfit?: Partial<Record<'hat' | 'eyes' | 'bag', string>>;
+    /** Sprouty's own outfit (also pot and background). Until first set, Sprouty mirrors `outfit`. */
+    sproutyOutfit?: Partial<Record<'hat' | 'eyes' | 'bag' | 'pot' | 'background', string>>;
     /** Cosmetics the player has already been shown as "new"; undefined until first checked. */
     seenCosmetics?: string[];
   };
@@ -166,6 +168,8 @@ export interface PlayerProgress {
   timedRuns?: TimedQuizRun[];
   /** Demo admin grants (separate from the player's own records). */
   adminGrants?: AdminGrant[];
+  /** Caring for Sprouty: days the player poured water, and fertilizer bags used. */
+  care?: { wateredDays: string[]; fertilizerUsed: number };
   schemaVersion: number;
 }
 

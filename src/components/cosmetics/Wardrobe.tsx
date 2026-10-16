@@ -1,24 +1,32 @@
 import { useState } from 'react';
-import { Lock, Check, Shirt } from 'lucide-react';
+import { Lock, Check, Shirt, UserRound, Sprout } from 'lucide-react';
 import { useGame } from '../../store/GameContext';
-import { getAllCosmeticStatuses, SLOT_LABELS, type CosmeticSlot } from '../../data/cosmetics';
+import { getAllCosmeticStatuses, SLOT_LABELS, slotsFor, type CosmeticSlot, type OutfitTarget } from '../../data/cosmetics';
 import { getCharacter } from '../../data/avatars';
 import { CharacterAvatar } from '../avatar/CharacterAvatar';
-import { PlayerSprouty } from '../sprouty/PlayerSprouty';
 import { SproutySeed } from '../illustrations/SproutySeed';
 import { getSproutyStage } from '../../utils/sprouty';
 import { getLevelFromXp } from '../../utils/xp';
 import { useOutfit } from './useOutfit';
+import { BackgroundArt } from './SproutyScenery';
 
-const SLOTS: CosmeticSlot[] = ['hat', 'eyes', 'bag'];
+const TARGETS: { id: OutfitTarget; label: string; icon: typeof Shirt }[] = [
+  { id: 'avatar', label: 'แต่งตัวละครของฉัน', icon: UserRound },
+  { id: 'sprouty', label: 'แต่งให้ Sprouty', icon: Sprout },
+];
 
-/** Unlocked cosmetics to wear on the avatar and Sprouty; locked ones show how to earn them. */
+/** Unlocked cosmetics, worn separately by the player's character and by Sprouty; locked ones show how to earn them. */
 export function Wardrobe() {
   const { profile, progress, wearCosmetic } = useGame();
-  const outfit = useOutfit();
+  const avatarOutfit = useOutfit('avatar');
+  const sproutyOutfit = useOutfit('sprouty');
+  const [target, setTarget] = useState<OutfitTarget>('avatar');
   const [slot, setSlot] = useState<CosmeticSlot>('hat');
   if (!profile) return null;
 
+  const slots = slotsFor(target);
+  const activeSlot = slots.includes(slot) ? slot : 'hat';
+  const outfit = target === 'avatar' ? avatarOutfit : sproutyOutfit;
   const statuses = getAllCosmeticStatuses(progress);
   const unlockedCount = statuses.filter((s) => s.unlocked).length;
   const stage = getSproutyStage(getLevelFromXp(progress.totalXp)).stage;
@@ -33,47 +41,80 @@ export function Wardrobe() {
         <span className="text-caption text-muted">ปลดล็อกแล้ว {unlockedCount}/{statuses.length}</span>
       </div>
 
-      {/* live preview */}
-      <div className="mt-3 flex items-end justify-center gap-4 rounded-2xl bg-pale-mint/70 px-3 pt-3">
-        <CharacterAvatar look={look} outfit={outfit} className="h-36 w-auto" title="ตัวอย่างอวาตาร์ของคุณ" />
-        <span className="mb-1 block w-28">
-          <PlayerSprouty size={112} mood="happy" title="ตัวอย่าง Sprouty ของคุณ" />
-        </span>
+      {/* who is being dressed */}
+      <div className="mt-3 grid grid-cols-2 gap-1 rounded-full bg-background p-1 ring-1 ring-border" role="tablist" aria-label="แต่งให้ใคร">
+        {TARGETS.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={target === id}
+            onClick={() => setTarget(id)}
+            className={`flex min-h-11 items-center justify-center gap-1.5 rounded-full px-2 text-caption font-semibold transition-colors ${
+              target === id ? 'bg-forest text-mint shadow-card' : 'text-text'
+            }`}
+          >
+            <Icon size={15} aria-hidden="true" /> {label}
+          </button>
+        ))}
       </div>
 
-      <div className="mt-3 flex gap-2" role="tablist" aria-label="ประเภทของแต่ง">
-        {SLOTS.map((s) => (
+      {/* live preview of the one being dressed */}
+      <div className="relative mt-3 flex h-44 items-end justify-center overflow-hidden rounded-2xl bg-pale-mint/70">
+        {target === 'avatar' ? (
+          <CharacterAvatar look={look} outfit={avatarOutfit} className="h-40 w-auto" title="ตัวอย่างตัวละครของคุณ" />
+        ) : (
+          <>
+            <BackgroundArt id={sproutyOutfit.background} className="absolute inset-0 h-full w-full" />
+            <span className="relative mb-1 block w-36">
+              <SproutySeed size={144} className="h-auto w-full" mood="happy" stage={stage} outfit={sproutyOutfit} title="ตัวอย่าง Sprouty ของคุณ" />
+            </span>
+          </>
+        )}
+      </div>
+
+      <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="ประเภทของแต่ง">
+        {slots.map((s) => (
           <button
             key={s}
             type="button"
             role="tab"
-            aria-selected={slot === s}
+            aria-selected={activeSlot === s}
             onClick={() => setSlot(s)}
-            className={`min-h-10 flex-1 rounded-full text-caption font-semibold ${slot === s ? 'bg-forest text-mint' : 'bg-background text-text ring-1 ring-border'}`}
+            className={`min-h-10 min-w-16 flex-1 shrink-0 rounded-full px-3 text-caption font-semibold ${activeSlot === s ? 'bg-forest text-mint' : 'bg-background text-text ring-1 ring-border'}`}
           >
             {SLOT_LABELS[s]}
           </button>
         ))}
       </div>
 
-      <ul className="mt-3 grid grid-cols-2 gap-2.5" aria-label={SLOT_LABELS[slot]}>
+      <ul className="mt-3 grid grid-cols-2 gap-2.5" aria-label={SLOT_LABELS[activeSlot]}>
         {statuses
-          .filter((s) => s.cosmetic.slot === slot)
-          .map(({ cosmetic, unlocked, condition, current, target }) => {
-            const worn = outfit[slot] === cosmetic.id;
+          .filter((s) => s.cosmetic.slot === activeSlot)
+          .map(({ cosmetic, unlocked, condition, current, target: goal }) => {
+            const worn = outfit[activeSlot] === cosmetic.id;
             return (
               <li key={cosmetic.id}>
                 <button
                   type="button"
                   disabled={!unlocked}
                   aria-pressed={worn}
-                  onClick={() => wearCosmetic(slot, worn ? null : cosmetic.id)}
+                  onClick={() => wearCosmetic(activeSlot, worn ? null : cosmetic.id, target)}
                   className={`relative flex w-full flex-col items-center rounded-2xl border p-2.5 text-center transition-colors ${
                     worn ? 'border-primary bg-primary/5 ring-2 ring-primary' : unlocked ? 'border-border bg-surface hover:border-primary/40' : 'border-border bg-background'
                   }`}
                 >
-                  <span className={`block w-20 ${unlocked ? '' : 'opacity-40 grayscale'}`}>
-                    <SproutySeed size={80} className="h-auto w-full" stage={stage} outfit={{ [slot]: cosmetic.id }} title="" />
+                  <span className={`relative block h-20 w-20 overflow-hidden rounded-xl ${unlocked ? '' : 'opacity-40 grayscale'}`}>
+                    {target === 'avatar' ? (
+                      <CharacterAvatar look={look} outfit={{ [activeSlot]: cosmetic.id }} className="h-20 w-auto" title="" />
+                    ) : activeSlot === 'background' ? (
+                      <>
+                        <BackgroundArt id={cosmetic.id} className="absolute inset-0 h-full w-full" />
+                        <SproutySeed size={56} className="absolute bottom-0 left-1/2 h-auto w-14 -translate-x-1/2" stage={stage} title="" />
+                      </>
+                    ) : (
+                      <SproutySeed size={80} className="h-auto w-full" stage={stage} outfit={{ [activeSlot]: cosmetic.id }} title="" />
+                    )}
                   </span>
                   <span className="mt-1 text-caption leading-tight font-semibold">{cosmetic.name}</span>
                   {unlocked ? (
@@ -81,7 +122,7 @@ export function Wardrobe() {
                   ) : (
                     <span className="mt-0.5 text-[0.75rem] leading-tight text-muted">
                       {condition}
-                      {target > 1 && ` (${current}/${target})`}
+                      {goal > 1 && ` (${current}/${goal})`}
                     </span>
                   )}
                   {worn && <Check size={16} className="absolute top-2 right-2 text-primary" aria-hidden="true" />}
@@ -91,7 +132,9 @@ export function Wardrobe() {
             );
           })}
       </ul>
-      <p className="mt-2 text-[0.75rem] text-muted">ของแต่งจะแสดงบนอวาตาร์และ Sprouty ทุกที่ในแอป</p>
+      <p className="mt-2 text-[0.75rem] text-muted">
+        {target === 'avatar' ? 'ชุดนี้แสดงบนตัวละครของคุณ เช่น หน้าหลัก โปรไฟล์ และอันดับ' : 'ชุดนี้แสดงบน Sprouty ทุกที่ในแอป กระถางและฉากหลังมีเฉพาะ Sprouty'}
+      </p>
     </section>
   );
 }

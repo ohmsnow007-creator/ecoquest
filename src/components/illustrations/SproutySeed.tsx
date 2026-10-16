@@ -2,6 +2,7 @@ import { useId, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { Outfit } from '../../data/cosmetics';
 import { SproutyCosmetics } from '../cosmetics/CosmeticArt';
+import { PotBack, PotFront } from '../cosmetics/SproutyScenery';
 
 export type SproutyMood = 'happy' | 'cheer' | 'sleepy' | 'worried' | 'angry' | 'shy';
 /** 1 seed with two leaves · 2 four leaves · 3 flowering · 4 small tree. */
@@ -216,7 +217,11 @@ export function SproutySeed({
         </radialGradient>
       </defs>
 
-      {/* soil with a few pebbles and grass tufts */}
+      {/* soil with a few pebbles and grass tufts — or the pot Sprouty sits in */}
+      {outfit?.pot ? (
+        <PotBack id={outfit.pot} />
+      ) : (
+      <>
       <ellipse cx="120" cy="214" rx="114" ry="25" fill={`url(#${id}-soil)`} />
       <ellipse cx="120" cy="206" rx="66" ry="10" fill="#2B1C12" opacity={0.35} />
       <ellipse cx="40" cy="220" rx="6" ry="3.5" fill="#B9A58C" />
@@ -228,6 +233,8 @@ export function SproutySeed({
       <motion.g style={{ transformOrigin: '208px 212px' }} animate={breeze} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}>
         <path d="M202 214 C200 206 202 200 206 196 M208 214 C209 205 212 200 217 197" stroke="#6FB64E" strokeWidth={3} strokeLinecap="round" fill="none" />
       </motion.g>
+      </>
+      )}
 
       {/* Whole seed tilts toward where Sprouty looks and hops on tap; it pivots at the soil. */}
       <motion.g style={{ transformOrigin: '120px 206px' }} animate={{ rotate: lx * 9 }} transition={SPRING}>
@@ -332,6 +339,7 @@ export function SproutySeed({
           )}
         </motion.g>
       </motion.g>
+      {outfit?.pot && <PotFront id={outfit.pot} />}
     </svg>
   );
 }

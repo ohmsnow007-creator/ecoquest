@@ -234,7 +234,7 @@ function IntroScreen({ onUnlock }: { onUnlock: () => void }) {
 
   const tantrum = useTantrum();
   const pet = usePet();
-  const outfit = useOutfit();
+  const outfit = useOutfit('sprouty');
   const mood = leaving ? 'cheer' : tantrum.angry ? 'angry' : pet.shy ? 'shy' : timeOfDay === 'night' && !touched ? 'sleepy' : 'happy';
 
   // Unlocking: Sprouty cheers, leaves burst out, the card drops away, then the app opens.

@@ -1,0 +1,105 @@
+import type { MissionCompletion, PlayerProgress } from '../types';
+import type { SproutyMood } from '../components/illustrations/SproutySeed';
+import { getLocalDate } from './streak';
+
+/*
+ * Caring for Sprouty. Everything here comes from records the game already keeps, plus the player's own
+ * taps on the care page (stored in progress.care):
+ * - Water: each day with at least one recorded mission gives one watering; the player pours it.
+ * - Fertilizer: about 1 in 3 recorded missions also drops a bag of fertilizer. The draw is fixed per
+ *   completion (a hash of its id), so reloading or reinstalling never re-rolls it.
+ * - Bond (ความผูกพัน): grows with waterings and fertilizer used. It never goes down; when the player is
+ *   away Sprouty only says it misses them.
+ */
+
+export const FERTILIZER_PERCENT = 34;
+export const BOND_STEP = 40;
+export const MAX_BOND = 10;
+const WATER_POINTS = 10;
+const FERTILIZER_POINTS = 15;
+/** Days without a mission before Sprouty says it misses the player. */
+export const LONELY_AFTER_DAYS = 3;
+
+export interface CareRecord {
+  /** Local dates (YYYY-MM-DD) the player watered Sprouty. */
+  wateredDays: string[];
+  fertilizerUsed: number;
+}
+
+export const EMPTY_CARE: CareRecord = { wateredDays: [], fertilizerUsed: 0 };
+
+function hash(s: string): number {
+  let h = 0x811c9dc5;
+  for (const ch of s) {
+    h ^= ch.charCodeAt(0);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+/** Whether this recorded mission came with a bag of fertilizer (fixed per completion). */
+export function givesFertilizer(c: MissionCompletion): boolean {
+  return hash(`fertilizer:${c.id}`) % 100 < FERTILIZER_PERCENT;
+}
+
+function daysBetween(from: string, to: string): number {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
+}
+
+export function bondFromCare(care: CareRecord): { points: number; level: number; intoLevel: number; nextAt: number | null } {
+  const points = care.wateredDays.length * WATER_POINTS + care.fertilizerUsed * FERTILIZER_POINTS;
+  const level = Math.min(MAX_BOND, Math.floor(points / BOND_STEP) + 1);
+  return { points, level, intoLevel: level === MAX_BOND ? BOND_STEP : points % BOND_STEP, nextAt: level === MAX_BOND ? null : level * BOND_STEP };
+}
+
+export interface CareState {
+  care: CareRecord;
+  /** A mission was recorded today, so there is water to pour. */
+  hasWaterToday: boolean;
+  wateredToday: boolean;
+  fertilizerEarned: number;
+  fertilizer: number;
+  /** Days since the last recorded mission (null if none yet). */
+  daysAway: number | null;
+  bond: ReturnType<typeof bondFromCare>;
+  mood: SproutyMood;
+  line: string;
+}
+
+export function getCareState(progress: PlayerProgress, today: string = getLocalDate()): CareState {
+  const care = progress.care ?? EMPTY_CARE;
+  const fertilizerEarned = progress.completions.filter(givesFertilizer).length;
+  const fertilizer = Math.max(0, fertilizerEarned - care.fertilizerUsed);
+  const hasWaterToday = progress.completions.some((c) => c.localDate === today);
+  const wateredToday = care.wateredDays.includes(today);
+  const last = progress.completions.reduce<string | null>((m, c) => (m === null || c.localDate > m ? c.localDate : m), null);
+  const daysAway = last ? Math.max(0, daysBetween(last, today)) : null;
+  const bond = bondFromCare(care);
+
+  let mood: SproutyMood = 'happy';
+  let line: string;
+  if (wateredToday) {
+    mood = 'cheer';
+    line = fertilizer > 0 ? 'สดชื่นจัง! ขอบคุณที่รดน้ำนะ มีปุ๋ยเหลืออยู่ด้วย อยากกินจัง~' : 'สดชื่นจัง! ขอบคุณที่รดน้ำให้นะ พรุ่งนี้มาเจอกันอีก';
+  } else if (hasWaterToday) {
+    line = 'ทำภารกิจวันนี้แล้ว ได้น้ำมาด้วย รดให้หน่อยนะ~';
+  } else if (daysAway === null) {
+    mood = 'sleepy';
+    line = 'ทำภารกิจแรกเพื่อเอาน้ำมารดให้ฉันหน่อยนะ';
+  } else if (daysAway >= LONELY_AFTER_DAYS) {
+    mood = 'worried';
+    line = `ไม่เจอกัน ${daysAway} วันแล้ว คิดถึงจัง… ทำภารกิจสักข้อแล้วมารดน้ำให้หน่อยนะ`;
+  } else {
+    mood = 'sleepy';
+    line = 'คอแห้งนิดหน่อย ทำภารกิจสักข้อเพื่อได้น้ำมารดนะ';
+  }
+  return { care, hasWaterToday, wateredToday, fertilizerEarned, fertilizer, daysAway, bond, mood, line };
+}
+
+/** Completions that dropped fertilizer, newest first (for "where did my fertilizer come from"). */
+export function fertilizerSources(progress: PlayerProgress, limit = 5): MissionCompletion[] {
+  return progress.completions
+    .filter(givesFertilizer)
+    .sort((a, b) => b.completedAt.localeCompare(a.completedAt))
+    .slice(0, limit);
+}

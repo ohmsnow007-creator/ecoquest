@@ -13,6 +13,7 @@ const ProfileCreation = lazyRetry(() => import('./pages/ProfileCreation').then((
 const Dashboard = lazyRetry(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
 const Missions = lazyRetry(() => import('./pages/Missions').then((m) => ({ default: m.Missions })));
 const MissionDetail = lazyRetry(() => import('./pages/MissionDetail').then((m) => ({ default: m.MissionDetail })));
+const SproutyCare = lazyRetry(() => import('./pages/SproutyCare').then((m) => ({ default: m.SproutyCare })));
 const VirtualWorld = lazyRetry(() => import('./pages/VirtualWorld').then((m) => ({ default: m.VirtualWorld })));
 const Achievements = lazyRetry(() => import('./pages/Achievements').then((m) => ({ default: m.Achievements })));
 const Progress = lazyRetry(() => import('./pages/Progress').then((m) => ({ default: m.Progress })));
@@ -55,6 +56,7 @@ function AppRoutes() {
         <Route path="/missions" element={guard(<Missions />)} />
         <Route path="/missions/:id" element={guard(<MissionDetail />)} />
         <Route path="/world" element={guard(<VirtualWorld />)} />
+        <Route path="/sprouty" element={guard(<SproutyCare />)} />
         <Route path="/achievements" element={guard(<Achievements />)} />
         <Route path="/progress" element={guard(<Progress />)} />
         <Route path="/impact" element={guard(<Impact />)} />

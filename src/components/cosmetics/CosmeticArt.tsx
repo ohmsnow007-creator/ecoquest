@@ -66,6 +66,24 @@ export function HatArt({ id }: { id: string }) {
           <circle cx="132" cy="38" r="3" fill="#FFF7D6" />
         </g>
       );
+    case 'hat-earth':
+      return (
+        <g>
+          <path d="M56 76 C56 32 144 32 144 76 Z" fill="#4FB3E8" />
+          <path d="M70 52 C80 44 94 50 92 60 C88 68 74 66 70 52 Z M110 44 C122 38 136 48 130 58 C122 62 112 56 110 44 Z M98 66 C108 62 116 70 110 74 C102 76 96 72 98 66 Z" fill="#5DBB4A" />
+          <path d="M50 74 Q100 86 150 74 L150 82 Q100 94 50 82 Z" fill="#2E8B57" />
+          <circle cx={100} cy={34} r={5} fill="#FFFFFF" />
+        </g>
+      );
+    case 'hat-chef':
+      return (
+        <g>
+          <path d="M64 78 L64 56 C50 52 48 32 64 30 C66 16 86 12 96 22 C104 10 126 12 128 28 C146 28 150 50 136 56 L136 78 Z" fill="#FFFFFF" stroke="#D6DDE3" strokeWidth={2} />
+          <rect x={62} y={70} width={76} height={12} rx={4} fill="#F1F5F9" stroke="#D6DDE3" strokeWidth={2} />
+          <path d="M120 70 C116 58 124 50 132 52 C132 62 126 68 120 70 Z" fill="#5DBB4A" />
+          <circle cx={84} cy={74} r={4} fill="#EF4444" />
+        </g>
+      );
     case 'hat-beanie':
       return (
         <g>

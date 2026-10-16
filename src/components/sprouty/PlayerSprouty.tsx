@@ -44,7 +44,7 @@ export function PlayerSprouty({ size = 96, mood = 'happy', title = '', className
   const reduce = useReducedMotion();
   const blinking = useBlinking(mood !== 'sleepy' && !reduce);
   const stage = getSproutyStage(getLevelFromXp(progress.totalXp)).stage;
-  const outfit = useOutfit();
+  const outfit = useOutfit('sprouty');
   return <SproutySeed size={size} className={className} mood={mood} stage={stage} title={title} blinking={blinking} hop={reduce ? 0 : hop} outfit={outfit} />;
 }
 

@@ -16,6 +16,10 @@ import { CATEGORY_ICON } from '../data/icons';
 import { getDailyStatus, getWeeklyStatus } from '../utils/challenges';
 import { ChallengeBonus, WeeklyChallengeCard } from '../components/challenges/ChallengeCards';
 import { SproutyHomeCard } from '../components/sprouty/SproutyHomeCard';
+import { getCareState } from '../utils/care';
+import { getActiveEvent } from '../data/events';
+import { EVENT_REWARDS, getCosmeticStatus } from '../data/cosmetics';
+import { getLocalDate } from '../utils/streak';
 import { GreenWorldScene } from '../components/world/GreenWorldScene';
 import { NotificationBell } from '../components/feedback/NotificationBell';
 import { Avatar } from '../components/ui/AvatarPicker';
@@ -149,6 +153,7 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
 export function Dashboard() {
   const { profile, progress, getMissionStatus, claimChallenge } = useGame();
   const outfit = useOutfit();
+  const sproutyOutfit = useOutfit('sprouty');
   if (!profile) return null;
 
   const stats = getPlayerStats(progress);
@@ -214,8 +219,36 @@ export function Dashboard() {
             streak={stats.streak}
             dailyComplete={dailyStatus.complete}
             firstTime={progress.completions.length === 0}
-            outfit={outfit}
+            outfit={sproutyOutfit}
           />
+          {(() => {
+            // Way into the care page, with what is waiting there (from today's real records).
+            const care = getCareState(progress);
+            const waiting = care.hasWaterToday && !care.wateredToday ? 'มีน้ำรออยู่' : care.fertilizer > 0 ? `มีปุ๋ย ${care.fertilizer} ถุง` : `ความผูกพันระดับ ${care.bond.level}`;
+            const ready = (care.hasWaterToday && !care.wateredToday) || care.fertilizer > 0;
+            const event = getActiveEvent(getLocalDate());
+            const reward = event && EVENT_REWARDS.find((r) => r.event.id === event.id)?.cosmetic;
+            const rewardDone = reward ? getCosmeticStatus(reward, progress).unlocked : true;
+            return (
+              <div className="mt-3 grid gap-2">
+                <Link
+                  to="/sprouty"
+                  className="flex min-h-12 items-center justify-between gap-2 rounded-2xl bg-forest px-4 py-2.5 text-white shadow-card active:scale-[0.99]"
+                >
+                  <span className="font-semibold">🌱 ดูแล Sprouty</span>
+                  <span className="flex items-center gap-1.5 text-caption text-mint">
+                    {ready && <span className="h-2 w-2 animate-pulse rounded-full bg-lime" aria-hidden="true" />}
+                    {waiting} ›
+                  </span>
+                </Link>
+                {event && reward && !rewardDone && (
+                  <Link to="/sprouty" className="flex min-h-11 items-center gap-2 rounded-2xl bg-tag-yellow px-4 py-2 text-caption font-semibold text-forest ring-1 ring-warning/40">
+                    🎉 สัปดาห์{event.name}: {event.blurb} รับ “{reward.name}”
+                  </Link>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* 2. Virtual world hero */}

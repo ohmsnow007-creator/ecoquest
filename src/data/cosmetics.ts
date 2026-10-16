@@ -2,18 +2,33 @@ import type { MissionCategory, PlayerProgress } from '../types';
 import { CATEGORY_LABELS } from '../types';
 import { badges } from './badges';
 import { missions } from './missions';
+import { ECO_EVENTS, eventCompleted, eventDateLabel, getEvent } from './events';
+import { getLongestStreak } from '../utils/streak';
+import { getCareState } from '../utils/care';
 import { getLevelFromXp } from '../utils/xp';
 
-export type CosmeticSlot = 'hat' | 'eyes' | 'bag';
+export type CosmeticSlot = 'hat' | 'eyes' | 'bag' | 'pot' | 'background';
 
-export const SLOT_LABELS: Record<CosmeticSlot, string> = { hat: 'หมวก', eyes: 'แว่นตา', bag: 'กระเป๋า' };
+export const SLOT_LABELS: Record<CosmeticSlot, string> = { hat: 'หมวก', eyes: 'แว่นตา', bag: 'กระเป๋า', pot: 'กระถาง', background: 'ฉากหลัง' };
+
+/** Who wears what: the character has hat/eyes/bag; Sprouty can also have a pot and a background. */
+export type OutfitTarget = 'avatar' | 'sprouty';
+export const AVATAR_SLOTS: CosmeticSlot[] = ['hat', 'eyes', 'bag'];
+export const SPROUTY_SLOTS: CosmeticSlot[] = ['hat', 'eyes', 'bag', 'pot', 'background'];
+export const slotsFor = (target: OutfitTarget) => (target === 'avatar' ? AVATAR_SLOTS : SPROUTY_SLOTS);
 
 export type UnlockRule =
   | { type: 'badge'; badgeId: string }
   | { type: 'level'; level: number }
   | { type: 'weekly'; count: number }
   /** Recorded mission completions, optionally in one category. */
-  | { type: 'missions'; count: number; category?: MissionCategory };
+  | { type: 'missions'; count: number; category?: MissionCategory }
+  /** Longest run of consecutive days with a mission. */
+  | { type: 'streak'; days: number }
+  /** Bond level with Sprouty (from the care page). */
+  | { type: 'bond'; level: number }
+  /** Took part in an environmental day (see data/events). */
+  | { type: 'event'; eventId: string };
 
 export interface Cosmetic {
   id: string;
@@ -42,7 +57,27 @@ export const COSMETICS: Cosmetic[] = [
   { id: 'hat-mushroom', slot: 'hat', name: 'หมวกเห็ดป่า', unlock: { type: 'missions', count: 3, category: 'nature' } },
   { id: 'eyes-goggles', slot: 'eyes', name: 'แว่นนักปั่น', unlock: { type: 'missions', count: 3, category: 'transport' } },
   { id: 'bag-basket', slot: 'bag', name: 'ตะกร้าจ่ายตลาด', unlock: { type: 'missions', count: 3, category: 'consumption' } },
+  // Sprouty's pots and backgrounds: from streaks and from caring for Sprouty.
+  { id: 'pot-clay', slot: 'pot', name: 'กระถางดินเผา', unlock: { type: 'streak', days: 3 } },
+  { id: 'pot-blue', slot: 'pot', name: 'กระถางเซรามิกฟ้า', unlock: { type: 'streak', days: 7 } },
+  { id: 'pot-gold', slot: 'pot', name: 'กระถางทองคำ', unlock: { type: 'streak', days: 14 } },
+  { id: 'pot-heart', slot: 'pot', name: 'กระถางหัวใจ', unlock: { type: 'bond', level: 3 } },
+  { id: 'bg-meadow', slot: 'background', name: 'ทุ่งหญ้ายามเช้า', unlock: { type: 'bond', level: 2 } },
+  { id: 'bg-sea', slot: 'background', name: 'ชายหาดสีคราม', unlock: { type: 'streak', days: 5 } },
+  { id: 'bg-night', slot: 'background', name: 'ท้องฟ้าดาวพราว', unlock: { type: 'bond', level: 5 } },
+  { id: 'bg-rainbow', slot: 'background', name: 'สายรุ้งสดใส', unlock: { type: 'bond', level: 8 } },
+  // Environmental-day specials.
+  { id: 'bg-rain', slot: 'background', name: 'ฉากสายฝนฉ่ำ', unlock: { type: 'event', eventId: 'water-day' } },
+  { id: 'hat-earth', slot: 'hat', name: 'หมวกโลกสีเขียว', unlock: { type: 'event', eventId: 'earth-day' } },
+  { id: 'pot-leaf', slot: 'pot', name: 'กระถางลายใบไม้', unlock: { type: 'event', eventId: 'env-day' } },
+  { id: 'hat-chef', slot: 'hat', name: 'หมวกเชฟผักสด', unlock: { type: 'event', eventId: 'food-day' } },
+  { id: 'bg-forest', slot: 'background', name: 'ป่าเขียวขจี', unlock: { type: 'event', eventId: 'thai-env-day' } },
 ];
+
+const missionCategory = (id: string) => missions.find((m) => m.id === id)?.category;
+
+/** The cosmetic each environmental day awards (kept in sync with data/events). */
+export const EVENT_REWARDS = ECO_EVENTS.map((e) => ({ event: e, cosmetic: COSMETICS.find((c) => c.id === e.rewardId)! }));
 
 function missionsDone(progress: PlayerProgress, category?: MissionCategory): number {
   if (!category) return progress.completions.length;
@@ -91,6 +126,19 @@ function getEarnedCosmeticStatus(cosmetic: Cosmetic, progress: PlayerProgress): 
       const done = weeklyChallengesDone(progress);
       return { cosmetic, unlocked: done >= rule.count, condition: `ทำชาเลนจ์ประจำสัปดาห์สำเร็จ ${rule.count} ครั้ง`, current: Math.min(done, rule.count), target: rule.count };
     }
+    case 'streak': {
+      const best = getLongestStreak(progress.completions);
+      return { cosmetic, unlocked: best >= rule.days, condition: `ทำภารกิจต่อเนื่อง ${rule.days} วัน`, current: Math.min(best, rule.days), target: rule.days };
+    }
+    case 'bond': {
+      const level = getCareState(progress).bond.level;
+      return { cosmetic, unlocked: level >= rule.level, condition: `ความผูกพันกับ Sprouty ระดับ ${rule.level}`, current: Math.min(level, rule.level), target: rule.level };
+    }
+    case 'event': {
+      const e = getEvent(rule.eventId);
+      const done = !!e && eventCompleted(e, progress, missionCategory);
+      return { cosmetic, unlocked: done, condition: e ? `ร่วมกิจกรรม${e.name} (${eventDateLabel(e)} ±3 วัน)` : 'กิจกรรมพิเศษ', current: done ? 1 : 0, target: 1 };
+    }
     case 'missions': {
       const done = missionsDone(progress, rule.category);
       const what = rule.category ? `ภารกิจหมวด${CATEGORY_LABELS[rule.category]}` : 'ภารกิจ';
@@ -103,12 +151,13 @@ export function getAllCosmeticStatuses(progress: PlayerProgress): CosmeticStatus
   return COSMETICS.map((c) => getCosmeticStatus(c, progress));
 }
 
-/** Only items that exist, sit in the right slot and are unlocked can be worn. */
-export function wearableOutfit(outfit: Outfit | undefined, progress: PlayerProgress): Outfit {
+/** Only items that exist, sit in the right slot (one the target can wear) and are unlocked can be worn. */
+export function wearableOutfit(outfit: Outfit | undefined, progress: PlayerProgress, target: OutfitTarget = 'sprouty'): Outfit {
   const out: Outfit = {};
+  const allowed = slotsFor(target);
   for (const [slot, id] of Object.entries(outfit ?? {}) as [CosmeticSlot, string][]) {
     const c = getCosmetic(id);
-    if (c && c.slot === slot && getCosmeticStatus(c, progress).unlocked) out[slot] = id;
+    if (c && c.slot === slot && allowed.includes(slot) && getCosmeticStatus(c, progress).unlocked) out[slot] = id;
   }
   return out;
 }

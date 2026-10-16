@@ -10,7 +10,7 @@ const CHEERS = ['เยี่ยมไปเลย!', 'สุดยอด!', '�
 
 /** XP rewards: Sprouty pops up, hops and cheers instead of a plain notice. */
 function SproutyCheer({ toast, stage, onClose }: { toast: Toast; stage: ReturnType<typeof getSproutyStage>['stage']; onClose: () => void }) {
-  const outfit = useOutfit();
+  const outfit = useOutfit('sprouty');
   const cheer = CHEERS[[...toast.id].reduce((n, ch) => n + ch.charCodeAt(0), 0) % CHEERS.length];
   return (
     <motion.div

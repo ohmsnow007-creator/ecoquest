@@ -4,7 +4,8 @@ import { COSMETICS } from '../data/cosmetics';
 import { MAX_LEVEL } from '../config/levels';
 import { getLevelFromXp, totalXpForLevel } from '../utils/xp';
 import { checkNewBadges } from '../utils/badges';
-import { getCosmetic, getCosmeticStatus, type CosmeticSlot } from '../data/cosmetics';
+import { AVATAR_SLOTS, getCosmetic, getCosmeticStatus, type CosmeticSlot, type OutfitTarget } from '../data/cosmetics';
+import { EMPTY_CARE, getCareState } from '../utils/care';
 import type { PlayerProfile, PlayerProgress, MissionCategory, MissionProgressStatus, ImpactRecord, AdminGrant, BadgeRecord } from '../types';
 import { getFactorFor } from '../data/emissionFactors';
 import { CALCULATION_VERSION } from '../services/impactCalculator';
@@ -79,7 +80,12 @@ interface GameActions {
   updateProfile: (changes: ProfileChanges) => void;
   setReducedMotion: (value: boolean) => void;
   setPreference: (key: BooleanPreference, value: boolean) => void;
-  wearCosmetic: (slot: CosmeticSlot, id: string | null) => WearResult;
+  /** Put on (or with null, take off) an item for the character, Sprouty, or both. */
+  wearCosmetic: (slot: CosmeticSlot, id: string | null, target?: OutfitTarget | 'both') => WearResult;
+  /** Pour today's water (needs a mission recorded today; once a day). */
+  waterSprouty: () => boolean;
+  /** Use one bag of fertilizer earned from missions. */
+  feedSprouty: () => boolean;
   markCosmeticsSeen: (ids: string[]) => void;
   admin: AdminActions;
   resetProgress: () => boolean;
@@ -213,23 +219,64 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   // Equip (or with null, take off) a cosmetic. Locked items are refused here, not only hidden in the UI.
   const wearCosmetic = useCallback(
-    (slot: CosmeticSlot, id: string | null): WearResult => {
+    (slot: CosmeticSlot, id: string | null, target: OutfitTarget | 'both' = 'both'): WearResult => {
       if (id !== null) {
         const item = getCosmetic(id);
         if (!item || item.slot !== slot) return 'unknown';
         if (!getCosmeticStatus(item, progress).unlocked) return 'locked';
       }
+      // Pots and backgrounds are Sprouty-only.
+      const toAvatar = target !== 'sprouty' && AVATAR_SLOTS.includes(slot);
+      const toSprouty = target !== 'avatar';
+      if (!toAvatar && !toSprouty) return 'unknown';
+      const put = <T extends Record<string, string | undefined>>(o: T): T => {
+        const next: Record<string, string | undefined> = { ...o };
+        if (id === null) delete next[slot];
+        else next[slot] = id;
+        return next as T;
+      };
       setProfile((prev) => {
         if (!prev) return prev;
-        const outfit = { ...(prev.preferences.outfit ?? {}) };
-        if (id === null) delete outfit[slot];
-        else outfit[slot] = id;
-        return { ...prev, preferences: { ...prev.preferences, outfit }, updatedAt: new Date().toISOString() };
+        const prefs = prev.preferences;
+        // Sprouty starts from a copy of the character's outfit the first time it is dressed on its own.
+        const sproutyBase = prefs.sproutyOutfit ?? { ...(prefs.outfit ?? {}) };
+        return {
+          ...prev,
+          preferences: {
+            ...prefs,
+            ...(toAvatar ? { outfit: put(prefs.outfit ?? {}) } : {}),
+            ...(toSprouty ? { sproutyOutfit: put(sproutyBase) } : {}),
+          },
+          updatedAt: new Date().toISOString(),
+        };
       });
       return 'ok';
     },
     [progress],
   );
+
+  const waterSprouty = useCallback((): boolean => {
+    const st = getCareState(progress);
+    if (!st.hasWaterToday || st.wateredToday) return false;
+    const today = getLocalDate();
+    setProgress((prev) => {
+      const care = prev.care ?? EMPTY_CARE;
+      if (care.wateredDays.includes(today)) return prev;
+      return { ...prev, care: { ...care, wateredDays: [...care.wateredDays, today].sort() } };
+    });
+    return true;
+  }, [progress]);
+
+  const feedSprouty = useCallback((): boolean => {
+    if (getCareState(progress).fertilizer <= 0) return false;
+    setProgress((prev) => {
+      const care = prev.care ?? EMPTY_CARE;
+      // Re-check against the latest records so a double tap can't use a bag that isn't there.
+      if (getCareState(prev).fertilizer <= 0) return prev;
+      return { ...prev, care: { ...care, fertilizerUsed: care.fertilizerUsed + 1 } };
+    });
+    return true;
+  }, [progress]);
 
   // ---- Demo admin ----
   const commitAdmin = useCallback(
@@ -538,6 +585,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setReducedMotion,
         setPreference,
         wearCosmetic,
+        waterSprouty,
+        feedSprouty,
         markCosmeticsSeen,
         admin,
         resetProgress,
