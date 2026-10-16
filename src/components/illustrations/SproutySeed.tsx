@@ -250,7 +250,20 @@ export function SproutySeed({
 
       {/* soil with a few pebbles and grass tufts — or the pot Sprouty sits in */}
       {outfit?.pot ? (
-        <PotBack id={outfit.pot} />
+        <>
+          {/* the pot sits on a patch of soil with a little grass, so it never floats */}
+          <ellipse cx="120" cy="234" rx="104" ry="15" fill={`url(#${id}-soil)`} />
+          <ellipse cx="120" cy="232" rx="70" ry="7" fill="#2B1C12" opacity={0.35} />
+          <ellipse cx="36" cy="236" rx="5" ry="3" fill="#B9A58C" />
+          <ellipse cx="206" cy="237" rx="4.5" ry="2.6" fill="#C9B79E" />
+          <motion.g style={{ transformOrigin: '30px 232px' }} animate={breeze} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}>
+            <path d="M24 234 C22 226 24 220 28 215 M30 234 C30 225 33 220 38 216" stroke="#5DAA43" strokeWidth={3} strokeLinecap="round" fill="none" />
+          </motion.g>
+          <motion.g style={{ transformOrigin: '210px 232px' }} animate={breeze} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}>
+            <path d="M204 234 C202 227 204 221 208 217 M210 234 C211 226 214 221 219 218" stroke="#6FB64E" strokeWidth={3} strokeLinecap="round" fill="none" />
+          </motion.g>
+          <PotBack id={outfit.pot} />
+        </>
       ) : (
       <>
       <ellipse cx="120" cy="214" rx="114" ry="25" fill={`url(#${id}-soil)`} />
