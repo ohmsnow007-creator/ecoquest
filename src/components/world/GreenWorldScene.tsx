@@ -33,38 +33,103 @@ function useHour(fixed?: number) {
   return fixed ?? hour;
 }
 
-/** Sun with spinning rays and a blinking face, or a sleepy crescent moon at night. */
+/** How long the sun grins / the moon yawns after a tap. */
+const POKE_MS = 1800;
+
+/**
+ * Sun with spinning rays and a blinking face, or a sleepy crescent moon at night. Tap it: the sun
+ * bounces with a big grin, the moon gives a long yawn.
+ */
 function SkyBody({ time, dry }: { time: TimeOfDay; dry: boolean }) {
   const { x, y, color } = SUN[time];
-  if (time === 'night') {
-    return (
-      <g transform={`translate(${x} ${y})`} data-testid="moon">
-        <g className="scene-bob">
-          <circle r={26} fill="#FFF4C8" opacity={0.18} />
-          <path d="M8 -20 A 21 21 0 1 0 8 20 A 16 16 0 1 1 8 -20 Z" fill={color} />
-          <circle cx={-10} cy={-9} r={2.4} fill="#E8DCA8" />
-          <circle cx={-3} cy={12} r={1.8} fill="#E8DCA8" />
-          <g className="scene-blink" style={{ animationDelay: '1.3s' }}>
-            <ellipse cx={-10} cy={0} rx={1.6} ry={2} className="fill-forest" />
-          </g>
-          <path d="M-13 6 Q-10 8.5 -7 6" className="stroke-forest" strokeWidth={1.5} strokeLinecap="round" fill="none" />
-          <ellipse cx={-15} cy={4} rx={2.4} ry={1.5} fill={ART.cheek} opacity={0.8} />
-        </g>
-      </g>
-    );
-  }
+  const night = time === 'night';
+  const [poke, setPoke] = useState(0);
+  const poked = poke > 0;
+  useEffect(() => {
+    if (!poke) return;
+    const t = window.setTimeout(() => setPoke(0), POKE_MS);
+    return () => window.clearTimeout(t);
+  }, [poke]);
+  const tap = (e: { stopPropagation: () => void }) => {
+    e.stopPropagation();
+    navigator.vibrate?.(12);
+    setPoke((n) => n + 1);
+  };
+
   return (
-    <g transform={`translate(${x} ${y})`} data-testid="sun">
-      <g className="scene-spin">
-        {Array.from({ length: 10 }, (_, i) => (
-          <path key={i} d="M0 -27 L3.5 -34 L-3.5 -34 Z" fill={ART.sunRay} opacity={dry ? 0.5 : 0.85} transform={`rotate(${i * 36})`} />
-        ))}
-      </g>
-      <g className="scene-bob">
-        <circle r={22} fill={color} opacity={dry ? 0.8 : 1} />
-        <circle cx={-7} cy={-8} r={6} fill="#FFFFFF" opacity={0.35} />
-        <Face x={0} y={-1} s={0.6} blink={0.4} />
-      </g>
+    <g
+      transform={`translate(${x} ${y})`}
+      data-testid={night ? 'moon' : 'sun'}
+      data-poked={poked || undefined}
+      role="button"
+      tabIndex={0}
+      aria-label={night ? 'จิ้มพระจันทร์' : 'จิ้มพระอาทิตย์'}
+      onClick={tap}
+      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), tap(e))}
+      style={{ cursor: 'pointer', outline: 'none' }}
+    >
+      {/* bigger invisible hit area for fingers */}
+      <circle r={38} fill="transparent" />
+      {night ? (
+        <motion.g
+          key={poke}
+          animate={poked ? { rotate: [0, -8, 6, -4, 0], scale: [1, 1.08, 1.08, 1] } : undefined}
+          transition={{ duration: 1.4 }}
+        >
+          <g className="scene-bob">
+            <circle r={26} fill="#FFF4C8" opacity={0.18} />
+            <path d="M8 -20 A 21 21 0 1 0 8 20 A 16 16 0 1 1 8 -20 Z" fill={color} />
+            <circle cx={-10} cy={-9} r={2.4} fill="#E8DCA8" />
+            <circle cx={-3} cy={12} r={1.8} fill="#E8DCA8" />
+            {poked ? (
+              // a big yawn: eyes squeezed shut, mouth wide open, little Zs float up
+              <>
+                <path d="M-13 -1 Q-10 1.5 -7 -1" className="stroke-forest" strokeWidth={1.6} strokeLinecap="round" fill="none" />
+                <motion.ellipse cx={-10} cy={7} rx={2.6} initial={{ ry: 1 }} animate={{ ry: [1, 4, 4, 1.5] }} transition={{ duration: 1.6 }} className="fill-forest" />
+                <motion.g initial={{ opacity: 0, y: 0 }} animate={{ opacity: [0, 1, 0], y: -18 }} transition={{ duration: 1.6 }} fill="#FFF8D6" fontFamily="sans-serif" fontWeight={700}>
+                  <text x={-34} y={-6} fontSize={9}>z</text>
+                  <text x={-42} y={-14} fontSize={7}>z</text>
+                </motion.g>
+              </>
+            ) : (
+              <>
+                <g className="scene-blink" style={{ animationDelay: '1.3s' }}>
+                  <ellipse cx={-10} cy={0} rx={1.6} ry={2} className="fill-forest" />
+                </g>
+                <path d="M-13 6 Q-10 8.5 -7 6" className="stroke-forest" strokeWidth={1.5} strokeLinecap="round" fill="none" />
+              </>
+            )}
+            <ellipse cx={-15} cy={4} rx={2.4} ry={1.5} fill={ART.cheek} opacity={0.8} />
+          </g>
+        </motion.g>
+      ) : (
+        <>
+          <g className="scene-spin">
+            {Array.from({ length: 10 }, (_, i) => (
+              <path key={i} d="M0 -27 L3.5 -34 L-3.5 -34 Z" fill={ART.sunRay} opacity={dry ? 0.5 : 0.85} transform={`rotate(${i * 36})`} />
+            ))}
+          </g>
+          <motion.g key={poke} animate={poked ? { scale: [1, 1.25, 0.95, 1.08, 1], rotate: [0, -10, 10, 0] } : undefined} transition={{ duration: 0.9 }}>
+            <g className="scene-bob">
+              <circle r={22} fill={color} opacity={dry ? 0.8 : 1} />
+              <circle cx={-7} cy={-8} r={6} fill="#FFFFFF" opacity={0.35} />
+              {poked ? (
+                // a big beaming grin with happy ^ ^ eyes
+                <g transform="translate(0 -1) scale(0.6)">
+                  <path d="M-13 1 Q-9 -6 -5 1" className="stroke-forest" strokeWidth={3} strokeLinecap="round" fill="none" />
+                  <path d="M5 1 Q9 -6 13 1" className="stroke-forest" strokeWidth={3} strokeLinecap="round" fill="none" />
+                  <path d="M-10 7 Q0 22 10 7 Z" className="fill-forest" />
+                  <path d="M-5 13 Q0 17 5 13" fill="#F47C8A" />
+                  <ellipse cx={-16} cy={7} rx={5} ry={3.4} fill={ART.cheek} />
+                  <ellipse cx={16} cy={7} rx={5} ry={3.4} fill={ART.cheek} />
+                </g>
+              ) : (
+                <Face x={0} y={-1} s={0.6} blink={0.4} />
+              )}
+            </g>
+          </motion.g>
+        </>
+      )}
     </g>
   );
 }

@@ -22,6 +22,8 @@ import { MissionArt, CATEGORY_TONE } from '../components/illustrations/MissionAr
 import { FilterChips, type ChipOption } from '../components/ui/Controls';
 import { MissionCard } from '../components/ui/MissionCard';
 import { SproutyTalk } from '../components/sprouty/PlayerSprouty';
+import { useTimeOfDay } from '../components/sprouty/useTimeOfDay';
+import { missionsLine } from '../utils/sprouty';
 import { getDailyStatus } from '../utils/challenges';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { XPBadge } from '../components/ui/Badges';
@@ -37,6 +39,7 @@ const CATEGORY_CHIPS: ChipOption<CategoryFilter>[] = CATEGORY_FILTERS.map((f) =>
 const STATUS_ORDER: StatusFilter[] = ['all', 'new', 'in-progress', 'completed'];
 
 export function Missions() {
+  const timeOfDay = useTimeOfDay();
   const { profile, progress, getMissionStatus, startMission, getCompletedSteps } = useGame();
   const [category, setCategory] = useState<CategoryFilter>('all');
   const [status, setStatus] = useState<StatusFilter>('all');
@@ -67,15 +70,12 @@ export function Missions() {
     setQuery('');
   };
 
-  // What Sprouty says here comes from today's real records.
+  // What Sprouty says here comes from the clock and today's real records.
   const today = profile ? getDailyStatus(progress, profile.id) : null;
-  const sproutyLine: { text: string; mood: 'happy' | 'cheer' | 'sleepy' } = !today
-    ? { text: 'เลือกภารกิจที่ชอบสักข้อ แล้วเริ่มกันเลย!', mood: 'happy' }
-    : today.complete
-      ? { text: 'ภารกิจประจำวันครบแล้ว! อยากทำเพิ่มก็เลือกได้อีกนะ', mood: 'cheer' }
-      : today.doneCount > 0
-        ? { text: `ภารกิจประจำวันเหลืออีก ${today.missions.length - today.doneCount} ข้อ สู้ ๆ นะ!`, mood: 'happy' }
-        : { text: 'วันนี้ยังไม่ได้เริ่มเลย ลองภารกิจง่าย ๆ สักข้อไหม', mood: 'sleepy' };
+  const sproutyLine = missionsLine(
+    timeOfDay,
+    today && { left: today.complete ? 0 : today.missions.length - today.doneCount, started: today.doneCount > 0 },
+  );
 
   return (
     <>

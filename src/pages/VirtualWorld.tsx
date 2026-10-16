@@ -8,16 +8,21 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { Card, SectionTitle } from '../components/ui/Card';
 import { ProgressRing } from '../components/ui/ProgressBar';
 import { EcoMascot } from '../components/ui/EcoMascot';
+import { SproutyTalk } from '../components/sprouty/PlayerSprouty';
+import { useTimeOfDay } from '../components/sprouty/useTimeOfDay';
+import { worldLine } from '../utils/sprouty';
 
 export function VirtualWorld() {
   const { progress } = useGame();
   const stats = getPlayerStats(progress);
   const world = getWorldState(stats.missionsCompleted);
   const { current, next } = world;
+  const line = worldLine(useTimeOfDay());
 
   return (
     <>
       <PageHeader title="โลกสีเขียวของฉัน" subtitle="โลกเสมือนเติบโตตามจำนวนภารกิจที่คุณทำสำเร็จ" />
+      <SproutyTalk className="-mt-1 mb-4 max-w-md" text={line.text} mood={line.mood} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card padded={false} className="overflow-hidden lg:col-span-2">

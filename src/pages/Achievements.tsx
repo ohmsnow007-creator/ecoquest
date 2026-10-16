@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { SproutyTalk } from '../components/sprouty/PlayerSprouty';
+import { useTimeOfDay } from '../components/sprouty/useTimeOfDay';
+import { timeOpener } from '../utils/sprouty';
 import { motion } from 'framer-motion';
 import { Trophy, Flame, Target, CalendarCheck, BookOpen, Globe2, Info, type LucideIcon } from 'lucide-react';
 import { useGame } from '../store/GameContext';
@@ -57,6 +59,7 @@ function BadgeRow({ status }: { status: BadgeStatus }) {
 }
 
 export function Achievements() {
+  const timeOfDay = useTimeOfDay();
   const { progress } = useGame();
   const [group, setGroup] = useState<GroupFilter>('all');
 
@@ -77,13 +80,14 @@ export function Achievements() {
   const shownLocked = shown.filter((s) => !s.unlocked);
 
   // Sprouty points at the locked badge that is closest to unlocking.
-  const sproutyLine: { text: string; mood: 'happy' | 'cheer' } = !closest
+  const baseLine: { text: string; mood: 'happy' | 'cheer' } = !closest
     ? { text: 'ปลดล็อกครบทุกเหรียญแล้ว! สุดยอดไปเลย', mood: 'cheer' }
     : closest.progress >= 1
       ? { text: `ทำครบเงื่อนไข “${closest.badge.name}” แล้ว เหรียญจะปลดล็อกเมื่อทำภารกิจหรือควิซครั้งถัดไป`, mood: 'cheer' }
       : closest.progress >= 0.5
       ? { text: `อีกนิดเดียวจะได้ “${closest.badge.name}” แล้ว (${closest.current}/${closest.target})`, mood: 'cheer' }
       : { text: `ได้แล้ว ${unlockedCount} เหรียญ เหรียญถัดไป: “${closest.badge.name}” ${closest.unlockCondition}`, mood: 'happy' };
+  const sproutyLine = { text: timeOpener(timeOfDay) + baseLine.text, mood: timeOfDay === 'night' ? ('sleepy' as const) : baseLine.mood };
 
   return (
     <>

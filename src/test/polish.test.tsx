@@ -49,3 +49,36 @@ describe('world scene follows the clock', () => {
     expect(container.querySelectorAll('.scene-blink').length).toBeGreaterThanOrEqual(6);
   });
 });
+
+describe('tapping the sun and moon', () => {
+  it('the sun grins and the moon yawns, then they go back to normal', async () => {
+    const { GreenWorldScene } = await import('../components/world/GreenWorldScene');
+    const { fireEvent, act } = await import('@testing-library/react');
+    const day = render(<GreenWorldScene stage={2} hour={12} />);
+    const sun = day.getByRole('button', { name: 'จิ้มพระอาทิตย์' });
+    fireEvent.click(sun);
+    expect(sun.getAttribute('data-poked')).toBe('true');
+    await act(async () => { await new Promise((r) => setTimeout(r, 1900)); });
+    expect(sun.getAttribute('data-poked')).toBeNull();
+    day.unmount();
+    const night = render(<GreenWorldScene stage={2} hour={23} />);
+    const moon = night.getByRole('button', { name: 'จิ้มพระจันทร์' });
+    fireEvent.keyDown(moon, { key: 'Enter' });
+    expect(moon.getAttribute('data-poked')).toBe('true');
+    expect(moon.querySelectorAll('text').length).toBe(2); // the floating "z z"
+  });
+});
+
+describe('Sprouty follows the clock on other pages', () => {
+  it('missions page: bedtime nudge at night, honest counts by day', async () => {
+    const { missionsLine, worldLine, timeOpener } = await import('../utils/sprouty');
+    expect(missionsLine('night', { left: 2, started: true }).text).toBe('ดึกแล้ว ทำอีกข้อแล้วไปนอนนะ');
+    expect(missionsLine('night', { left: 0, started: true }).text).toContain('ไปนอนได้เลย');
+    expect(missionsLine('evening', { left: 2, started: true }).text).toContain('เหลืออีก 2 ข้อ');
+    expect(missionsLine('morning', { left: 3, started: false }).text).toContain('อรุณสวัสดิ์');
+    expect(missionsLine('day', { left: 1, started: true }).text).toContain('เหลืออีก 1 ข้อ');
+    expect(worldLine('night').text).toContain('พระจันทร์');
+    expect(worldLine('day').text).toContain('พระอาทิตย์');
+    expect(timeOpener('day')).toBe('');
+  });
+});
