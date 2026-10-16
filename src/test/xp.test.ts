@@ -12,8 +12,8 @@ describe('xpForLevel', () => {
     expect(xpForLevel(5)).toBeGreaterThan(xpForLevel(4));
   });
 
-  it('uses floor of 50 * level^1.5', () => {
-    expect(xpForLevel(4)).toBe(Math.floor(50 * Math.pow(4, 1.5)));
+  it('grows by 45 XP per level', () => {
+    expect(xpForLevel(4)).toBe(50 + 45 * 3);
   });
 });
 

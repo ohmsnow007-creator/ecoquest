@@ -1,7 +1,8 @@
-// Central level table. Level N needs `minXp` total XP; the step to the next level grows as 50 × N^1.5.
+// Central level table. Level N needs `minXp` total XP; the step to the next level grows gently: 50 + 45 × (N − 1).
+// Lv20 ≈ 8,600 XP and Lv50 ≈ 55,400 XP, so the top is reachable in a school term of regular play.
 export const MAX_LEVEL = 50;
 
-const stepToNext = (level: number) => Math.floor(50 * Math.pow(level, 1.5));
+const stepToNext = (level: number) => 50 + 45 * (level - 1);
 
 const TITLES: { from: number; title: string }[] = [
   { from: 1, title: 'ต้นกล้า' },

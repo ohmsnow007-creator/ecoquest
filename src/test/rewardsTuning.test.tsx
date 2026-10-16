@@ -72,15 +72,16 @@ describe('frames from weekly challenges', () => {
 });
 
 describe('levels go up to 50', () => {
-  it('has 50 levels with titles, and existing XP keeps the same level up to 30', async () => {
+  it('has 50 levels with titles, and the top is reachable (not hundreds of thousands of XP)', async () => {
     const { LEVELS, MAX_LEVEL } = await import('../config/levels');
     const { getLevelFromXp } = await import('../utils/xp');
     expect(MAX_LEVEL).toBe(50);
     expect(LEVELS).toHaveLength(50);
     expect(LEVELS[49].title).toBe('ตำนานแห่งโลกสีเขียว');
-    // the step formula is unchanged, so a player's level for the same XP doesn't move
-    expect(getLevelFromXp(7131)).toBe(11);
-    expect(getLevelFromXp(94504)).toBe(30);
+    expect(LEVELS[19].minXp).toBe(8645);
+    expect(LEVELS[49].minXp).toBe(55370);
+    // the old curve put Lv11 at 7,131 XP; nobody goes down a level with the gentler one
+    expect(getLevelFromXp(7131)).toBeGreaterThanOrEqual(11);
     expect(getLevelFromXp(10_000_000)).toBe(50);
   });
 });
