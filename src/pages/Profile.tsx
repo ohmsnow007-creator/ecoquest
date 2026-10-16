@@ -126,8 +126,8 @@ export function Profile() {
           {/* Identity */}
           <section aria-label="ข้อมูลผู้เล่น" className="bg-forest-hero rounded-hero p-4 text-white shadow-raised sm:p-5">
             <div className="flex items-center gap-4">
-              <span className="rounded-full ring-4 ring-mint/80">
-                <Avatar id={profile.avatarId} color={profile.preferences.profileColor} size="lg" outfit={outfit} />
+              <span className="m-2 inline-flex">
+                <Avatar id={profile.avatarId} color={profile.preferences.profileColor} size="lg" outfit={outfit} framed />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-section font-bold text-white">{profile.displayName}</p>

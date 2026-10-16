@@ -1,6 +1,7 @@
 import type { MissionCompletion, PlayerProgress } from '../types';
 import type { SproutyMood } from '../components/illustrations/SproutySeed';
 import { getLocalDate } from './streak';
+import { SPECIAL_FERTILIZER } from '../config/challenges';
 
 /*
  * Caring for Sprouty. Everything here comes from records the game already keeps, plus the player's own
@@ -37,9 +38,14 @@ function hash(s: string): number {
   return h >>> 0;
 }
 
-/** Whether this recorded mission came with a bag of fertilizer (fixed per completion). */
+/** Bags of fertilizer this recorded mission gave: special daily missions always give some; others are a fixed draw. */
+export function fertilizerFrom(c: MissionCompletion): number {
+  if (c.special) return SPECIAL_FERTILIZER;
+  return hash(`fertilizer:${c.id}`) % 100 < FERTILIZER_PERCENT ? 1 : 0;
+}
+
 export function givesFertilizer(c: MissionCompletion): boolean {
-  return hash(`fertilizer:${c.id}`) % 100 < FERTILIZER_PERCENT;
+  return fertilizerFrom(c) > 0;
 }
 
 function daysBetween(from: string, to: string): number {
@@ -68,7 +74,7 @@ export interface CareState {
 
 export function getCareState(progress: PlayerProgress, today: string = getLocalDate()): CareState {
   const care = progress.care ?? EMPTY_CARE;
-  const fertilizerEarned = progress.completions.filter(givesFertilizer).length;
+  const fertilizerEarned = progress.completions.reduce((n, c) => n + fertilizerFrom(c), 0);
   const fertilizer = Math.max(0, fertilizerEarned - care.fertilizerUsed);
   const hasWaterToday = progress.completions.some((c) => c.localDate === today);
   const wateredToday = care.wateredDays.includes(today);

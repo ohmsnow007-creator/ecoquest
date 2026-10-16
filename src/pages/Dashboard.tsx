@@ -13,7 +13,8 @@ import { missions } from '../data/missions';
 import { CATEGORY_LABELS, DIFFICULTY_LABELS } from '../types';
 import type { Mission, MissionProgressStatus } from '../types';
 import { CATEGORY_ICON } from '../data/icons';
-import { getDailyStatus, getWeeklyStatus } from '../utils/challenges';
+import { getDailyStatus, getSpecialMissionIds, getWeeklyStatus } from '../utils/challenges';
+import { SpecialMissionTag } from '../components/challenges/SpecialMissionTag';
 import { ChallengeBonus, WeeklyChallengeCard } from '../components/challenges/ChallengeCards';
 import { SproutyHomeCard } from '../components/sprouty/SproutyHomeCard';
 import { getCareState } from '../utils/care';
@@ -69,12 +70,19 @@ function StatLink({ to, icon: Icon, label, value, hint, delay }: { to: string; i
   );
 }
 
-function DailyMissionRow({ mission, status }: { mission: Mission; status: MissionProgressStatus }) {
+function DailyMissionRow({ mission, status, special }: { mission: Mission; status: MissionProgressStatus; special: boolean }) {
   const Icon = CATEGORY_ICON[mission.category];
   const meta = STATUS_META[status];
   return (
-    <li className="flex items-center gap-3 rounded-card border border-border bg-surface p-3 shadow-card sm:p-4">
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] bg-pale-mint text-primary ring-1 ring-mint" aria-hidden="true">
+    <li
+      className={`flex items-center gap-3 rounded-card border p-3 shadow-card sm:p-4 ${
+        special ? 'border-[#F59E0B]/60 bg-gradient-to-br from-[#FFFBEB] to-surface ring-1 ring-[#FBBF24]/40' : 'border-border bg-surface'
+      }`}
+    >
+      <span
+        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] ring-1 ${special ? 'bg-[#FEF3C7] text-[#B45309] ring-[#FBBF24]' : 'bg-pale-mint text-primary ring-mint'}`}
+        aria-hidden="true"
+      >
         <Icon size={22} />
       </span>
       <div className="min-w-0 flex-1">
@@ -83,6 +91,7 @@ function DailyMissionRow({ mission, status }: { mission: Mission; status: Missio
           {CATEGORY_LABELS[mission.category]} · {DIFFICULTY_LABELS[mission.difficulty]}
         </p>
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          {special && <SpecialMissionTag compact />}
           <XPBadge amount={mission.xpReward} />
           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-caption font-semibold ${meta.className}`}>
             <meta.icon size={12} aria-hidden="true" />
@@ -163,16 +172,18 @@ export function Dashboard() {
   // Today's three daily missions are fixed for the day; the order shows what is still open first.
   const dailyStatus = getDailyStatus(progress, profile.id);
   const weeklyStatus = getWeeklyStatus(progress, profile.id);
+  const specialIds = getSpecialMissionIds(profile.id);
+  // Open missions first; among those, today's special ones on top.
   const daily = dailyStatus.missions
-    .map(({ mission }) => ({ mission, status: getMissionStatus(mission.id) }))
-    .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
+    .map(({ mission }) => ({ mission, status: getMissionStatus(mission.id), special: specialIds.includes(mission.id) }))
+    .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status] || Number(b.special) - Number(a.special));
 
   return (
     <>
       {/* 1. Header */}
       <header className="safe-top flex items-center gap-3 pt-5 pb-4 lg:pt-10 lg:pb-6">
-        <Link to="/profile" aria-label="โปรไฟล์ของฉัน" className="shrink-0 rounded-full ring-2 ring-mint ring-offset-2 ring-offset-background">
-          <Avatar id={profile.avatarId} color={profile.preferences.profileColor} size="lg" outfit={outfit} />
+        <Link to="/profile" aria-label="โปรไฟล์ของฉัน" className="m-1.5 inline-flex shrink-0 rounded-full">
+          <Avatar id={profile.avatarId} color={profile.preferences.profileColor} size="lg" outfit={outfit} framed />
         </Link>
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-section leading-tight font-bold text-forest">สวัสดี {profile.displayName}</h1>
@@ -307,8 +318,8 @@ export function Dashboard() {
         <section aria-labelledby="daily-title" className="lg:col-span-2 lg:row-span-2">
           <SectionTitle id="daily-title" title="ภารกิจประจำวัน" action={<ViewAll to="/missions" />} />
           <ul className="space-y-2.5">
-            {daily.map(({ mission, status }) => (
-              <DailyMissionRow key={mission.id} mission={mission} status={status} />
+            {daily.map(({ mission, status, special }) => (
+              <DailyMissionRow key={mission.id} mission={mission} status={status} special={special} />
             ))}
           </ul>
           <ChallengeBonus status={dailyStatus} onClaim={() => claimChallenge('daily')} />

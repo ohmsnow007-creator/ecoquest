@@ -24,53 +24,122 @@ const WATER_LINES = ['อ๊า~ สดชื่นสุด ๆ ขอบคุ
 const FEED_LINES = ['ปุ๋ยอร่อยจัง! รู้สึกแข็งแรงขึ้นเลย', 'ว้าว พลังเต็มเปี่ยม!', 'อิ่มแล้ว~ รักเธอที่สุด'];
 const pick = (list: string[]) => list[Math.floor(Math.random() * list.length)];
 
-/** Drops falling from a tilted watering can. */
+/** "+N ความผูกพัน" floating up from Sprouty. */
+function BondFloat({ amount }: { amount: number }) {
+  return (
+    <motion.span
+      className="pointer-events-none absolute top-1/3 left-1/2 rounded-full bg-white/90 px-3 py-1 text-caption font-bold text-[#E11D48] shadow-card"
+      initial={{ x: '-50%', y: 20, opacity: 0, scale: 0.6 }}
+      animate={{ y: -50, opacity: [0, 1, 1, 0], scale: 1 }}
+      transition={{ duration: 1.8, delay: 0.9, times: [0, 0.2, 0.75, 1] }}
+      aria-hidden="true"
+    >
+      💗 +{amount} ความผูกพัน
+    </motion.span>
+  );
+}
+
+/** A watering can tips over Sprouty; drops fall, splash on the soil, and a little rainbow shines. */
 function WateringFx() {
   return (
-    <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
       <motion.svg
-        viewBox="0 0 80 60"
-        className="absolute top-2 right-6 w-24"
-        initial={{ rotate: 0, x: 20, opacity: 0 }}
-        animate={{ rotate: -28, x: 0, opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.4 }}
+        viewBox="0 0 90 64"
+        className="absolute top-14 right-[14%] w-28 drop-shadow-md"
+        initial={{ rotate: 10, x: 60, y: -10, opacity: 0 }}
+        animate={{ rotate: [10, -32, -28, -34, -30], x: 0, y: 0, opacity: 1 }}
+        exit={{ x: 60, opacity: 0 }}
+        transition={{ duration: 1.4, times: [0, 0.3, 0.55, 0.8, 1] }}
       >
-        <rect x={22} y={18} width={36} height={30} rx={8} fill="#5BA8D9" />
-        <path d="M24 26 L4 14" stroke="#5BA8D9" strokeWidth={6} strokeLinecap="round" />
-        <path d="M54 22 C70 18 72 40 56 40" stroke="#3C86B8" strokeWidth={4} fill="none" />
-        <rect x={26} y={22} width={10} height={4} rx={2} fill="#FFFFFF" opacity={0.5} />
+        <rect x={26} y={20} width={42} height={34} rx={9} fill="#38BDF8" />
+        <rect x={26} y={20} width={42} height={8} rx={4} fill="#7DD3FC" />
+        <path d="M28 30 L6 16" stroke="#38BDF8" strokeWidth={7} strokeLinecap="round" />
+        <ellipse cx={5} cy={15} rx={5} ry={3} fill="#0EA5E9" transform="rotate(-30 5 15)" />
+        <path d="M64 24 C84 20 86 46 66 46" stroke="#0284C7" strokeWidth={4.5} fill="none" />
+        <path d="M36 34 l5 -3 l5 3" stroke="#FFFFFF" strokeWidth={2} fill="none" opacity={0.7} />
       </motion.svg>
-      {Array.from({ length: 9 }, (_, i) => (
+      {Array.from({ length: 16 }, (_, i) => (
         <motion.span
           key={i}
-          className="absolute block h-3 w-2 rounded-full bg-[#38BDF8]/80"
-          style={{ left: `${44 + (i % 3) * 5}%`, top: '22%' }}
+          className="absolute block h-3.5 w-2 rounded-full bg-[#38BDF8]"
+          style={{ left: `${38 + (i % 4) * 4 + (i % 3)}%`, top: '30%', borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%' }}
           initial={{ y: 0, opacity: 0 }}
-          animate={{ y: 120, opacity: [0, 1, 1, 0] }}
-          transition={{ duration: 0.9, delay: 0.3 + i * 0.12, ease: 'easeIn' }}
+          animate={{ y: [0, 130], opacity: [0, 1, 1, 0] }}
+          transition={{ duration: 0.8, delay: 0.45 + i * 0.07, ease: 'easeIn' }}
         />
       ))}
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={i}
+          className="absolute bottom-[14%] block h-3 w-10 rounded-[50%] border-2 border-[#7DD3FC]"
+          style={{ left: `${36 + i * 9}%` }}
+          initial={{ scale: 0.2, opacity: 0 }}
+          animate={{ scale: [0.2, 1.4], opacity: [0, 0.9, 0] }}
+          transition={{ duration: 0.9, delay: 1 + i * 0.18 }}
+        />
+      ))}
+      <motion.svg
+        viewBox="0 0 200 100"
+        className="absolute top-[18%] left-1/2 w-56 -translate-x-1/2"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: [0, 0.75, 0], scale: 1 }}
+        transition={{ duration: 2.2, delay: 1.2 }}
+      >
+        {['#F9A8D4', '#FDE68A', '#86EFAC', '#93C5FD'].map((c, i) => (
+          <path key={c} d={`M${20 + i * 7} 95 A ${80 - i * 7} ${80 - i * 7} 0 0 1 ${180 - i * 7} 95`} stroke={c} strokeWidth={6} fill="none" />
+        ))}
+      </motion.svg>
+      <BondFloat amount={10} />
     </div>
   );
 }
 
-/** Sparkles and hearts when Sprouty gets fertilizer. */
+/** A fertilizer bag shakes out granules; Sprouty glows and sparkles and hearts burst out. */
 function FeedFx() {
   return (
-    <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-      {Array.from({ length: 10 }, (_, i) => (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      <motion.svg
+        viewBox="0 0 60 70"
+        className="absolute top-12 left-1/2 w-16 -translate-x-1/2 drop-shadow-md"
+        initial={{ y: -40, opacity: 0, rotate: 0 }}
+        animate={{ y: 0, opacity: [0, 1, 1, 0], rotate: [0, 160, 150, 165, 155] }}
+        transition={{ duration: 1.6, times: [0, 0.3, 0.5, 0.75, 1] }}
+      >
+        <path d="M10 14 L50 14 L54 64 L6 64 Z" fill="#D6A15E" />
+        <path d="M10 14 L50 14 L46 6 L14 6 Z" fill="#B7813F" />
+        <circle cx={30} cy={40} r={11} fill="#86EFAC" />
+        <path d="M30 47 C24 40 26 33 30 31 C34 33 36 40 30 47Z" fill="#16A34A" />
+      </motion.svg>
+      {Array.from({ length: 18 }, (_, i) => (
+        <motion.span
+          key={i}
+          className="absolute block h-1.5 w-1.5 rounded-full"
+          style={{ left: `${44 + (i % 6) * 2}%`, top: '24%', background: i % 3 ? '#8B5E34' : '#86EFAC' }}
+          initial={{ y: 0, opacity: 0 }}
+          animate={{ y: [0, 140], x: [(i % 5) * 3 - 6, (i % 7) * 4 - 12], opacity: [0, 1, 0] }}
+          transition={{ duration: 0.9, delay: 0.55 + i * 0.04, ease: 'easeIn' }}
+        />
+      ))}
+      <motion.span
+        className="absolute bottom-[10%] left-1/2 block h-44 w-44 -translate-x-1/2 rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(190,242,100,0.55) 0%, rgba(190,242,100,0) 70%)' }}
+        initial={{ scale: 0.4, opacity: 0 }}
+        animate={{ scale: [0.4, 1.3, 1.1], opacity: [0, 1, 0] }}
+        transition={{ duration: 1.6, delay: 1.1 }}
+      />
+      {Array.from({ length: 12 }, (_, i) => (
         <motion.span
           key={i}
           className="absolute text-lg"
-          style={{ left: `${20 + ((i * 37) % 60)}%`, top: '60%' }}
-          initial={{ y: 0, opacity: 0, scale: 0.4 }}
-          animate={{ y: -110 - (i % 3) * 20, opacity: [0, 1, 0], scale: 1 }}
-          transition={{ duration: 1.4, delay: i * 0.08 }}
+          style={{ left: '50%', top: '62%' }}
+          initial={{ x: 0, y: 0, opacity: 0, scale: 0.3 }}
+          animate={{ x: Math.cos((i / 12) * Math.PI * 2) * 110, y: Math.sin((i / 12) * Math.PI * 2) * 80 - 40, opacity: [0, 1, 0], scale: 1 }}
+          transition={{ duration: 1.3, delay: 1.2 + (i % 4) * 0.05 }}
         >
-          {i % 2 ? '💚' : '✨'}
+          {['💚', '✨', '🌱', '💛'][i % 4]}
         </motion.span>
       ))}
+      <BondFloat amount={15} />
     </div>
   );
 }
@@ -85,7 +154,7 @@ export function SproutyCare() {
 
   useEffect(() => {
     if (!reaction) return;
-    const t = window.setTimeout(() => setReaction(null), 2600);
+    const t = window.setTimeout(() => setReaction(null), 3400);
     return () => window.clearTimeout(t);
   }, [reaction]);
 
@@ -143,7 +212,20 @@ export function SproutyCare() {
               aria-label="แตะหรือลูบหัว Sprouty"
               className="absolute bottom-0 left-1/2 block w-56 -translate-x-1/2 rounded-full"
             >
-              <SproutySeed size={224} className="h-auto w-full" mood={mood} stage={stage} hop={reduce ? 0 : hop} outfit={outfit} title="" />
+              <motion.span
+                key={reaction ? `${reaction.kind}-${hop}` : 'idle'}
+                className="block origin-bottom"
+                animate={
+                  reaction && !reduce
+                    ? reaction.kind === 'water'
+                      ? { scaleY: [1, 1, 0.9, 1.12, 0.97, 1.03, 1], scaleX: [1, 1, 1.08, 0.94, 1.02, 1, 1] }
+                      : { scale: [1, 1, 1.14, 0.96, 1.06, 1], rotate: [0, 0, -4, 4, -2, 0], filter: ['brightness(1)', 'brightness(1)', 'brightness(1.25)', 'brightness(1.1)', 'brightness(1)', 'brightness(1)'] }
+                    : undefined
+                }
+                transition={{ duration: 1.5, delay: 0.8 }}
+              >
+                <SproutySeed size={224} className="h-auto w-full" mood={mood} stage={stage} hop={reduce ? 0 : hop} outfit={outfit} title="" />
+              </motion.span>
             </button>
             <AnimatePresence>{reaction?.kind === 'water' && !reduce && <WateringFx key={`w${hop}`} />}</AnimatePresence>
             <AnimatePresence>{reaction?.kind === 'feed' && !reduce && <FeedFx key={`f${hop}`} />}</AnimatePresence>
@@ -254,6 +336,7 @@ export function SproutyCare() {
             <ul className="list-disc space-y-1 pl-5 text-caption text-text">
               <li>วันที่ทำภารกิจอย่างน้อย 1 ข้อ จะได้น้ำ 1 ครั้ง กดรดน้ำได้วันละครั้ง (+10 แต้ม)</li>
               <li>แต่ละภารกิจมีโอกาสได้ปุ๋ยประมาณ {FERTILIZER_PERCENT}% ผลลุ้นถูกกำหนดตอนบันทึก กดซ้ำหรือโหลดใหม่ไม่เปลี่ยน (+15 แต้มต่อถุง)</li>
+              <li>ภารกิจพิเศษประจำวัน (⭐ วันละ 1 ข้อ เสาร์–อาทิตย์ 2 ข้อ) ได้ปุ๋ย 2 ถุงแน่นอน และ XP เพิ่ม</li>
               <li>ลูบหัว Sprouty 3 ครั้งเพื่อให้เขิน แตะเพื่อให้กระโดด</li>
               <li>ถ้าไม่ได้มา {LONELY_AFTER_DAYS} วันขึ้นไป Sprouty จะบอกว่าคิดถึง แต่ความผูกพันไม่ลดลง</li>
             </ul>

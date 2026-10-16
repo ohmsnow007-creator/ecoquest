@@ -5,6 +5,8 @@ import { MAX_LEVEL } from '../config/levels';
 import { getLevelFromXp, totalXpForLevel } from '../utils/xp';
 import { checkNewBadges } from '../utils/badges';
 import { AVATAR_SLOTS, getCosmetic, getCosmeticStatus, type CosmeticSlot, type OutfitTarget } from '../data/cosmetics';
+import { getSpecialMissionIds } from '../utils/challenges';
+import { SPECIAL_FERTILIZER } from '../config/challenges';
 import { EMPTY_CARE, getCareState } from '../utils/care';
 import type { PlayerProfile, PlayerProgress, MissionCategory, MissionProgressStatus, ImpactRecord, AdminGrant, BadgeRecord } from '../types';
 import { getFactorFor } from '../data/emissionFactors';
@@ -466,16 +468,21 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const completeMission = useCallback((missionId: string, note?: string): CompleteMissionResult => {
     if (completingRef.current.has(missionId)) return { ok: false, reason: 'busy' };
-    const result = evaluateMissionCompletion(progress, missionId, new Date(), note);
+    const now = new Date();
+    const special = !!profile && getSpecialMissionIds(profile.id, now).includes(missionId);
+    const result = evaluateMissionCompletion(progress, missionId, now, note, special);
     if (!result.ok) return result;
     completingRef.current.add(missionId);
     if (!applyReward(result)) {
       completingRef.current.delete(missionId);
       return { ok: false, reason: 'save-failed' };
     }
-    addToast(`ภารกิจสำเร็จ! +${result.xpAwarded} XP`, 'xp');
+    addToast(
+      special ? `ภารกิจพิเศษสำเร็จ! +${result.xpAwarded} XP · ได้น้ำและปุ๋ย ${SPECIAL_FERTILIZER} ถุงให้ Sprouty` : `ภารกิจสำเร็จ! +${result.xpAwarded} XP`,
+      'xp',
+    );
     return { ok: true, xpAwarded: result.xpAwarded, completedAt: result.completion.completedAt };
-  }, [progress, applyReward, addToast]);
+  }, [progress, profile, applyReward, addToast]);
 
   // Bonus for today's daily missions or this week's challenge: checked against stored records, paid once per period.
   const claimChallenge = useCallback(

@@ -69,9 +69,9 @@ function pickSlots<S extends string>(v: Obj, slots: readonly S[]): Partial<Recor
   return out;
 }
 
-function sanitizeOutfit(v: unknown): { outfit?: Partial<Record<'hat' | 'eyes' | 'bag', string>> } {
+function sanitizeOutfit(v: unknown): { outfit?: Partial<Record<'hat' | 'eyes' | 'bag' | 'frame', string>> } {
   if (!isObj(v)) return {};
-  const outfit = pickSlots(v, ['hat', 'eyes', 'bag'] as const);
+  const outfit = pickSlots(v, ['hat', 'eyes', 'bag', 'frame'] as const);
   return Object.keys(outfit).length ? { outfit } : {};
 }
 
@@ -105,6 +105,7 @@ function sanitizeCompletion(v: unknown): MissionCompletion | null {
     xpAwarded: v.xpAwarded,
     completionType: v.completionType as MissionType,
     ...(typeof v.note === 'string' ? { note: v.note } : {}),
+    ...(v.special === true ? { special: true } : {}),
   };
 }
 

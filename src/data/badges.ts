@@ -30,6 +30,7 @@ export const badges: Badge[] = [
   // Virtual world
   { id: 'badge-world-2', name: 'Garden Starter', description: 'โลกเสมือนเริ่มมีต้นไม้และพุ่มไม้', icon: 'TreeDeciduous', group: 'world', ruleType: 'world-stage', threshold: 2, rarity: 'uncommon' },
   { id: 'badge-world-4', name: 'Ecosystem Builder', description: 'สร้างระบบนิเวศที่อุดมสมบูรณ์', icon: 'Mountain', group: 'world', ruleType: 'world-stage', threshold: 4, rarity: 'epic' },
+  { id: 'badge-world-7', name: 'Legend Forest', description: 'โลกเสมือนกลายเป็นผืนป่าแห่งตำนาน', icon: 'TreePine', group: 'world', ruleType: 'world-stage', threshold: 7, rarity: 'legendary' },
 ];
 
 export const BADGE_GROUP_LABELS: Record<BadgeGroup, string> = {

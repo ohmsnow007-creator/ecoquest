@@ -7,13 +7,13 @@ import { getLongestStreak } from '../utils/streak';
 import { getCareState } from '../utils/care';
 import { getLevelFromXp } from '../utils/xp';
 
-export type CosmeticSlot = 'hat' | 'eyes' | 'bag' | 'pot' | 'background';
+export type CosmeticSlot = 'hat' | 'eyes' | 'bag' | 'frame' | 'pot' | 'background';
 
-export const SLOT_LABELS: Record<CosmeticSlot, string> = { hat: 'หมวก', eyes: 'แว่นตา', bag: 'กระเป๋า', pot: 'กระถาง', background: 'ฉากหลัง' };
+export const SLOT_LABELS: Record<CosmeticSlot, string> = { hat: 'หมวก', eyes: 'แว่นตา', bag: 'กระเป๋า', frame: 'กรอบรูป', pot: 'กระถาง', background: 'ฉากหลัง' };
 
-/** Who wears what: the character has hat/eyes/bag; Sprouty can also have a pot and a background. */
+/** Who wears what: the character has hat/eyes/bag and a profile frame; Sprouty can also have a pot and a background. */
 export type OutfitTarget = 'avatar' | 'sprouty';
-export const AVATAR_SLOTS: CosmeticSlot[] = ['hat', 'eyes', 'bag'];
+export const AVATAR_SLOTS: CosmeticSlot[] = ['hat', 'eyes', 'bag', 'frame'];
 export const SPROUTY_SLOTS: CosmeticSlot[] = ['hat', 'eyes', 'bag', 'pot', 'background'];
 export const slotsFor = (target: OutfitTarget) => (target === 'avatar' ? AVATAR_SLOTS : SPROUTY_SLOTS);
 
@@ -28,7 +28,9 @@ export type UnlockRule =
   /** Bond level with Sprouty (from the care page). */
   | { type: 'bond'; level: number }
   /** Took part in an environmental day (see data/events). */
-  | { type: 'event'; eventId: string };
+  | { type: 'event'; eventId: string }
+  /** Basic items everyone can pick from the start. */
+  | { type: 'free' };
 
 export interface Cosmetic {
   id: string;
@@ -66,6 +68,21 @@ export const COSMETICS: Cosmetic[] = [
   { id: 'bg-sea', slot: 'background', name: 'ชายหาดสีคราม', unlock: { type: 'streak', days: 5 } },
   { id: 'bg-night', slot: 'background', name: 'ท้องฟ้าดาวพราว', unlock: { type: 'bond', level: 5 } },
   { id: 'bg-rainbow', slot: 'background', name: 'สายรุ้งสดใส', unlock: { type: 'bond', level: 8 } },
+  // Profile-picture frames: five free colours, and special ones that grow with Sprouty (levels 3, 8, 15).
+  { id: 'frame-mint', slot: 'frame', name: 'กรอบมิ้นต์', unlock: { type: 'free' } },
+  { id: 'frame-lime', slot: 'frame', name: 'กรอบมะนาว', unlock: { type: 'free' } },
+  { id: 'frame-sky', slot: 'frame', name: 'กรอบฟ้าใส', unlock: { type: 'free' } },
+  { id: 'frame-peach', slot: 'frame', name: 'กรอบพีช', unlock: { type: 'free' } },
+  { id: 'frame-lavender', slot: 'frame', name: 'กรอบลาเวนเดอร์', unlock: { type: 'free' } },
+  { id: 'frame-leaf', slot: 'frame', name: 'กรอบใบไม้ต้นอ่อน', unlock: { type: 'level', level: 3 } },
+  { id: 'frame-flower', slot: 'frame', name: 'กรอบดอกไม้บาน', unlock: { type: 'level', level: 8 } },
+  { id: 'frame-golden', slot: 'frame', name: 'กรอบต้นไม้ทอง', unlock: { type: 'level', level: 15 } },
+  // Free backgrounds to choose from right away.
+  { id: 'bg-trees', slot: 'background', name: 'ลานต้นไม้ร่มรื่น', unlock: { type: 'free' } },
+  { id: 'bg-woods', slot: 'background', name: 'ป่าสนเขียวชอุ่ม', unlock: { type: 'free' } },
+  { id: 'bg-city', slot: 'background', name: 'เมืองสีเขียว', unlock: { type: 'free' } },
+  { id: 'bg-home', slot: 'background', name: 'หน้าบ้านแสนอุ่น', unlock: { type: 'free' } },
+  { id: 'bg-backyard', slot: 'background', name: 'สวนหลังบ้าน', unlock: { type: 'free' } },
   // Environmental-day specials.
   { id: 'bg-rain', slot: 'background', name: 'ฉากสายฝนฉ่ำ', unlock: { type: 'event', eventId: 'water-day' } },
   { id: 'hat-earth', slot: 'hat', name: 'หมวกโลกสีเขียว', unlock: { type: 'event', eventId: 'earth-day' } },
@@ -126,6 +143,8 @@ function getEarnedCosmeticStatus(cosmetic: Cosmetic, progress: PlayerProgress): 
       const done = weeklyChallengesDone(progress);
       return { cosmetic, unlocked: done >= rule.count, condition: `ทำชาเลนจ์ประจำสัปดาห์สำเร็จ ${rule.count} ครั้ง`, current: Math.min(done, rule.count), target: rule.count };
     }
+    case 'free':
+      return { cosmetic, unlocked: true, condition: 'ใช้ได้ฟรี', current: 1, target: 1 };
     case 'streak': {
       const best = getLongestStreak(progress.completions);
       return { cosmetic, unlocked: best >= rule.days, condition: `ทำภารกิจต่อเนื่อง ${rule.days} วัน`, current: Math.min(best, rule.days), target: rule.days };

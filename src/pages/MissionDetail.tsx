@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { getSpecialMissionIds } from '../utils/challenges';
+import { SPECIAL_BONUS_XP } from '../config/challenges';
+import { SpecialMissionBanner } from '../components/challenges/SpecialMissionTag';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Share2, Clock, Leaf, Play, CheckCircle2, Check, Timer, Circle, AlertCircle, RotateCcw, History, ChevronRight, ShieldCheck } from 'lucide-react';
@@ -65,7 +68,9 @@ function MissionHero({ mission, onBack, onShare }: { mission: Mission; onBack: (
 export function MissionDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { progress, completeMission, getMissionStatus, startMission, toggleMissionStep, getCompletedSteps, notify } = useGame();
+  const { profile, progress, completeMission, getMissionStatus, startMission, toggleMissionStep, getCompletedSteps, notify } = useGame();
+  // One of today's special daily missions (and not already done today): bonus XP plus water and fertilizer.
+  const special = !!profile && !!id && getSpecialMissionIds(profile.id).includes(id) && getMissionStatus(id) !== 'completed-today';
   const [note, setNote] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [celebrate, setCelebrate] = useState<{ xp: number } | null>(null);
@@ -234,8 +239,13 @@ export function MissionDetail() {
                   <meta.icon size={12} aria-hidden="true" /> {meta.label}
                 </span>
               </div>
+              {special && (
+                <div className="mt-3">
+                  <SpecialMissionBanner />
+                </div>
+              )}
               <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-                <XPBadge amount={mission.xpReward} plus className="text-body" />
+                <XPBadge amount={mission.xpReward + (special ? SPECIAL_BONUS_XP : 0)} plus className="text-body" />
                 <span className="inline-flex items-center gap-1.5 text-body font-semibold">
                   <Clock size={17} className="text-primary" aria-hidden="true" /> {mission.estimatedMinutes} นาที
                 </span>

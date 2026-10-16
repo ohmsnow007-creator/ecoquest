@@ -1,4 +1,5 @@
 import type { Badge, BadgeRecord, ChallengeReward, MissionCompletion, PlayerProgress, QuizAttempt, QuizCategory, QuizDifficulty } from '../types';
+import { SPECIAL_BONUS_XP } from '../config/challenges';
 import { getQuestion } from '../data/quizzes';
 import { missions } from '../data/missions';
 import { checkNewBadges } from '../utils/badges';
@@ -42,30 +43,33 @@ export function isMissionCompleted(progress: PlayerProgress, missionId: string, 
  * Pure: validates a mission completion and returns the complete next state (XP, badges, history).
  * Nothing is applied here; the caller persists `next` first and only then shows it.
  */
-export function evaluateMissionCompletion(progress: PlayerProgress, missionId: string, now: Date, note?: string): MissionRewardResult {
+export function evaluateMissionCompletion(progress: PlayerProgress, missionId: string, now: Date, note?: string, special = false): MissionRewardResult {
   const mission = missions.find((m) => m.id === missionId);
   if (!mission) return { ok: false, reason: 'not-found' };
   if (!mission.active) return { ok: false, reason: 'inactive' };
   if (isMissionCompleted(progress, missionId, now)) return { ok: false, reason: 'already-completed' };
   if (!progress.inProgress.some((s) => s.missionId === missionId)) return { ok: false, reason: 'not-started' };
 
+  // A special daily mission pays a fixed bonus once (a mission can only be completed once a day).
+  const xp = mission.xpReward + (special ? SPECIAL_BONUS_XP : 0);
   const completion: MissionCompletion = {
     id: createId(),
     missionId,
     completedAt: now.toISOString(),
     localDate: getLocalDate(now),
-    xpAwarded: mission.xpReward,
+    xpAwarded: xp,
     completionType: mission.type,
     ...(note ? { note } : {}),
+    ...(special ? { special: true } : {}),
   };
 
   const next: PlayerProgress = {
     ...progress,
-    totalXp: progress.totalXp + mission.xpReward,
+    totalXp: progress.totalXp + xp,
     inProgress: progress.inProgress.filter((s) => s.missionId !== missionId),
     completions: [...progress.completions, completion],
   };
-  return { ok: true, completion, ...finalize(progress, next, mission.xpReward, now) };
+  return { ok: true, completion, ...finalize(progress, next, xp, now) };
 }
 
 /**

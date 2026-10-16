@@ -477,6 +477,114 @@ export function GreenWorldScene({ stage, className = '', hour: fixedHour }: Gree
         </motion.g>
       )}
 
+      {stage >= 5 && (
+        <motion.g {...pop(0.2)}>
+          {/* wind turbines on the far hills */}
+          {[
+            [92, 128, 1],
+            [276, 118, 0.85],
+          ].map(([x, y, s], i) => (
+            <g key={x} transform={`translate(${x} ${y}) scale(${s})`}>
+              <path d="M-1.5 0 L-0.8 -38 L0.8 -38 L1.5 0 Z" fill="#F8FAFC" />
+              <g transform="translate(0 -38)">
+                <g className="scene-spin" style={{ animationDuration: `${5 + i * 2}s` }}>
+                  {[0, 120, 240].map((r) => (
+                    <path key={r} d="M0 0 L2 -3 L1 -20 L-1 -20 Z" fill="#FFFFFF" transform={`rotate(${r})`} />
+                  ))}
+                </g>
+                <circle r={2.2} fill="#CBD5E1" />
+              </g>
+            </g>
+          ))}
+          {/* a little solar house with a vegetable patch */}
+          <g transform="translate(250 176)">
+            <rect x={-14} y={-14} width={28} height={16} fill="#FFF7ED" />
+            <path d="M-17 -14 L0 -27 L17 -14 Z" fill="#B5562F" />
+            <path d="M-12 -16.5 L-2 -24.5 L6 -18.5 L-4 -10.5 Z" fill="#1E3A8A" opacity={0.9} transform="translate(2 -1)" />
+            <path d="M-8 -17 L-3 -21 M-5 -14 L0 -18" stroke="#93C5FD" strokeWidth={0.8} />
+            <rect x={-4} y={-7} width={7} height={9} fill="#8E3F22" />
+            <rect x={6} y={-10} width={5} height={5} fill="#BFE8F5" />
+            {[0, 6, 12].map((dx) => (
+              <path key={dx} d={`M${20 + dx} 2 q-2 -5 0 -8 q2 3 0 8`} fill="#4ADE80" />
+            ))}
+          </g>
+        </motion.g>
+      )}
+
+      {stage >= 6 && (
+        <motion.g {...pop(0.25)}>
+          {/* the pond becomes a lake with lily pads, ducks and a jumping fish */}
+          <ellipse cx={262} cy={203} rx={58} ry={12} fill={LAND.water} />
+          <ellipse cx={244} cy={200} rx={18} ry={2.5} fill="#FFFFFF" opacity={0.55} />
+          {[[230, 206], [292, 208], [276, 199]].map(([x, y]) => (
+            <g key={x} transform={`translate(${x} ${y})`}>
+              <ellipse rx={5} ry={2} fill="#22A06B" />
+              <circle cx={1} cy={-1.5} r={1.4} fill="#F9A8D4" />
+            </g>
+          ))}
+          {[[252, 201], [266, 205]].map(([x, y], i) => (
+            <g key={x} transform={`translate(${x} ${y}) scale(${i ? 0.8 : 1})`} className="scene-bob" style={{ animationDuration: '3s', animationDelay: `${i}s` }}>
+              <ellipse cx={0} cy={0} rx={6} ry={3.5} fill="#FFFFFF" />
+              <circle cx={5} cy={-4} r={2.8} fill="#FFFFFF" />
+              <path d="M7.5 -4 L10 -3.4 L7.5 -2.8 Z" fill="#F59E0B" />
+              <circle cx={5.8} cy={-4.6} r={0.6} className="fill-forest" />
+            </g>
+          ))}
+          <path d="M296 196 q6 -12 12 0" stroke="#7DD3FC" strokeWidth={1.2} fill="none" strokeDasharray="2 2" />
+          <path d="M300 190 c3 -2 6 -1 7 1 c-2 2 -5 2 -7 -1 Z" fill="#FB923C" />
+          {/* a flock passing by */}
+          <g className="scene-drift stroke-forest" style={{ animationDuration: '18s' }} strokeWidth={1.4} fill="none" strokeLinecap="round">
+            {[[176, 62], [186, 56], [196, 64], [206, 58]].map(([x, y]) => (
+              <path key={x} d={`M${x} ${y} q3 -3 6 0 q3 -3 6 0`} />
+            ))}
+          </g>
+        </motion.g>
+      )}
+
+      {stage >= 7 && (
+        <motion.g {...pop(0.3)}>
+          {!night && (
+            <g fill="none" strokeWidth={4} opacity={0.45}>
+              {['#C4B5FD', '#93C5FD', '#86EFAC'].map((c, i) => (
+                <path key={c} d={`M${20 + i * 6} 176 A ${158 - i * 6} ${136 - i * 6} 0 0 1 ${340 - i * 6} 176`} stroke={c} />
+              ))}
+            </g>
+          )}
+          {/* a giant old tree */}
+          <Sway delay={0.4}>
+            <g transform="translate(78 196)">
+              <path d="M-9 0 C-8 -20 -12 -34 -6 -48 L6 -48 C12 -34 8 -20 9 0 Z" fill={ART.trunkDark} />
+              <path d="M-9 0 C-14 2 -18 4 -20 6 M9 0 C14 2 18 4 20 6" stroke={ART.trunkDark} strokeWidth={4} strokeLinecap="round" />
+              <circle cx={0} cy={-62} r={26} className="fill-primary" />
+              <circle cx={-22} cy={-50} r={17} className="fill-emerald" />
+              <circle cx={22} cy={-52} r={18} className="fill-emerald" />
+              <circle cx={-10} cy={-80} r={15} className="fill-emerald" />
+              <circle cx={12} cy={-78} r={16} className="fill-primary" />
+              <circle cx={-8} cy={-70} r={5} className="fill-mint" opacity={0.5} />
+              <Face x={0} y={-56} s={0.8} blink={1.6} />
+            </g>
+          </Sway>
+          {/* a deer grazing */}
+          <g transform="translate(300 204)">
+            <ellipse cx={0} cy={-8} rx={11} ry={6} fill="#C08552" />
+            <path d="M-8 -4 L-8 4 M-4 -3 L-4 4 M5 -3 L5 4 M9 -4 L9 4" stroke="#8B5E34" strokeWidth={2} strokeLinecap="round" />
+            <path d="M8 -11 L13 -18" stroke="#C08552" strokeWidth={4} strokeLinecap="round" />
+            <ellipse cx={15} cy={-19} rx={4} ry={3} fill="#C08552" />
+            <path d="M14 -22 L12 -28 M12 -26 L9 -28 M16 -22 L18 -28 M18 -26 L21 -28" stroke="#8B5E34" strokeWidth={1.2} strokeLinecap="round" />
+            <circle cx={16.5} cy={-19.5} r={0.7} className="fill-forest" />
+            {[[-5, -10], [2, -8], [-1, -12]].map(([x, y]) => (
+              <circle key={`${x}${y}`} cx={x} cy={y} r={1} fill="#FFFFFF" opacity={0.8} />
+            ))}
+          </g>
+          {/* magic sparkles drifting over the forest */}
+          <g fill="#FDE68A">
+            {[[40, 120], [150, 104], [210, 132], [330, 110], [110, 150]].map(([x, y], i) => (
+              <path key={x} d={`M${x} ${y} l2 -5 l2 5 l5 2 l-5 2 l-2 5 l-2 -5 l-5 -2Z`} className="scene-twinkle" style={{ animationDelay: `${i * 0.5}s` }} />
+            ))}
+          </g>
+        </motion.g>
+      )}
+
       {/* Light of the hour over the land; the moon and stars stay bright above it. */}
       {sky.tintOpacity > 0 && <rect width={360} height={220} fill={`url(#${tintId})`} pointerEvents="none" />}
       {night && stage >= 2 && (

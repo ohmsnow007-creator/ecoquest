@@ -42,4 +42,28 @@ export const worldStages: WorldStage[] = [
     requiredMissions: 25,
     unlockedMessage: 'โลกของคุณกลายเป็นระบบนิเวศที่อุดมสมบูรณ์แล้ว',
   },
+  {
+    id: 'stage-5',
+    stage: 5,
+    title: 'หมู่บ้านพลังงานสะอาด',
+    description: 'กังหันลมหมุนบนเนินเขา บ้านหลังเล็กติดแผงโซลาร์ และสวนผักข้างบ้าน',
+    requiredMissions: 40,
+    unlockedMessage: 'หมู่บ้านพลังงานสะอาดเกิดขึ้นในโลกของคุณแล้ว',
+  },
+  {
+    id: 'stage-6',
+    stage: 6,
+    title: 'ทะเลสาบแห่งชีวิต',
+    description: 'บ่อน้ำกลายเป็นทะเลสาบ มีเป็ด ใบบัว ปลากระโดด และฝูงนกบินผ่าน',
+    requiredMissions: 60,
+    unlockedMessage: 'ทะเลสาบแห่งชีวิตเต็มไปด้วยสัตว์น้อยใหญ่',
+  },
+  {
+    id: 'stage-7',
+    stage: 7,
+    title: 'ผืนป่าแห่งตำนาน',
+    description: 'ต้นไม้ยักษ์อายุนับร้อยปี กวางป่า รุ้งคู่ และแสงระยิบระยับทั่วผืนป่า',
+    requiredMissions: 90,
+    unlockedMessage: 'สุดยอด! โลกของคุณกลายเป็นผืนป่าแห่งตำนาน',
+  },
 ];

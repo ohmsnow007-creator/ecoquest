@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react';
 import { AVATAR_CHARACTERS, getCharacter, getProfileColor } from '../../data/avatars';
 import { CharacterAvatar } from '../avatar/CharacterAvatar';
+import { AvatarFrame } from '../avatar/AvatarFrame';
 import type { Outfit } from '../../data/cosmetics';
 
 interface AvatarProps {
@@ -9,6 +10,8 @@ interface AvatarProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   onDark?: boolean;
   outfit?: Outfit;
+  /** Draw the player's frame (outfit.frame), or a plain mint ring if none is chosen. */
+  framed?: boolean;
 }
 
 const AVATAR_SIZE = {
@@ -18,16 +21,24 @@ const AVATAR_SIZE = {
   xl: 'h-40 w-40',
 };
 
-export function Avatar({ id, color, size = 'md', onDark = false, outfit }: AvatarProps) {
+export function Avatar({ id, color, size = 'md', onDark = false, outfit, framed = false }: AvatarProps) {
   const character = getCharacter(id);
   const bg = getProfileColor(color).className;
-  return (
+  const frame = outfit?.frame ?? (framed ? 'frame-mint' : undefined);
+  const face = (
     <span
       role="img"
       aria-label={`อวาตาร์ ${character.name}`}
-      className={`inline-flex shrink-0 items-end justify-center overflow-hidden rounded-full ${AVATAR_SIZE[size]} ${bg} ${onDark ? 'ring-2 ring-white/30' : ''}`}
+      className={`inline-flex shrink-0 items-end justify-center overflow-hidden rounded-full ${AVATAR_SIZE[size]} ${bg} ${onDark && !frame ? 'ring-2 ring-white/30' : ''}`}
     >
       <CharacterAvatar look={character.look} framing="bust" className="h-full w-full" outfit={outfit} />
+    </span>
+  );
+  if (!frame) return face;
+  return (
+    <span className={`relative inline-flex shrink-0 ${AVATAR_SIZE[size]}`}>
+      {face}
+      <AvatarFrame id={frame} />
     </span>
   );
 }

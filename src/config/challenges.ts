@@ -4,6 +4,12 @@ import type { MissionCategory } from '../types';
 export const DAILY_MISSION_COUNT = 3;
 /** Bonus for finishing all of today's daily missions, claimable once per day. */
 export const DAILY_BONUS_XP = 15;
+/** Special daily missions: 1 on weekdays, 2 at the weekend, picked from today's daily missions. */
+export const SPECIAL_PER_DAY = { weekday: 1, weekend: 2 } as const;
+/** Extra XP for completing a special daily mission (on top of the mission's own XP). */
+export const SPECIAL_BONUS_XP = 30;
+/** Fertilizer bags a special mission always gives Sprouty (instead of the usual chance). */
+export const SPECIAL_FERTILIZER = 2;
 
 export type WeeklyGoal =
   | { type: 'category'; category: MissionCategory; target: number }

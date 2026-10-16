@@ -1,6 +1,6 @@
 import type { Mission, MissionCategory, PlayerProgress } from '../types';
 import { missions } from '../data/missions';
-import { DAILY_BONUS_XP, DAILY_MISSION_COUNT, WEEKLY_CHALLENGES, type WeeklyChallenge } from '../config/challenges';
+import { DAILY_BONUS_XP, DAILY_MISSION_COUNT, SPECIAL_PER_DAY, WEEKLY_CHALLENGES, type WeeklyChallenge } from '../config/challenges';
 import { getLocalDate } from './streak';
 
 /** Small deterministic PRNG so the same player sees the same picks all day (and on every device refresh). */
@@ -57,6 +57,14 @@ export function getDailyMissions(playerId: string, date: Date = new Date()): Mis
   }
   for (const m of order) if (picks.length < DAILY_MISSION_COUNT && !picks.includes(m)) picks.push(m);
   return picks;
+}
+
+/** Today's special daily missions (the first 1–2 of the daily picks; 2 on Saturday and Sunday). */
+export function getSpecialMissionIds(playerId: string, date: Date = new Date()): string[] {
+  const weekend = date.getDay() === 0 || date.getDay() === 6;
+  return getDailyMissions(playerId, date)
+    .slice(0, weekend ? SPECIAL_PER_DAY.weekend : SPECIAL_PER_DAY.weekday)
+    .map((m) => m.id);
 }
 
 export function getWeeklyChallenge(playerId: string, date: Date = new Date()): WeeklyChallenge {

@@ -136,7 +136,9 @@ export function Settings() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <Link to="/profile" className="flex items-center gap-3 rounded-card border border-border bg-surface p-4 shadow-card hover:border-primary/40">
-            <Avatar id={profile.avatarId} color={prefs.profileColor} size="md" outfit={outfit} />
+            <span className="m-1 inline-flex">
+              <Avatar id={profile.avatarId} color={prefs.profileColor} size="md" outfit={outfit} framed />
+            </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-body font-semibold">{profile.displayName}</span>
               <span className="flex items-center gap-1 text-caption text-muted"><User size={13} aria-hidden="true" /> แก้ไขชื่อและอวาตาร์ที่หน้าโปรไฟล์</span>

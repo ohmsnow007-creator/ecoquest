@@ -27,7 +27,12 @@ describe('world stages follow completed missions', () => {
     [5, 2],
     [12, 3],
     [25, 4],
-    [40, 4],
+    [39, 4],
+    [40, 5],
+    [60, 6],
+    [89, 6],
+    [90, 7],
+    [500, 7],
   ])('%i missions → stage %i', (missionsDone, stage) => {
     expect(getWorldState(missionsDone).current.stage).toBe(stage);
   });

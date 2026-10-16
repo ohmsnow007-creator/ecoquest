@@ -85,8 +85,119 @@ export function BackgroundArt({ id, className = '' }: { id?: string; className?:
   );
 }
 
+function RoundTreeBg({ x, y, s = 1, c = '#3FA35E' }: { x: number; y: number; s?: number; c?: string }) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${s})`}>
+      <rect x={-3} y={-6} width={6} height={22} rx={2} fill="#9A5B34" />
+      <circle cx={0} cy={-18} r={16} fill={c} />
+      <circle cx={-11} cy={-10} r={10} fill={c} />
+      <circle cx={11} cy={-10} r={10} fill={c} />
+      <circle cx={-5} cy={-24} r={5} fill="#FFFFFF" opacity={0.2} />
+    </g>
+  );
+}
+
 function BackgroundShapes({ id }: { id?: string }) {
   switch (id) {
+    case 'bg-trees':
+      return (
+        <>
+          <rect width={240} height={240} fill="#D9F3E6" />
+          <circle cx={196} cy={46} r={20} fill="#FFE07A" />
+          <path d="M0 150 Q120 128 240 150 L240 240 L0 240Z" fill="#B7E4A0" />
+          <RoundTreeBg x={34} y={150} s={1.2} c="#4FAF6A" />
+          <RoundTreeBg x={204} y={146} s={1.35} />
+          <RoundTreeBg x={120} y={128} s={0.8} c="#6BC17E" />
+          <path d="M0 196 Q120 178 240 196 L240 240 L0 240Z" fill="#8FD07A" />
+          {[[22, 214], [214, 220], [60, 228]].map(([x, y]) => (
+            <circle key={x} cx={x} cy={y} r={3.5} fill="#FDE68A" />
+          ))}
+        </>
+      );
+    case 'bg-woods':
+      return (
+        <>
+          <rect width={240} height={240} fill="#CFEDE0" />
+          <path d="M0 120 L40 70 L80 110 L130 60 L180 108 L240 72 L240 240 L0 240Z" fill="#A9D9C0" />
+          {[[16, 172, 1.1, '#2F8F55'], [58, 160, 0.9, '#3FA35E'], [190, 162, 1, '#2F8F55'], [230, 176, 1.2, '#277A49'], [104, 150, 0.7, '#4FAF6A'], [146, 156, 0.8, '#3FA35E']].map(([x, y, s, c]) => (
+            <g key={`${x}`} transform={`translate(${x} ${y}) scale(${s})`}>
+              <rect x={-3} y={10} width={6} height={12} fill="#7A4A2A" />
+              <path d="M0 -50 L20 -14 L10 -14 L26 12 L-26 12 L-10 -14 L-20 -14Z" fill={c as string} />
+            </g>
+          ))}
+          <path d="M0 200 Q120 186 240 200 L240 240 L0 240Z" fill="#5FB06C" />
+          <ellipse cx={180} cy={218} rx={12} ry={6} fill="#E8D5B5" />
+          <circle cx={176} cy={214} r={4} fill="#EF4444" />
+        </>
+      );
+    case 'bg-city':
+      return (
+        <>
+          <rect width={240} height={240} fill="#D6EEF8" />
+          <circle cx={46} cy={40} r={18} fill="#FFE07A" />
+          {[[8, 96, 34, '#9FC6D9'], [46, 70, 30, '#B7D7E6'], [80, 110, 26, '#9FC6D9'], [150, 80, 32, '#B7D7E6'], [186, 104, 26, '#9FC6D9'], [212, 64, 28, '#B7D7E6']].map(([x, y, w, c]) => (
+            <g key={`${x}`}>
+              <rect x={x as number} y={y as number} width={w as number} height={200 - (y as number)} rx={3} fill={c as string} />
+              {Array.from({ length: Math.floor((200 - (y as number)) / 18) }, (_, r) => (
+                <rect key={r} x={(x as number) + 6} y={(y as number) + 8 + r * 18} width={(w as number) - 12} height={6} rx={1.5} fill="#EAF6FB" />
+              ))}
+              {/* rooftop gardens and solar panels */}
+              <rect x={(x as number) + 3} y={(y as number) - 5} width={(w as number) - 6} height={5} rx={2} fill={(x as number) % 2 ? '#4FAF6A' : '#2B4C7E'} />
+            </g>
+          ))}
+          <path d="M0 196 L240 196 L240 240 L0 240Z" fill="#7FC97A" />
+          <rect y={206} width={240} height={12} fill="#CBD5E1" />
+          <path d="M10 212 L30 212 M60 212 L80 212 M110 212 L130 212 M160 212 L180 212 M210 212 L230 212" stroke="#FFFFFF" strokeWidth={2} />
+          <RoundTreeBg x={124} y={196} s={0.7} />
+          <RoundTreeBg x={20} y={198} s={0.6} c="#4FAF6A" />
+        </>
+      );
+    case 'bg-home':
+      return (
+        <>
+          <rect width={240} height={240} fill="#FDF0DC" />
+          <circle cx={200} cy={44} r={18} fill="#FFD95C" />
+          <path d="M0 176 Q120 160 240 176 L240 240 L0 240Z" fill="#A6DD7E" />
+          <g transform="translate(150 178)">
+            <rect x={-44} y={-58} width={88} height={60} rx={4} fill="#FFF7ED" />
+            <path d="M-54 -56 L0 -96 L54 -56 Z" fill="#E07A5F" />
+            <rect x={-10} y={-30} width={20} height={32} rx={3} fill="#9A5B34" />
+            <circle cx={6} cy={-14} r={1.6} fill="#FDE68A" />
+            <rect x={-36} y={-44} width={18} height={16} rx={2} fill="#BFE8F5" />
+            <rect x={18} y={-44} width={18} height={16} rx={2} fill="#BFE8F5" />
+            <path d="M-36 -36 L-18 -36 M18 -36 L36 -36" stroke="#FFFFFF" strokeWidth={1.5} />
+            <rect x={-38} y={-27} width={22} height={6} rx={3} fill="#4FAF6A" />
+            {[-34, -27, -20].map((x) => (
+              <circle key={x} cx={x} cy={-28} r={2.4} fill="#F9A8D4" />
+            ))}
+          </g>
+          <RoundTreeBg x={40} y={178} s={1.1} />
+          <path d="M140 180 L160 180 L170 240 L130 240 Z" fill="#E8D5B5" />
+        </>
+      );
+    case 'bg-backyard':
+      return (
+        <>
+          <rect width={240} height={240} fill="#DDF3F1" />
+          <circle cx={42} cy={44} r={18} fill="#FFE07A" />
+          {/* wooden fence */}
+          <rect y={150} width={240} height={8} fill="#D6A15E" />
+          <rect y={170} width={240} height={8} fill="#D6A15E" />
+          {Array.from({ length: 12 }, (_, i) => (
+            <path key={i} d={`M${6 + i * 20} 196 L${6 + i * 20} 138 L${14 + i * 20} 130 L${22 + i * 20} 138 L${22 + i * 20} 196 Z`} fill="#E8B878" stroke="#C99256" strokeWidth={1} />
+          ))}
+          <path d="M0 192 L240 192 L240 240 L0 240Z" fill="#8FD07A" />
+          {/* vegetable bed and a sunflower */}
+          <rect x={18} y={206} width={86} height={20} rx={5} fill="#9A6B45" />
+          {[30, 50, 70, 90].map((x, i) => (
+            <path key={x} d={`M${x} 208 q-4 -10 0 -14 q4 4 0 14`} fill={i % 2 ? '#22A06B' : '#4ADE80'} />
+          ))}
+          <path d="M204 230 L204 168" stroke="#4E9A3A" strokeWidth={3} />
+          <circle cx={204} cy={164} r={11} fill="#FBBF24" />
+          <circle cx={204} cy={164} r={5} fill="#8B5E34" />
+          <ellipse cx={164} cy={224} rx={14} ry={6} fill="#7DD3FC" opacity={0.8} />
+        </>
+      );
     case 'bg-meadow':
       return (
         <>

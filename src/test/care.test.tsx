@@ -178,3 +178,59 @@ describe('care page', () => {
     expect(screen.getByRole('button', { name: /ใส่ปุ๋ย/ })).toBeDisabled();
   });
 });
+
+describe('special daily missions', () => {
+  it('1 on weekdays and 2 at the weekend, picked from that day’s daily missions', async () => {
+    const { getSpecialMissionIds, getDailyMissions } = await import('../utils/challenges');
+    const wed = new Date(2026, 9, 14, 10);
+    const sat = new Date(2026, 9, 17, 10);
+    expect(getSpecialMissionIds('p1', wed)).toHaveLength(1);
+    expect(getSpecialMissionIds('p1', sat)).toHaveLength(2);
+    const daily = getDailyMissions('p1', sat).map((m) => m.id);
+    expect(getSpecialMissionIds('p1', sat).every((id) => daily.includes(id))).toBe(true);
+    expect(getSpecialMissionIds('p1', wed)).toEqual(getSpecialMissionIds('p1', wed));
+  });
+
+  it('pay bonus XP once, are marked special, and always give Sprouty fertilizer', async () => {
+    const { evaluateMissionCompletion } = await import('../services/rewardService');
+    const { SPECIAL_BONUS_XP, SPECIAL_FERTILIZER } = await import('../config/challenges');
+    const { missions } = await import('../data/missions');
+    const { fertilizerFrom } = await import('../utils/care');
+    const m = missions.find((x) => x.repeatPolicy === 'daily' && x.active)!;
+    const base = { ...storageService.getDefaultProgress(), inProgress: [{ missionId: m.id, startedAt: '2026-10-17T08:00:00.000Z', completedSteps: [] }] };
+    const now = new Date(2026, 9, 17, 9);
+    const special = evaluateMissionCompletion(base, m.id, now, undefined, true);
+    const normal = evaluateMissionCompletion(base, m.id, now, undefined, false);
+    if (!special.ok || !normal.ok) throw new Error('completion failed');
+    expect(special.completion.xpAwarded).toBe(m.xpReward + SPECIAL_BONUS_XP);
+    expect(special.completion.special).toBe(true);
+    expect(normal.completion.xpAwarded).toBe(m.xpReward);
+    expect(fertilizerFrom(special.completion)).toBe(SPECIAL_FERTILIZER);
+    // stored and reloaded, the special flag survives; the same mission can't be done twice today
+    const reloaded = sanitizeProgress(special.next);
+    expect(reloaded.completions[0].special).toBe(true);
+    expect(evaluateMissionCompletion(reloaded, m.id, now, undefined, true).ok).toBe(false);
+  });
+});
+
+describe('profile frames and free backgrounds', () => {
+  it('five free frames and backgrounds are there from the start; special frames come with Sprouty levels', () => {
+    const fresh = storageService.getDefaultProgress();
+    const free = COSMETICS.filter((c) => c.unlock.type === 'free');
+    expect(free.filter((c) => c.slot === 'frame')).toHaveLength(5);
+    expect(free.filter((c) => c.slot === 'background').length).toBeGreaterThanOrEqual(5);
+    expect(free.every((c) => getCosmeticStatus(c, fresh).unlocked)).toBe(true);
+    for (const id of ['frame-leaf', 'frame-flower', 'frame-golden']) {
+      expect(getCosmeticStatus(COSMETICS.find((c) => c.id === id)!, fresh).unlocked).toBe(false);
+    }
+  });
+
+  it('frames are worn by the character only', () => {
+    const fresh = storageService.getDefaultProgress();
+    expect(wearableOutfit({ frame: 'frame-sky' }, fresh, 'avatar')).toEqual({ frame: 'frame-sky' });
+    expect(wearableOutfit({ frame: 'frame-sky' }, fresh, 'sprouty')).toEqual({});
+    const clean = sanitizeProfile({ ...profile, preferences: { ...profile.preferences, outfit: { frame: 'frame-sky' }, sproutyOutfit: { frame: 'frame-sky' } } });
+    expect(clean?.preferences.outfit).toEqual({ frame: 'frame-sky' });
+    expect(clean?.preferences.sproutyOutfit).toEqual({});
+  });
+});

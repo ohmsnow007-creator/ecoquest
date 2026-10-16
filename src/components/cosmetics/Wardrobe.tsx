@@ -4,6 +4,7 @@ import { useGame } from '../../store/GameContext';
 import { getAllCosmeticStatuses, SLOT_LABELS, slotsFor, type CosmeticSlot, type OutfitTarget } from '../../data/cosmetics';
 import { getCharacter } from '../../data/avatars';
 import { CharacterAvatar } from '../avatar/CharacterAvatar';
+import { Avatar } from '../ui/AvatarPicker';
 import { SproutySeed } from '../illustrations/SproutySeed';
 import { getSproutyStage } from '../../utils/sprouty';
 import { getLevelFromXp } from '../../utils/xp';
@@ -62,7 +63,13 @@ export function Wardrobe() {
       {/* live preview of the one being dressed */}
       <div className="relative mt-3 flex h-44 items-end justify-center overflow-hidden rounded-2xl bg-pale-mint/70">
         {target === 'avatar' ? (
-          <CharacterAvatar look={look} outfit={avatarOutfit} className="h-40 w-auto" title="ตัวอย่างตัวละครของคุณ" />
+          activeSlot === 'frame' ? (
+            <span className="mb-8 flex">
+              <Avatar id={profile.avatarId} color={profile.preferences.profileColor} size="xl" outfit={avatarOutfit} framed />
+            </span>
+          ) : (
+            <CharacterAvatar look={look} outfit={avatarOutfit} className="h-40 w-auto" title="ตัวอย่างตัวละครของคุณ" />
+          )
         ) : (
           <>
             <BackgroundArt id={sproutyOutfit.background} className="absolute inset-0 h-full w-full" />
@@ -105,7 +112,11 @@ export function Wardrobe() {
                   }`}
                 >
                   <span className={`relative block h-20 w-20 overflow-hidden rounded-xl ${unlocked ? '' : 'opacity-40 grayscale'}`}>
-                    {target === 'avatar' ? (
+                    {activeSlot === 'frame' ? (
+                      <span className="flex h-full w-full items-center justify-center">
+                        <Avatar id={profile.avatarId} color={profile.preferences.profileColor} size="md" outfit={{ frame: cosmetic.id }} />
+                      </span>
+                    ) : target === 'avatar' ? (
                       <CharacterAvatar look={look} outfit={{ [activeSlot]: cosmetic.id }} className="h-20 w-auto" title="" />
                     ) : activeSlot === 'background' ? (
                       <>

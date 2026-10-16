@@ -48,6 +48,8 @@ export interface MissionCompletion {
   xpAwarded: number;
   completionType: MissionType;
   note?: string;
+  /** Completed as one of that day's special daily missions (bonus XP and fertilizer included). */
+  special?: boolean;
 }
 
 export interface BadgeRecord {
@@ -96,7 +98,7 @@ export interface PlayerProfile {
     inAppToasts?: boolean;
     celebrations?: boolean;
     /** The character's equipped cosmetics (hat, eyes, bag); only unlocked items are worn. */
-    outfit?: Partial<Record<'hat' | 'eyes' | 'bag', string>>;
+    outfit?: Partial<Record<'hat' | 'eyes' | 'bag' | 'frame', string>>;
     /** Sprouty's own outfit (also pot and background). Until first set, Sprouty mirrors `outfit`. */
     sproutyOutfit?: Partial<Record<'hat' | 'eyes' | 'bag' | 'pot' | 'background', string>>;
     /** Cosmetics the player has already been shown as "new"; undefined until first checked. */

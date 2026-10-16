@@ -3,7 +3,7 @@ import { render, screen, fireEvent, act, cleanup } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { MotionConfig } from 'framer-motion';
 import { GameProvider, useGame } from '../store/GameContext';
-import { COSMETICS, getAllCosmeticStatuses, wearableOutfit } from '../data/cosmetics';
+import { COSMETICS, getAllCosmeticStatuses, getCosmetic, wearableOutfit } from '../data/cosmetics';
 import { storageService, sanitizeProgress } from '../services/storageService';
 import { bestTimedRun, TIMED_QUIZ_SECONDS } from '../utils/timedQuiz';
 import { QuizTimed } from '../pages/QuizTimed';
@@ -21,8 +21,10 @@ const profile = {
 };
 
 describe('cosmetic unlocks', () => {
-  it('nothing is unlocked for a new player', () => {
-    expect(getAllCosmeticStatuses(fresh()).filter((s) => s.unlocked)).toHaveLength(0);
+  it('a new player has only the free basics', () => {
+    const unlocked = getAllCosmeticStatuses(fresh()).filter((s) => s.unlocked);
+    expect(unlocked.length).toBeGreaterThan(0);
+    expect(unlocked.every((s) => s.cosmetic.unlock.type === 'free')).toBe(true);
   });
 
   it('unlocks come from real badges, level and weekly challenges', () => {
@@ -33,7 +35,7 @@ describe('cosmetic unlocks', () => {
       challengeRewards: [{ id: 'w1', kind: 'weekly', periodKey: '2026-10-05', challengeId: 'week-waste', xpAwarded: 40, awardedAt: '2026-10-08T00:00:00.000Z' }],
     };
     const unlocked = getAllCosmeticStatuses(p).filter((s) => s.unlocked).map((s) => s.cosmetic.id);
-    expect(unlocked.sort()).toEqual(['hat-flower-crown', 'hat-leaf-cap', 'hat-straw']);
+    expect(unlocked.filter((id) => getCosmetic(id)?.unlock.type !== 'free').sort()).toEqual(['frame-flower', 'frame-leaf', 'hat-flower-crown', 'hat-leaf-cap', 'hat-straw']);
   });
 
   it('a locked or misplaced item is never worn', () => {
@@ -84,7 +86,7 @@ describe('wardrobe', () => {
         </MemoryRouter>
       </MotionConfig>,
     );
-    expect(screen.getByText(`ปลดล็อกแล้ว 1/${COSMETICS.length}`)).toBeInTheDocument();
+    expect(screen.getByText(`ปลดล็อกแล้ว ${1 + COSMETICS.filter((c) => c.unlock.type === 'free').length}/${COSMETICS.length}`)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /หมวกใบไม้/ }));
     expect(screen.getByTestId('outfit')).toHaveTextContent('"hat":"hat-leaf-cap"');
     expect(storageService.getProfile()?.preferences.outfit).toEqual({ hat: 'hat-leaf-cap' });
@@ -242,6 +244,6 @@ describe('timed-quiz badges and the new-item celebration', () => {
     withLeafCap();
     await renderShell();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(storageService.getProfile()!.preferences.seenCosmetics).toEqual(['hat-leaf-cap']);
+    expect(storageService.getProfile()!.preferences.seenCosmetics!.filter((id) => getCosmetic(id)?.unlock.type !== 'free')).toEqual(['hat-leaf-cap']);
   });
 });
