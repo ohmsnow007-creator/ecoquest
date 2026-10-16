@@ -166,6 +166,9 @@ function topicOf(q: string): Topic | undefined {
   return best;
 }
 
+/** Small talk that doesn't need an environmental keyword. */
+const CHAT_IDS = new Set(['hello', 'who', 'thanks', 'tired', 'xp', 'water-sprouty']);
+
 const OFF_TOPIC: SproutyReply = {
   text: 'ขอโทษนะ 🙏 ฉันตอบได้เฉพาะเรื่องธรรมชาติ สิ่งแวดล้อม ขยะ พลังงาน น้ำ และการใช้แอป EcoQuest เท่านั้น ลองถามเรื่องเหล่านี้ดูนะ 🌱',
   unknown: true,
@@ -201,14 +204,16 @@ export function answerQuestion(input: string): SproutyReply {
       bestScore = s;
     }
   }
-  if (best && bestScore >= 0.55) {
+  // A keyword hit (score ≥ 1) is trusted. A wording-only match must be close AND the question must be
+  // on an environmental topic — otherwise "1+1" could look like a quiz about "1 unit of electricity".
+  const topic = topicOf(q);
+  if (best && (bestScore >= 1 || (bestScore >= 0.6 && (topic || CHAT_IDS.has(best.id))))) {
     return { text: best.answer, source: best.source, suggestions: best.next ? [best.next] : undefined };
   }
 
   const named = generalBins ? null : wasteInQuestion(q);
   if (named) return wasteReply(named);
 
-  const topic = topicOf(q);
   if (topic) {
     return { text: topic.overview, suggestions: topic.suggestions };
   }
