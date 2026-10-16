@@ -18,7 +18,7 @@ const CHAT_KEY = 'ecoquest_chat';
 const GREETING: Message = {
   id: 0,
   from: 'sprouty',
-  text: 'สวัสดี! ฉัน Sprouty 🌱 อยากรู้เรื่องขยะ พลังงาน น้ำ หรือโลกร้อน ถามมาได้เลย หรือกดคำถามด้านล่างก็ได้นะ',
+  text: 'สวัสดี! ฉัน Sprouty 🌱 ถามฉันได้ทุกเรื่องเกี่ยวกับธรรมชาติ สัตว์ ป่า ทะเล ขยะ พลังงาน น้ำ และโลกร้อน หรือกดคำถามด้านล่างก็ได้นะ',
 };
 
 /** The conversation lives only for this browser session (and never leaves the device). */

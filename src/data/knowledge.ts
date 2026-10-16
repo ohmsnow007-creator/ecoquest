@@ -1,5 +1,6 @@
 import { quizzes, type QuizSource } from './quizzes';
 import { BINS, BIN_SOURCE } from './wasteItems';
+import { MORE_KNOWLEDGE } from './knowledgeMore';
 
 /*
  * What Sprouty knows. Every number comes with a source; anything not covered here gets an honest
@@ -221,7 +222,7 @@ const QUIZ_ENTRIES: KnowledgeEntry[] = quizzes.map((q) => {
   };
 });
 
-export const KNOWLEDGE: KnowledgeEntry[] = [...decayEntries, ...CURATED, ...QUIZ_ENTRIES];
+export const KNOWLEDGE: KnowledgeEntry[] = [...decayEntries, ...CURATED, ...MORE_KNOWLEDGE, ...QUIZ_ENTRIES];
 
 /** Suggested questions shown as chips. */
 export const SUGGESTED_QUESTIONS = [
@@ -232,5 +233,8 @@ export const SUGGESTED_QUESTIONS = [
   'ตั้งแอร์กี่องศาประหยัดไฟ?',
   'PM2.5 คืออะไร?',
   'ไมโครพลาสติกคืออะไร?',
+  'ปะการังฟอกขาวคืออะไร?',
+  'ทำไมต้องรักษาป่า?',
+  'กล่องนมรีไซเคิลได้ไหม?',
   'ช่วยโลกได้ยังไง?',
 ];

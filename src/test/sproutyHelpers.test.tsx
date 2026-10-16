@@ -58,15 +58,42 @@ describe('Sprouty answers from the in-app knowledge base', () => {
     expect(answerQuestion('ถังขยะแต่ละสีทิ้งอะไร?').text).toContain('ถังขยะ 4 สี');
   });
 
-  it('is honest about questions it has no knowledge for', () => {
-    const r = answerQuestion('ใครเป็นนายกรัฐมนตรี');
-    expect(r.unknown).toBe(true);
-    expect(r.text).toContain('ยังไม่รู้');
+  it('declines anything outside nature, environment, waste and the app', () => {
+    for (const q of ['ใครเป็นนายกรัฐมนตรี', 'ช่วยทำการบ้านคณิตหน่อย', 'แนะนำหนังหน่อย', 'บอลคืนนี้ใครชนะ']) {
+      const r = answerQuestion(q);
+      expect(r.unknown, q).toBe(true);
+      expect(r.text, q).toContain('ตอบได้เฉพาะเรื่องธรรมชาติ');
+    }
+  });
+
+  it('knows much more about nature, climate, waste and energy', () => {
+    const cases: [string, string][] = [
+      ['ปะการังฟอกขาวคืออะไร', 'ปะการัง'],
+      ['ป่าชายเลนมีประโยชน์อะไร', 'ป่าชายเลน'],
+      ['พะยูนกินอะไร', 'หญ้าทะเล'],
+      ['ทำไมเต่ากินพลาสติก', 'แมงกะพรุน'],
+      ['ชั้นโอโซนคืออะไร', 'มอนทรีออล'],
+      ['ข้อตกลงปารีสคืออะไร', '1.5'],
+      ['ตู้เย็นประหยัดไฟยังไง', 'ตู้เย็น'],
+      ['น้ำท่วมเกี่ยวกับโลกร้อนไหม', 'อากาศสุดขั้ว'],
+      ['น้ำมันทอดทิ้งยังไง', 'ห้ามเท'],
+      ['ทำอะไรจากขวดพลาสติกได้บ้าง', 'อัปไซเคิล'],
+      ['กล่องนมรีไซเคิลได้ไหม', 'ถังสีเหลือง'],
+      ['เปลือกส้ม', 'ถังสีเขียว'],
+    ];
+    for (const [q, want] of cases) expect(answerQuestion(q).text, q).toContain(want);
+  });
+
+  it('broad questions on a topic get an overview with good follow-ups instead of "I don’t know"', () => {
+    const r = answerQuestion('อยากรู้เรื่องป่า');
+    expect(r.unknown).toBeFalsy();
+    expect(r.suggestions?.length).toBeGreaterThan(0);
+    for (const s of r.suggestions ?? []) expect(answerQuestion(s).unknown, s).toBeFalsy();
   });
 
   it('every knowledge entry with a figure carries a source', () => {
     for (const e of KNOWLEDGE) {
-      if (/\d/.test(e.answer.replace(/^\d\./gm, '').replace(/[1-4]\. /g, '')) && !e.id.startsWith('quiz-') && !['xp', 'water-sprouty', 'bins', '3r', 'compost', 'save-electricity'].includes(e.id)) {
+      if (/\d/.test(e.answer.replace(/^\d\./gm, '').replace(/[1-4]\. /g, '')) && !e.id.startsWith('quiz-') && !['xp', 'water-sprouty', 'bins', '3r', 'compost', 'save-electricity', 'app-missions'].includes(e.id)) {
         expect(e.source, e.id).toBeDefined();
       }
     }

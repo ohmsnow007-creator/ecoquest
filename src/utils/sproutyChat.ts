@@ -1,4 +1,5 @@
 import { KNOWLEDGE, type KnowledgeEntry } from '../data/knowledge';
+import { TOPICS, type Topic } from '../data/knowledgeMore';
 import { BINS, WASTE_ITEMS, type Bin, type WasteItem } from '../data/wasteItems';
 
 /*
@@ -99,42 +100,96 @@ const FILLER = /(คืออะไร|อะไร|ยังไง|อย่า
 const core = (s: string) => s.replace(FILLER, '');
 
 function scoreEntry(q: string, e: KnowledgeEntry): number {
-  let score = 0;
+  const cq = core(q);
+  let askSim = 0;
+  for (const a of e.ask) {
+    const n = core(normalize(a));
+    askSim = Math.max(askSim, similarity(cq, n), 0.85 * containment(cq, n) * Math.min(1, cq.length / 6));
+  }
   if (e.match.length) {
     const hits = e.match.map((group) => group.map(normalize).filter((w) => q.includes(w)));
     if (hits.every((h) => h.length > 0)) {
       const matchedLength = hits.reduce((n, h) => n + Math.max(...h.map((w) => w.length)), 0);
-      score = 1 + e.match.length * 0.15 + matchedLength * 0.01;
+      // Keyword hit; among several hits, the entry whose wording is closer to the question wins.
+      return 1 + e.match.length * 0.15 + matchedLength * 0.01 + askSim * 0.3;
     }
   }
-  const cq = core(q);
-  for (const a of e.ask) {
-    const n = core(normalize(a));
-    const s = Math.max(similarity(cq, n), 0.85 * containment(cq, n) * Math.min(1, cq.length / 6));
-    score = Math.max(score, s);
-  }
-  return score;
+  return askSim;
 }
 
 const WASTE_INTENT = ['ทิ้ง', 'ถังไหน', 'ถังอะไร', 'ถังสีอะไร', 'แยกขยะ'];
 /** General questions about the bins themselves (answered from knowledge, not as one item). */
 const BIN_QUESTION = ['ถังขยะ', 'แต่ละสี', 'กี่สี', 'สีถัง', 'แยกขยะยังไง'];
 
+const BIN_NOTE: Record<WasteItem['bin'], string> = {
+  green: 'ย่อยสลายได้ นำไปทำปุ๋ยหมักได้ 🌱',
+  yellow: 'รีไซเคิลได้ ♻️',
+  blue: 'รีไซเคิลยาก ทิ้งรวมขยะทั่วไป',
+  red: 'เป็นขยะอันตราย ต้องแยกทิ้งเสมอ ⚠️',
+};
+
+/** A waste item named inside the question (longest name wins), if any. */
+function wasteInQuestion(q: string): WasteMatch | null {
+  let found: WasteMatch | null = null;
+  for (const item of WASTE_ITEMS) {
+    for (const name of item.names) {
+      const n = normalize(name);
+      if (n.length >= 3 && q.includes(n) && (!found || n.length > normalize(found.name).length)) {
+        found = { item, bin: BINS[item.bin], name, score: 1 };
+      }
+    }
+  }
+  return found;
+}
+
+function wasteReply(m: WasteMatch): SproutyReply {
+  return {
+    text: `“${m.name}” ทิ้ง${m.bin.name} – ${m.bin.kind} 🗑️
+${BIN_NOTE[m.item.bin]}${m.item.tip ? `
+เคล็ดลับ: ${m.item.tip}` : ''}`,
+    source: { name: 'กรมควบคุมมลพิษ – การคัดแยกขยะตามสีถัง' },
+    suggestions: ['ถังขยะแต่ละสีทิ้งอะไร?', `${m.name}ย่อยสลายกี่ปี?`],
+  };
+}
+
+/** Is the question about nature / environment / waste / the app at all? */
+function topicOf(q: string): Topic | undefined {
+  let best: Topic | undefined;
+  let bestHits = 0;
+  for (const t of TOPICS) {
+    const hits = t.words.filter((w) => q.includes(normalize(w))).length;
+    if (hits > bestHits) {
+      best = t;
+      bestHits = hits;
+    }
+  }
+  return best;
+}
+
+const OFF_TOPIC: SproutyReply = {
+  text: 'ขอโทษนะ 🙏 ฉันตอบได้เฉพาะเรื่องธรรมชาติ สิ่งแวดล้อม ขยะ พลังงาน น้ำ และการใช้แอป EcoQuest เท่านั้น ลองถามเรื่องเหล่านี้ดูนะ 🌱',
+  unknown: true,
+  suggestions: ['ขยะพลาสติกย่อยสลายกี่ปี?', 'ทำไมโลกร้อน?', 'ทำไมต้องรักษาป่า?', 'ประหยัดไฟทำยังไง?'],
+};
+
+/**
+ * Sprouty's answer. Order: a known waste item + "where/how to throw" → the bin; a strong knowledge
+ * match → that answer; any other waste item named → the bin; an environmental topic without a precise
+ * match → the topic overview with good follow-ups; anything else → politely declined (off-topic).
+ */
 export function answerQuestion(input: string): SproutyReply {
   const q = normalize(input);
   if (!q) return { text: 'พิมพ์คำถามมาได้เลยนะ 🌱', unknown: true };
+  const generalBins = BIN_QUESTION.some((w) => q.includes(normalize(w)));
 
-  // "Where do I throw X?" goes to the waste list.
-  if (WASTE_INTENT.some((w) => q.includes(normalize(w))) && !BIN_QUESTION.some((w) => q.includes(normalize(w)))) {
-    const stripped = WASTE_INTENT.reduce((s, w) => s.split(normalize(w)).join(''), q).replace(/(ลง|ที่|ใน|ควร|ต้อง|ยังไง|อย่างไร|ไหน)/g, '');
+  // "Where do I throw X?" / "Can X be recycled?"
+  const intent = WASTE_INTENT.some((w) => q.includes(normalize(w))) || /รีไซเคิลได้|ทิ้งยังไง|ทิ้งที่ไหน/.test(q);
+  if (intent && !generalBins) {
+    const named = wasteInQuestion(q);
+    if (named) return wasteReply(named);
+    const stripped = WASTE_INTENT.reduce((s, w) => s.split(normalize(w)).join(''), q).replace(/(รีไซเคิลได้|ลง|ที่|ใน|ควร|ต้อง|ยังไง|อย่างไร|ไหน|ไหม|มั้ย)/g, '');
     const [m] = classifyWaste(stripped);
-    if (m && m.score >= 0.6) {
-      return {
-        text: `“${m.name}” ทิ้ง${m.bin.name} – ${m.bin.kind} 🗑️${m.item.tip ? `\nเคล็ดลับ: ${m.item.tip}` : ''}`,
-        source: { name: 'กรมควบคุมมลพิษ – การคัดแยกขยะตามสีถัง' },
-        suggestions: ['ถังขยะแต่ละสีทิ้งอะไร?'],
-      };
-    }
+    if (m && m.score >= 0.6) return wasteReply(m);
   }
 
   let best: KnowledgeEntry | null = null;
@@ -146,12 +201,16 @@ export function answerQuestion(input: string): SproutyReply {
       bestScore = s;
     }
   }
-  if (best && bestScore >= 0.5) {
+  if (best && bestScore >= 0.55) {
     return { text: best.answer, source: best.source, suggestions: best.next ? [best.next] : undefined };
   }
-  return {
-    text: 'อืม… เรื่องนี้ฉันยังไม่รู้เลย 🤔 ฉันตอบได้จากคลังความรู้ในแอปเท่านั้น จะไม่เดาคำตอบเอง ลองถามเรื่องขยะ พลังงาน น้ำ หรือโลกร้อนดูนะ',
-    unknown: true,
-    suggestions: ['ขยะพลาสติกย่อยสลายกี่ปี?', 'ถังขยะแต่ละสีทิ้งอะไร?', 'ช่วยโลกได้ยังไง?'],
-  };
+
+  const named = generalBins ? null : wasteInQuestion(q);
+  if (named) return wasteReply(named);
+
+  const topic = topicOf(q);
+  if (topic) {
+    return { text: topic.overview, suggestions: topic.suggestions };
+  }
+  return OFF_TOPIC;
 }
