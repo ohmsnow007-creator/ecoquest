@@ -32,7 +32,10 @@ function SproutyCheer({ toast, stage, onClose }: { toast: Toast; stage: ReturnTy
       </motion.span>
       <span className="min-w-0 flex-1 pb-1.5">
         <span className="block font-display text-body leading-tight font-bold text-forest">{cheer}</span>
-        <span className="block text-caption font-semibold text-primary">{toast.message}</span>
+        <span className="block text-caption font-semibold text-primary">
+          {toast.message}
+          <RepeatCount count={toast.count} />
+        </span>
       </span>
       <button
         type="button"
@@ -43,6 +46,22 @@ function SproutyCheer({ toast, stage, onClose }: { toast: Toast; stage: ReturnTy
         <X size={16} />
       </button>
     </motion.div>
+  );
+}
+
+/** "×3" when the same notice came again while it was still showing; pops a little on each repeat. */
+function RepeatCount({ count }: { count?: number }) {
+  if (!count || count < 2) return null;
+  return (
+    <motion.span
+      key={count}
+      initial={{ scale: 1.5 }}
+      animate={{ scale: 1 }}
+      transition={{ type: 'spring', damping: 10, stiffness: 300 }}
+      className="ml-1.5 inline-block rounded-full bg-[#DCFCE7] px-1.5 align-middle text-caption font-bold text-primary"
+    >
+      ×{count}
+    </motion.span>
   );
 }
 
@@ -88,7 +107,10 @@ export function ToastNotification() {
               >
                 <Icon size={20} />
               </motion.span>
-              <span className="flex-1 text-body font-semibold">{toast.message}</span>
+              <span className="flex-1 text-body font-semibold">
+                {toast.message}
+                <RepeatCount count={toast.count} />
+              </span>
               <button
                 type="button"
                 onClick={() => dismissToast(toast.id)}

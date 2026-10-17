@@ -24,7 +24,13 @@ export interface Toast {
   id: string;
   message: string;
   type: 'xp' | 'badge' | 'level' | 'info' | 'error';
+  /** The same notice repeated while still on screen is shown once with ×count. */
+  count?: number;
 }
+
+/** At most this many notices on screen; older ones make room for new ones. */
+export const MAX_TOASTS = 3;
+const TOAST_MS = 3500;
 
 export type Celebration =
   | { id: string; type: 'level'; level: number; from: number }
@@ -153,18 +159,41 @@ export function GameProvider({ children }: { children: ReactNode }) {
     prefsRef.current = profile?.preferences;
   }, [profile]);
 
-  const addToast = useCallback((message: string, type: Toast['type'] = 'info') => {
-    if (type !== 'error' && prefsRef.current?.inAppToasts === false) return;
-    const id = newId();
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3500);
+  // Tapping the same action quickly (e.g. watering again and again) bumps one notice's ×count
+  // instead of stacking copies, and the list never grows past MAX_TOASTS.
+  const toastsRef = useRef<Toast[]>([]);
+  const toastTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  useEffect(() => {
+    toastsRef.current = toasts;
+  }, [toasts]);
+  useEffect(() => {
+    const timers = toastTimers.current;
+    return () => timers.forEach((t) => clearTimeout(t));
   }, []);
 
   const dismissToast = useCallback((id: string) => {
+    clearTimeout(toastTimers.current.get(id));
+    toastTimers.current.delete(id);
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
+
+  const addToast = useCallback(
+    (message: string, type: Toast['type'] = 'info') => {
+      if (type !== 'error' && prefsRef.current?.inAppToasts === false) return;
+      const same = toastsRef.current.find((t) => t.message === message && t.type === type);
+      const id = same?.id ?? newId();
+      setToasts((prev) => {
+        const next = prev.some((t) => t.id === id)
+          ? prev.map((t) => (t.id === id ? { ...t, count: (t.count ?? 1) + 1 } : t))
+          : [...prev, { id, message, type }];
+        toastsRef.current = next.slice(-MAX_TOASTS);
+        return toastsRef.current;
+      });
+      clearTimeout(toastTimers.current.get(id));
+      toastTimers.current.set(id, setTimeout(() => dismissToast(id), TOAST_MS));
+    },
+    [dismissToast],
+  );
 
   const dismissCelebration = useCallback(() => {
     setCelebrations((prev) => prev.slice(1));

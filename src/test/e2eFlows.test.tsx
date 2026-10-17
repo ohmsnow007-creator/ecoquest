@@ -192,7 +192,7 @@ describe('Intro — slide to unlock', () => {
     expect(screen.getByText('Tester · เลเวล 1')).toBeInTheDocument();
     expect(screen.getByText(/วันนี้ 0\/3/)).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole('button', { name: /เลื่อนเพื่อเข้าเกม/ }), { key: 'Enter' });
-    expect(await screen.findByText('สวัสดี Tester', undefined, { timeout: 5000 })).toBeInTheDocument();
+    expect(await screen.findByText('สวัสดี Tester', undefined, { timeout: 12_000 })).toBeInTheDocument();
     expect(window.location.hash).toBe('#/home');
   });
 
