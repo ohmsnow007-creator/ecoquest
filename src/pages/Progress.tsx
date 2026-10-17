@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { Target, Sparkles, TrendingUp, Flame, ChevronRight, Leaf, History } from 'lucide-react';
 import { useGame } from '../store/GameContext';
 import { getPlayerStats } from '../utils/playerStats';
-import { getRecentActivity, buildActivityFeed, formatRelativeTime } from '../utils/activity';
+import { getRecentActivity, buildActivityFeed, formatRelativeTime, levelUpText } from '../utils/activity';
 import { CATEGORY_LABELS } from '../types';
 import { CATEGORY_ICON, CATEGORY_ORDER } from '../data/icons';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -102,7 +102,7 @@ export function Progress() {
                 : e.type === 'badge' ? `ปลดล็อกเหรียญ "${e.title}"`
                 : e.type === 'admin' ? e.title
                 : e.type === 'challenge' ? (e.kind === 'daily' ? 'ทำภารกิจประจำวันครบ' : `สำเร็จชาเลนจ์ "${e.title}"`)
-                : `เลื่อนเป็นเลเวล ${e.level}`;
+                : levelUpText(e);
               const xp = e.type === 'mission' || e.type === 'quiz' || e.type === 'challenge' || e.type === 'admin' ? e.xp : 0;
               return (
                 <li key={e.id} className="flex items-center justify-between gap-3 py-3">

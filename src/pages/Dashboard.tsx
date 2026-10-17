@@ -9,7 +9,7 @@ import { useGame } from '../store/GameContext';
 import { getPlayerStats } from '../utils/playerStats';
 import { worldMissionCount } from '../utils/admin';
 import { getWorldState, explainWorld } from '../utils/world';
-import { buildActivityFeed, formatRelativeTime, type ActivityEvent } from '../utils/activity';
+import { buildActivityFeed, formatRelativeTime, levelUpText, type ActivityEvent } from '../utils/activity';
 import { missions } from '../data/missions';
 import { CATEGORY_LABELS, DIFFICULTY_LABELS } from '../types';
 import type { Mission, MissionProgressStatus } from '../types';
@@ -143,7 +143,7 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
     xp = event.xp;
   } else {
     Icon = TrendingUp;
-    text = `เลื่อนเป็นเลเวล ${event.level}`;
+    text = levelUpText(event);
   }
 
   return (

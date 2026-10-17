@@ -239,6 +239,27 @@ describe('timed-quiz badges and the new-item celebration', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('several new items: “ดูทั้งหมด” shows them all on one page, tap to wear, keep all in one go', async () => {
+    localStorage.setItem('ecoquest_profile', JSON.stringify({ ...profile, preferences: { ...profile.preferences, seenCosmetics: [] } }));
+    localStorage.setItem('ecoquest_progress', JSON.stringify({
+      ...fresh(),
+      adminGrants: [{ id: 'g1', at: '2026-10-01T00:00:00.000Z', kind: 'xp', amount: totalXpForLevel(8) }],
+      unlockedBadges: [{ badgeId: 'badge-first-mission', unlockedAt: '2026-10-01T00:00:00.000Z' }],
+    }));
+    await renderShell();
+    const fresh4 = ['frame-flower', 'frame-leaf', 'hat-flower-crown', 'hat-leaf-cap'];
+    fireEvent.click(screen.getByRole('button', { name: `ดูทั้งหมด (${fresh4.length} ชิ้น)` }));
+    const all = screen.getByRole('dialog', { name: /แตะชิ้นที่อยากใส่/ });
+    for (const id of fresh4) expect(all).toHaveTextContent(getCosmetic(id)!.name);
+    fireEvent.click(screen.getByRole('button', { name: /มงกุฎดอกไม้/ }));
+    expect(screen.getByRole('button', { name: /มงกุฎดอกไม้/ })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'เรียบร้อย!' }));
+    const saved = storageService.getProfile()!.preferences;
+    expect(saved.outfit?.hat).toBe('hat-flower-crown');
+    for (const id of fresh4) expect(saved.seenCosmetics).toContain(id);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
   it('an existing player is not flooded: items unlocked before this feature count as seen', async () => {
     localStorage.setItem('ecoquest_profile', JSON.stringify(profile));
     withLeafCap();

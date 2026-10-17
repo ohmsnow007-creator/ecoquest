@@ -55,3 +55,16 @@ describe('sound effects are on by default', () => {
     expect(sanitizeProfile({ ...base, preferences: { soundEffects: true, soundChosen: true } })?.preferences.soundEffects).toBe(true);
   });
 });
+
+describe('recent activity', () => {
+  it('a record that lifts several levels at once shows one line "เลเวล 1 → N"', async () => {
+    const { buildActivityFeed, levelUpText } = await import('../utils/activity');
+    const { storageService } = await import('../services/storageService');
+    const { totalXpForLevel } = await import('../utils/xp');
+    const p = { ...storageService.getDefaultProgress(), adminGrants: [{ id: 'g1', at: '2026-10-16T00:00:00.000Z', kind: 'xp' as const, amount: totalXpForLevel(6) }] };
+    const levels = buildActivityFeed(p).filter((e) => e.type === 'level');
+    expect(levels).toHaveLength(1);
+    expect(levelUpText(levels[0] as { level: number; from: number })).toBe('เลื่อนจากเลเวล 1 → 6');
+    expect(levelUpText({ from: 3, level: 4 })).toBe('เลื่อนเป็นเลเวล 4');
+  });
+});

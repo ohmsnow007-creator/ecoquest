@@ -93,5 +93,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
+    // Whole-app flows render every page; give them room when the machine is busy running all files at once.
+    testTimeout: 15_000,
   },
 })

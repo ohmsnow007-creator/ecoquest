@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Bell, Medal, TrendingUp } from 'lucide-react';
 import { useGame } from '../../store/GameContext';
 import { storageService } from '../../services/storageService';
-import { buildActivityFeed, formatRelativeTime } from '../../utils/activity';
+import { buildActivityFeed, formatRelativeTime, levelUpText } from '../../utils/activity';
 import { Modal } from '../ui/Modal';
 
 // Notifications are the player's real milestones (badges, level-ups); "unread" means newer than the last time the panel was opened.
@@ -52,7 +52,7 @@ export function NotificationBell() {
                 </span>
                 <div className="min-w-0">
                   <p className="text-body font-medium">
-                    {e.type === 'badge' ? `ปลดล็อกเหรียญ "${e.title}"` : `เลื่อนเป็นเลเวล ${e.level}`}
+                    {e.type === 'badge' ? `ปลดล็อกเหรียญ "${e.title}"` : levelUpText(e)}
                   </p>
                   <p className="text-caption text-muted">{formatRelativeTime(e.at)}</p>
                 </div>

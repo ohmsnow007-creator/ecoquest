@@ -1,3 +1,4 @@
+import { missionXpToday } from '../utils/challenges';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
@@ -128,6 +129,9 @@ function renderAt(path: string) {
   );
 }
 
+// What energy-001 pays today: ×3 (plus a special bonus) on the days it is one of player p1's daily missions.
+const energyXp = () => missionXpToday(missions.find((m) => m.id === 'energy-001')!, 'p1').xp;
+
 describe('mission detail page', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -147,7 +151,7 @@ describe('mission detail page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'ยืนยันว่าทำสำเร็จ' }));
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByText(/ปิดไฟเมื่อออกจากห้อง/)).toBeInTheDocument();
-    expect(within(dialog).getByText(/\+20 XP/)).toBeInTheDocument();
+    expect(within(dialog).getByText(new RegExp(`\\+${energyXp()} XP`))).toBeInTheDocument();
   });
 
   it('does not add XP when saving the completion fails, and offers a retry', () => {
@@ -164,7 +168,7 @@ describe('mission detail page', () => {
 
     spy.mockRestore();
     fireEvent.click(screen.getByRole('button', { name: 'ลองอีกครั้ง' }));
-    expect(screen.getByTestId('probe')).toHaveTextContent(/^20:1/);
+    expect(screen.getByTestId('probe')).toHaveTextContent(new RegExp(`^${energyXp()}:1`));
   });
 });
 

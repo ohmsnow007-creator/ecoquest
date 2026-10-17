@@ -10,7 +10,7 @@ export type ActivityEvent =
   | { id: string; type: 'mission'; at: string; missionId: string; title: string; xp: number; selfReported: boolean }
   | { id: string; type: 'quiz'; at: string; attemptId: string; title: string; xp: number; correctCount: number; total: number }
   | { id: string; type: 'badge'; at: string; badgeId: string; title: string }
-  | { id: string; type: 'level'; at: string; level: number }
+  | { id: string; type: 'level'; at: string; level: number; from: number }
   | { id: string; type: 'challenge'; at: string; kind: 'daily' | 'weekly'; title: string; xp: number }
   | { id: string; type: 'admin'; at: string; title: string; xp: number };
 
@@ -75,9 +75,8 @@ export function buildActivityFeed(progress: PlayerProgress): ActivityEvent[] {
     const before = getLevelFromXp(xp);
     xp += e.type === 'mission' || e.type === 'quiz' || e.type === 'challenge' || e.type === 'admin' ? e.xp : 0;
     const after = getLevelFromXp(xp);
-    for (let lv = before + 1; lv <= after; lv++) {
-      levelEvents.push({ id: `l-${lv}`, type: 'level', at: new Date(time(e.at) + 1).toISOString(), level: lv });
-    }
+    // One line per jump: a record that lifts several levels at once reads "เลเวล 1 → 6".
+    if (after > before) levelEvents.push({ id: `l-${after}`, type: 'level', at: new Date(time(e.at) + 1).toISOString(), level: after, from: before });
   }
 
   const badgeEvents: ActivityEvent[] = progress.unlockedBadges.filter((b) => b.source !== 'admin').map((b) => ({
@@ -89,6 +88,11 @@ export function buildActivityFeed(progress: PlayerProgress): ActivityEvent[] {
   }));
 
   return [...xpEvents, ...levelEvents, ...badgeEvents].sort((a, b) => time(b.at) - time(a.at));
+}
+
+/** "เลื่อนเป็นเลเวล 4", or "เลื่อนจากเลเวล 1 → 6" when several levels came at once. */
+export function levelUpText(e: { level: number; from: number }): string {
+  return e.level - e.from > 1 ? `เลื่อนจากเลเวล ${e.from} → ${e.level}` : `เลื่อนเป็นเลเวล ${e.level}`;
 }
 
 const RTF = new Intl.RelativeTimeFormat('th', { numeric: 'auto' });
